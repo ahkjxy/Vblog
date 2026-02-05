@@ -382,7 +382,7 @@ export default function NewPostPage() {
             value={excerpt}
             onChange={(e) => setExcerpt(e.target.value)}
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="输入文章摘要，或点击"自动生成"从正文提取"
+            placeholder="输入文章摘要，或点击自动生成从正文提取"
             rows={3}
           />
         </div>
