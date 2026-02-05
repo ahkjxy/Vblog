@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, ArrowRight } from 'lucide-react'
+import { Logo } from '@/components/Logo'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -52,8 +53,11 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
           <div className="mb-8">
-            <Link href="/" className="text-2xl font-bold">
-              博客
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center text-white p-2">
+                <Logo className="w-full h-full" />
+              </div>
+              <span className="text-2xl font-bold">元气银行</span>
             </Link>
           </div>
 
@@ -81,8 +85,8 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
-                  placeholder="your@email.com"
+                  className="w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="ahkjxy@qq.com"
                 />
               </div>
             </div>
@@ -99,7 +103,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="••••••••"
                 />
               </div>
@@ -118,7 +122,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 font-medium flex items-center justify-center gap-2"
+              className="w-full py-3 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 font-medium flex items-center justify-center gap-2"
             >
               {loading ? '登录中...' : '登录'}
               {!loading && <ArrowRight className="w-4 h-4" />}
@@ -162,7 +166,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-600 mt-8">
             还没有账户？{' '}
-            <Link href="/auth/signup" className="text-black font-medium hover:underline">
+            <Link href="/auth/signup" className="text-orange-600 font-medium hover:text-orange-700">
               免费注册
             </Link>
           </p>
@@ -170,11 +174,11 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Image/Gradient */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-gray-900 to-gray-700 items-center justify-center p-12">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-[#FF4D94] via-orange-400 to-yellow-400 items-center justify-center p-12">
         <div className="max-w-md text-white">
           <h2 className="text-4xl font-bold mb-4">开始你的创作之旅</h2>
-          <p className="text-gray-300 text-lg">
-            加入我们的社区，分享你的想法和经验。让更多人看到你的故事。
+          <p className="text-orange-50 text-lg">
+            加入元气银行，让家庭积分管理变得简单高效。
           </p>
         </div>
       </div>

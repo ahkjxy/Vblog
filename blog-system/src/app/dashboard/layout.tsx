@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { Logo } from '@/components/Logo'
 import { 
   LayoutDashboard, 
   FileText, 
@@ -53,8 +54,11 @@ export default async function DashboardLayout({
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r min-h-screen fixed left-0 top-0">
           <div className="p-6 border-b">
-            <Link href="/dashboard" className="text-xl font-bold">
-              博客管理
+            <Link href="/dashboard" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center text-white p-1.5">
+                <Logo className="w-full h-full" />
+              </div>
+              <span className="text-xl font-bold">元气银行</span>
             </Link>
           </div>
 
@@ -84,7 +88,7 @@ export default async function DashboardLayout({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 hover:text-gray-900"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-orange-50 transition-colors text-sm font-medium text-gray-700 hover:text-orange-600"
                 >
                   <item.icon className="w-5 h-5" />
                   <span>{item.label}</span>

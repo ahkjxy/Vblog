@@ -69,16 +69,20 @@ body {
 }
 
 /* Custom gradient backgrounds */
-.gradient-orange {
-  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+.gradient-pink {
+  background: linear-gradient(135deg, #FF4D94 0%, #7C4DFF 100%);
 }
 
-.gradient-yellow {
-  background: linear-gradient(135deg, #ffd93d 0%, #ffb800 100%);
+.gradient-purple {
+  background: linear-gradient(135deg, #7C4DFF 0%, #6366f1 100%);
 }
 
 .gradient-warm {
-  background: linear-gradient(135deg, #ff6b35 0%, #ffd93d 100%);
+  background: linear-gradient(135deg, #FF4D94 0%, #7C4DFF 100%);
+}
+
+.gradient-light {
+  background: linear-gradient(135deg, #FF7AB8 0%, #7C4DFF 100%);
 }
 
 .dark {

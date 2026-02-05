@@ -20,17 +20,17 @@ export function Footer() {
           <div>
             <h4 className="font-medium mb-4 text-sm">资源</h4>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><a href="#" className="hover:text-gray-900 transition-colors">文档</a></li>
-              <li><a href="#" className="hover:text-gray-900 transition-colors">API</a></li>
-              <li><a href="#" className="hover:text-gray-900 transition-colors">支持</a></li>
+              <li><a href="/docs" className="hover:text-gray-900 transition-colors">文档</a></li>
+              <li><a href="/api" className="hover:text-gray-900 transition-colors">API</a></li>
+              <li><a href="/support" className="hover:text-gray-900 transition-colors">支持</a></li>
             </ul>
           </div>
           <div>
             <h4 className="font-medium mb-4 text-sm">公司</h4>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><a href="#" className="hover:text-gray-900 transition-colors">关于</a></li>
-              <li><a href="#" className="hover:text-gray-900 transition-colors">联系</a></li>
-              <li><a href="#" className="hover:text-gray-900 transition-colors">隐私政策</a></li>
+              <li><a href="/about" className="hover:text-gray-900 transition-colors">关于</a></li>
+              <li><a href="/contact" className="hover:text-gray-900 transition-colors">联系</a></li>
+              <li><a href="/privacy" className="hover:text-gray-900 transition-colors">隐私政策</a></li>
             </ul>
           </div>
         </div>

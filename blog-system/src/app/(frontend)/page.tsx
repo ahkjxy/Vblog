@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
-import { ArrowRight, Zap, TrendingUp, Award, Shield, FileText } from 'lucide-react'
+import { ArrowRight, Calendar, Eye, User } from 'lucide-react'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -11,283 +11,181 @@ export default async function HomePage() {
     .select('*, profiles(username, avatar_url)')
     .eq('status', 'published')
     .order('published_at', { ascending: false })
-    .limit(6)
+    .limit(12)
+
+  const { data: featuredPost } = await supabase
+    .from('posts')
+    .select('*, profiles(username, avatar_url)')
+    .eq('status', 'published')
+    .order('view_count', { ascending: false })
+    .limit(1)
+    .single()
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="container mx-auto px-6 py-20 md:py-32">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-orange-100 to-yellow-100 text-sm mb-6">
-            <Zap className="w-4 h-4 text-orange-600" />
-            <span className="text-orange-900 font-medium">元气银行 Architecture & Guide</span>
-          </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">
-            元气银行<br />
-            <span className="text-gray-600">使用说明与技术手册</span>
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            本指南详细汇总了应用的功能模块、操作流程及同步策略。旨在帮助家庭成员快速上手，同时为系统管理员提供完整的维护参考。
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center mb-8">
-            <div className="px-4 py-2 bg-white border rounded-full text-sm font-medium">
-              React 18
-            </div>
-            <div className="px-4 py-2 bg-white border rounded-full text-sm font-medium">
-              Tailwind CSS
-            </div>
-            <div className="px-4 py-2 bg-white border rounded-full text-sm font-medium">
-              Supabase Cloud
-            </div>
-            <div className="px-4 py-2 bg-white border rounded-full text-sm font-medium">
-              Realtime Sync
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/blog"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition-all font-medium"
-            >
-              查看文档
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 rounded-full hover:border-gray-400 transition-all font-medium"
-            >
-              开始使用
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="container mx-auto px-6 py-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">🗺️ 路由架构 / Navigation</h2>
-            <p className="text-gray-600">完整的功能模块导航</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white border rounded-2xl p-6 hover:shadow-lg transition-all">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
-                <TrendingUp className="w-6 h-6 text-blue-600" />
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section with Featured Post */}
+      {featuredPost && (
+        <section className="bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 border-b">
+          <div className="container mx-auto px-6 py-20">
+            <div className="max-w-5xl mx-auto">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full text-sm font-medium text-[#FF4D94] mb-6 shadow-sm">
+                <span className="w-2 h-2 bg-[#FF4D94] rounded-full animate-pulse"></span>
+                精选文章
               </div>
-              <h3 className="font-semibold mb-2">/dashboard</h3>
-              <p className="text-sm text-gray-600">账户概览 - 核心看板，展示余额与趋势</p>
-            </div>
-
-            <div className="bg-white border rounded-2xl p-6 hover:shadow-lg transition-all">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
-                <Zap className="w-6 h-6 text-green-600" />
-              </div>
-              <h3 className="font-semibold mb-2">/earn</h3>
-              <p className="text-sm text-gray-600">元气任务 - 赚取积分与违规扣减入口</p>
-            </div>
-
-            <div className="bg-white border rounded-2xl p-6 hover:shadow-lg transition-all">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
-                <Award className="w-6 h-6 text-purple-600" />
-              </div>
-              <h3 className="font-semibold mb-2">/redeem</h3>
-              <p className="text-sm text-gray-600">梦想商店 - 积分兑换实物 or 特权奖励</p>
-            </div>
-
-            <div className="bg-white border rounded-2xl p-6 hover:shadow-lg transition-all">
-              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-4">
-                <FileText className="w-6 h-6 text-orange-600" />
-              </div>
-              <h3 className="font-semibold mb-2">/history</h3>
-              <p className="text-sm text-gray-600">能量账单 - 全量交易流水查询</p>
-            </div>
-
-            <div className="bg-white border rounded-2xl p-6 hover:shadow-lg transition-all">
-              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
-                <Shield className="w-6 h-6 text-gray-600" />
-              </div>
-              <h3 className="font-semibold mb-2">/settings</h3>
-              <p className="text-sm text-gray-600">系统配置 - 仅管理员可见的规则与成员管理</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Core Features */}
-      <section className="container mx-auto px-6 py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">🚀 页面核心功能 / Modules</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white rounded-2xl p-8">
-              <h3 className="text-xl font-semibold mb-3">数据实时同步</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                所有积分变动、成员信息及任务规则均直接持久化至 Supabase 云端，确保多设备访问时数据的一致性与实时性。
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl p-8">
-              <h3 className="text-xl font-semibold mb-3">自动化管理</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                支持设置每日、每周、每月等多种结算周期的任务；系统每日会自动发放"元气奖励"以保持成员活跃度。
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl p-8">
-              <h3 className="text-xl font-semibold mb-3">多角色权限</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                严谨的权限控制：普通成员仅能执行赚取与兑换，管理员拥有规则制定权与账单审计权。
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Workflow */}
-      <section className="container mx-auto px-6 py-16">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">🛠️ 管理流程 / Workflow</h2>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center font-semibold">
-                1
-              </div>
-              <div>
-                <h4 className="font-semibold mb-1">录入任务</h4>
-                <p className="text-gray-600 text-sm">选择分类下的具体事项，确认后系统即刻更新成员余额。</p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center font-semibold">
-                2
-              </div>
-              <div>
-                <h4 className="font-semibold mb-1">兑换奖品</h4>
-                <p className="text-gray-600 text-sm">商品网格展示，余额不足时自动置灰锁定，防止超支。</p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center font-semibold">
-                3
-              </div>
-              <div>
-                <h4 className="font-semibold mb-1">规则制定</h4>
-                <p className="text-gray-600 text-sm">管理员可在设置中随时调整任务点数、商品库存或图片。</p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center font-semibold">
-                4
-              </div>
-              <div>
-                <h4 className="font-semibold mb-1">成员更替</h4>
-                <p className="text-gray-600 text-sm">支持管理员增删成员及调整权限，确保家庭空间的私密性。</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Latest Posts */}
-      {posts && posts.length > 0 && (
-        <section className="container mx-auto px-6 py-16 bg-gray-50">
-          <div className="max-w-6xl mx-auto">
-            <div className="flex items-center justify-between mb-12">
-              <h2 className="text-3xl font-bold">📚 最新文档</h2>
-              <Link href="/blog" className="text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1">
-                查看全部
-                <ArrowRight className="w-4 h-4" />
+              <Link href={`/blog/${featuredPost.slug}`}>
+                <h1 className="text-5xl md:text-6xl font-bold mb-6 hover:text-[#FF4D94] transition-colors leading-tight">
+                  {featuredPost.title}
+                </h1>
               </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {posts.map((post) => (
-                <article key={post.id} className="group">
-                  <Link href={`/blog/${post.slug}`}>
-                    <div className="bg-white border rounded-2xl p-6 hover:shadow-lg transition-all duration-300">
-                      <div className="mb-4">
-                        <h3 className="text-xl font-semibold mb-2 group-hover:text-gray-600 transition-colors line-clamp-2">
-                          {post.title}
-                        </h3>
-                        {post.excerpt && (
-                          <p className="text-gray-600 text-sm line-clamp-3">{post.excerpt}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-gray-500">
-                        {post.profiles?.avatar_url && (
-                          <img 
-                            src={post.profiles.avatar_url} 
-                            alt={post.profiles.username}
-                            className="w-8 h-8 rounded-full"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900">{post.profiles?.username}</div>
-                          <div className="text-xs">{formatDate(post.published_at!)}</div>
-                        </div>
-                      </div>
+              {featuredPost.excerpt && (
+                <p className="text-xl text-gray-600 mb-8 leading-relaxed">{featuredPost.excerpt}</p>
+              )}
+              <div className="flex items-center gap-6 text-sm text-gray-600">
+                <div className="flex items-center gap-3">
+                  {featuredPost.profiles?.avatar_url ? (
+                    <img 
+                      src={featuredPost.profiles.avatar_url} 
+                      alt={featuredPost.profiles.username}
+                      className="w-10 h-10 rounded-full ring-2 ring-white shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center text-white font-semibold shadow-sm">
+                      {featuredPost.profiles?.username?.charAt(0).toUpperCase()}
                     </div>
-                  </Link>
-                </article>
-              ))}
+                  )}
+                  <span className="font-medium">{featuredPost.profiles?.username}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  <span>{formatDate(featuredPost.published_at!)}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Eye className="w-4 h-4" />
+                  <span>{featuredPost.view_count} 阅读</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* Tech Stack */}
-      <section className="container mx-auto px-6 py-16">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">💻 技术规范 / Specs</h2>
+      {/* Posts Grid */}
+      <section className="container mx-auto px-6 py-20">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-12">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">最新文章</h2>
+              <p className="text-gray-600">探索最新的家庭管理智慧</p>
+            </div>
+            <Link href="/blog" className="text-sm font-medium text-[#FF4D94] hover:text-[#7C4DFF] flex items-center gap-2 transition-colors">
+              查看全部
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
 
-          <div className="bg-white border rounded-2xl p-8">
-            <h3 className="font-semibold mb-6">Tech Stack</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <div className="text-sm text-gray-600 mb-2">Frontend</div>
-                <div className="font-medium">React + TypeScript</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600 mb-2">Styling</div>
-                <div className="font-medium">Tailwind + Radix</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600 mb-2">Backend</div>
-                <div className="font-medium">Supabase BaaS</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600 mb-2">Storage</div>
-                <div className="font-medium">Supabase S3 Bucket</div>
+          {posts && posts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {posts.map((post, index) => {
+                const colors = [
+                  'from-[#FF4D94] to-[#FF7AB8]',
+                  'from-[#FFA726] to-[#FFB74D]',
+                  'from-[#7C4DFF] to-[#9575CD]',
+                  'from-[#42A5F5] to-[#64B5F6]',
+                ]
+                const colorClass = colors[index % colors.length]
+                
+                return (
+                  <article key={post.id} className="group">
+                    <Link href={`/blog/${post.slug}`}>
+                      <div className="bg-white rounded-3xl p-6 hover:shadow-2xl transition-all duration-300 h-full flex flex-col border border-gray-100">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold mb-3 group-hover:text-[#FF4D94] transition-colors line-clamp-2 leading-snug">
+                            {post.title}
+                          </h3>
+                          {post.excerpt && (
+                            <p className="text-gray-600 text-sm line-clamp-3 mb-6 leading-relaxed">{post.excerpt}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                          <div className="flex items-center gap-3">
+                            {post.profiles?.avatar_url ? (
+                              <img 
+                                src={post.profiles.avatar_url} 
+                                alt={post.profiles.username}
+                                className="w-8 h-8 rounded-full ring-2 ring-gray-100"
+                              />
+                            ) : (
+                              <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center text-white text-sm font-semibold shadow-sm`}>
+                                {post.profiles?.username?.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="font-medium text-gray-900 text-sm">{post.profiles?.username}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{post.view_count}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </article>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-white rounded-3xl border border-gray-100">
+              <div className="max-w-md mx-auto">
+                <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-10 h-10 text-[#FF4D94]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-3">暂无文章</h3>
+                <p className="text-gray-600 mb-8">还没有发布任何文章，开始创作第一篇吧</p>
+                <Link 
+                  href="/auth/login"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-full hover:shadow-xl transition-all font-medium"
+                >
+                  登录后台创建文章
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-6 py-16">
-        <div className="max-w-4xl mx-auto bg-gradient-to-br from-orange-500 to-yellow-500 text-white rounded-3xl p-12 text-center">
-          <h2 className="text-3xl font-bold mb-4">准备好开始了吗？</h2>
-          <p className="text-orange-50 mb-8 max-w-2xl mx-auto">
-            立即开始使用元气银行，让家庭积分管理变得简单高效。
-          </p>
-          <Link
-            href="/auth/signup"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-orange-600 rounded-full hover:bg-orange-50 transition-all font-medium"
-          >
-            免费开始
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+      <section className="bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+        <div className="container mx-auto px-6 py-20">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-3xl p-12 shadow-xl text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </div>
+              <h2 className="text-4xl font-bold mb-4">开始你的创作之旅</h2>
+              <p className="text-gray-600 mb-10 max-w-2xl mx-auto text-lg">
+                分享你的想法和经验，让更多人看到你的故事
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  href="/auth/signup"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-full hover:shadow-xl transition-all font-medium text-lg"
+                >
+                  免费注册
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+                <Link
+                  href="/blog"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 border-gray-300 rounded-full hover:border-[#FF4D94] hover:text-[#FF4D94] transition-all font-medium text-lg"
+                >
+                  浏览更多文章
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>

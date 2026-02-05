@@ -42,6 +42,12 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        // 元气银行品牌色
+        brand: {
+          pink: '#FF4D94',
+          purple: '#7C4DFF',
+          light: '#FF7AB8',
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
