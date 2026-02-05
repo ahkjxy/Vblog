@@ -5,11 +5,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Logo } from '@/components/Logo'
-import { LayoutDashboard, LogOut, ChevronDown, Sparkles, BookOpen, FolderOpen, Tag } from 'lucide-react'
+import { LayoutDashboard, LogOut, ChevronDown, Sparkles, BookOpen, FolderOpen, Tag, Menu, X } from 'lucide-react'
 
 export function Header() {
   const [user, setUser] = useState<{ username: string; avatar_url?: string; role?: string } | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -55,31 +56,37 @@ export function Header() {
     await supabase.auth.signOut()
     setUser(null)
     setIsDropdownOpen(false)
+    setIsMobileMenuOpen(false)
     router.push('/')
     router.refresh()
   }
 
+  // 关闭移动菜单
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false)
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-purple-100/50 bg-white/80 backdrop-blur-xl shadow-sm">
-      <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+      <div className="container mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/" className="flex items-center gap-2 md:gap-3 group">
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
-            <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white p-2 shadow-lg group-hover:scale-105 transition-transform">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl md:rounded-2xl blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
+            <div className="relative w-9 h-9 md:w-11 md:h-11 rounded-xl md:rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white p-1.5 md:p-2 shadow-lg group-hover:scale-105 transition-transform">
               <Logo className="w-full h-full" />
             </div>
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <span className="text-base md:text-xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               元气银行
             </span>
-            <span className="text-xs text-gray-500 font-medium">Family Bank</span>
+            <span className="text-[10px] md:text-xs text-gray-500 font-medium hidden sm:block">Family Bank</span>
           </div>
         </Link>
         
-        {/* Navigation */}
-        <nav className="flex items-center gap-2">
+        {/* Desktop Navigation */}
+        <nav className="hidden lg:flex items-center gap-2">
           <Link 
             href="/blog" 
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
@@ -178,7 +185,107 @@ export function Header() {
             </Link>
           )}
         </nav>
+
+        {/* Mobile Menu Button */}
+        <div className="flex items-center gap-2 lg:hidden">
+          {user && (
+            <Link 
+              href="/dashboard"
+              className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center"
+            >
+              <LayoutDashboard className="w-4 h-4 text-purple-600" />
+            </Link>
+          )}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 hover:bg-purple-100 transition-colors"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden border-t border-purple-100 bg-white animate-slide-up">
+          <nav className="container mx-auto px-4 py-4 space-y-1">
+            <Link 
+              href="/blog"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
+            >
+              <BookOpen className="w-5 h-5" />
+              <span>文档</span>
+            </Link>
+            <Link 
+              href="/categories"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
+            >
+              <FolderOpen className="w-5 h-5" />
+              <span>分类</span>
+            </Link>
+            <Link 
+              href="/tags"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
+            >
+              <Tag className="w-5 h-5" />
+              <span>标签</span>
+            </Link>
+            
+            {user ? (
+              <>
+                <div className="h-px bg-gray-200 my-2"></div>
+                <div className="px-4 py-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
+                  <div className="flex items-center gap-3 mb-3">
+                    {user.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt={user.username}
+                        className="w-10 h-10 rounded-full border-2 border-purple-200"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md">
+                        <span className="text-white text-sm font-bold">
+                          {user.username.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{user.username}</p>
+                      {user.role && (
+                        <p className="text-xs text-purple-600">
+                          {user.role === 'admin' ? '管理员' : user.role === 'editor' ? '编辑' : '作者'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>退出登录</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="h-px bg-gray-200 my-2"></div>
+                <Link 
+                  href="/auth/login"
+                  onClick={closeMobileMenu}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>登录</span>
+                </Link>
+              </>
+            )}
+          </nav>
+        </div>
+      )}
     </header>
   )
 }
