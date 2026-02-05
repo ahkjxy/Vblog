@@ -6,12 +6,22 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function generateSlug(title: string): string {
-  return title
+  // Remove special characters and convert to lowercase
+  let slug = title
     .toLowerCase()
     .trim()
+    // Replace Chinese characters and special chars with hyphen
+    .replace(/[\u4e00-\u9fa5]/g, '') // Remove Chinese characters
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '')
+  
+  // If slug is empty or too short after processing, use timestamp
+  if (!slug || slug.length < 3) {
+    slug = `post-${Date.now()}`
+  }
+  
+  return slug
 }
 
 export function formatDate(date: string): string {

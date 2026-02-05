@@ -8,6 +8,7 @@ import { generateSlug } from '@/lib/utils'
 
 export default function NewPostPage() {
   const [title, setTitle] = useState('')
+  const [slug, setSlug] = useState('')
   const [content, setContent] = useState<Record<string, unknown> | null>(null)
   const [excerpt, setExcerpt] = useState('')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
@@ -16,6 +17,14 @@ export default function NewPostPage() {
   
   const router = useRouter()
   const supabase = createClient()
+
+  // Auto-generate slug when title changes
+  const handleTitleChange = (newTitle: string) => {
+    setTitle(newTitle)
+    if (!slug || slug === generateSlug(title)) {
+      setSlug(generateSlug(newTitle))
+    }
+  }
 
   const handleImageUpload = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop()
@@ -44,8 +53,8 @@ export default function NewPostPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('未登录')
 
-      // Generate unique slug
-      let slug = generateSlug(title)
+      // Use provided slug or generate from title
+      let finalSlug = slug || generateSlug(title)
       let slugExists = true
       let counter = 1
 
@@ -54,13 +63,13 @@ export default function NewPostPage() {
         const { data: existingPost } = await supabase
           .from('posts')
           .select('id')
-          .eq('slug', slug)
+          .eq('slug', finalSlug)
           .single()
 
         if (!existingPost) {
           slugExists = false
         } else {
-          slug = `${generateSlug(title)}-${counter}`
+          finalSlug = `${slug || generateSlug(title)}-${counter}`
           counter++
         }
       }
@@ -69,7 +78,7 @@ export default function NewPostPage() {
         .from('posts')
         .insert({
           title,
-          slug,
+          slug: finalSlug,
           content,
           excerpt,
           status,
@@ -107,10 +116,27 @@ export default function NewPostPage() {
             type="text"
             required
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => handleTitleChange(e.target.value)}
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             placeholder="输入文章标题"
           />
+        </div>
+
+        <div>
+          <label htmlFor="slug" className="block text-sm font-medium mb-2">
+            URL 别名 (Slug)
+          </label>
+          <input
+            id="slug"
+            type="text"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            placeholder="自动生成或手动输入"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            文章 URL 将是: /blog/{slug || 'your-slug'}
+          </p>
         </div>
 
         <div>

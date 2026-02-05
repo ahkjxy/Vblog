@@ -13,6 +13,7 @@ interface PageProps {
 export default function EditPostPage({ params }: PageProps) {
   const [id, setId] = useState<string>('')
   const [title, setTitle] = useState('')
+  const [slug, setSlug] = useState('')
   const [content, setContent] = useState<Record<string, unknown> | null>(null)
   const [excerpt, setExcerpt] = useState('')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
@@ -42,6 +43,7 @@ export default function EditPostPage({ params }: PageProps) {
       if (!post) throw new Error('文章未找到')
 
       setTitle(post.title)
+      setSlug(post.slug)
       setContent(post.content)
       setExcerpt(post.excerpt || '')
       setStatus(post.status)
@@ -79,18 +81,17 @@ export default function EditPostPage({ params }: PageProps) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('未登录')
 
-      // Get current post to check if title changed
+      // Get current post to check if slug changed
       const { data: currentPost } = await supabase
         .from('posts')
-        .select('title, slug')
+        .select('slug, status')
         .eq('id', id)
         .single()
 
-      let slug = currentPost?.slug || generateSlug(title)
+      let finalSlug = slug
 
-      // If title changed, generate new slug and check for duplicates
-      if (currentPost && currentPost.title !== title) {
-        slug = generateSlug(title)
+      // If slug changed, check for duplicates
+      if (currentPost && currentPost.slug !== slug) {
         let slugExists = true
         let counter = 1
 
@@ -98,14 +99,14 @@ export default function EditPostPage({ params }: PageProps) {
           const { data: existingPost } = await supabase
             .from('posts')
             .select('id')
-            .eq('slug', slug)
+            .eq('slug', finalSlug)
             .neq('id', id)
             .single()
 
           if (!existingPost) {
             slugExists = false
           } else {
-            slug = `${generateSlug(title)}-${counter}`
+            finalSlug = `${slug}-${counter}`
             counter++
           }
         }
@@ -113,7 +114,7 @@ export default function EditPostPage({ params }: PageProps) {
 
       const updateData: Record<string, unknown> = {
         title,
-        slug,
+        slug: finalSlug,
         content,
         excerpt,
         status,
@@ -192,6 +193,24 @@ export default function EditPostPage({ params }: PageProps) {
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             placeholder="输入文章标题"
           />
+        </div>
+
+        <div>
+          <label htmlFor="slug" className="block text-sm font-medium mb-2">
+            URL 别名 (Slug)
+          </label>
+          <input
+            id="slug"
+            type="text"
+            required
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            placeholder="文章 URL 别名"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            文章 URL 将是: /blog/{slug || 'your-slug'}
+          </p>
         </div>
 
         <div>

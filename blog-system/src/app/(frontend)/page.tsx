@@ -8,14 +8,14 @@ export default async function HomePage() {
   
   const { data: posts } = await supabase
     .from('posts')
-    .select('*, profiles(username, avatar_url)')
+    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url)')
     .eq('status', 'published')
     .order('published_at', { ascending: false })
     .limit(12)
 
   const { data: featuredPost } = await supabase
     .from('posts')
-    .select('*, profiles(username, avatar_url)')
+    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url)')
     .eq('status', 'published')
     .order('view_count', { ascending: false })
     .limit(1)
@@ -42,18 +42,18 @@ export default async function HomePage() {
               )}
               <div className="flex items-center gap-6 text-sm text-gray-600">
                 <div className="flex items-center gap-3">
-                  {featuredPost.profiles?.avatar_url ? (
+                  {featuredPost.profiles?.[0]?.avatar_url ? (
                     <img 
-                      src={featuredPost.profiles.avatar_url} 
-                      alt={featuredPost.profiles.username}
+                      src={featuredPost.profiles[0].avatar_url} 
+                      alt={featuredPost.profiles[0].username}
                       className="w-10 h-10 rounded-full ring-2 ring-white shadow-sm"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center text-white font-semibold shadow-sm">
-                      {featuredPost.profiles?.username?.charAt(0).toUpperCase()}
+                      {featuredPost.profiles?.[0]?.username?.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <span className="font-medium">{featuredPost.profiles?.username}</span>
+                  <span className="font-medium">{featuredPost.profiles?.[0]?.username}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
@@ -108,18 +108,18 @@ export default async function HomePage() {
                         </div>
                         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                           <div className="flex items-center gap-3">
-                            {post.profiles?.avatar_url ? (
+                            {post.profiles?.[0]?.avatar_url ? (
                               <img 
-                                src={post.profiles.avatar_url} 
-                                alt={post.profiles.username}
+                                src={post.profiles[0].avatar_url} 
+                                alt={post.profiles[0].username}
                                 className="w-8 h-8 rounded-full ring-2 ring-gray-100"
                               />
                             ) : (
                               <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center text-white text-sm font-semibold shadow-sm`}>
-                                {post.profiles?.username?.charAt(0).toUpperCase()}
+                                {post.profiles?.[0]?.username?.charAt(0).toUpperCase()}
                               </div>
                             )}
-                            <span className="font-medium text-gray-900 text-sm">{post.profiles?.username}</span>
+                            <span className="font-medium text-gray-900 text-sm">{post.profiles?.[0]?.username}</span>
                           </div>
                           <div className="flex items-center gap-2 text-xs text-gray-500">
                             <Eye className="w-3.5 h-3.5" />

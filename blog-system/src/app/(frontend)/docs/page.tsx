@@ -160,7 +160,7 @@ export default function DocsPage() {
             <div className="bg-white border rounded-2xl p-6">
               <h3 className="font-semibold mb-2">如何添加新的任务类型？</h3>
               <p className="text-gray-600">
-                管理员可以在"系统设置"中添加新的任务分类和具体任务项，设置对应的积分值和结算周期。
+                管理员可以在&ldquo;系统设置&rdquo;中添加新的任务分类和具体任务项，设置对应的积分值和结算周期。
               </p>
             </div>
             <div className="bg-white border rounded-2xl p-6">

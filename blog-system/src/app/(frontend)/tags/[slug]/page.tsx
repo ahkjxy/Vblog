@@ -48,19 +48,21 @@ export default async function TagPage({ params }: PageProps) {
   const { data: postTags } = await supabase
     .from('post_tags')
     .select(`
-      posts(
+      posts!inner(
         id,
         title,
         slug,
         excerpt,
         published_at,
         view_count,
+        status,
         profiles(username, avatar_url)
       )
     `)
     .eq('tag_id', tag.id)
+    .eq('posts.status', 'published')
 
-  const posts = postTags?.map(pt => pt.posts).filter(Boolean) || []
+  const posts = postTags?.map(pt => pt.posts).filter(Boolean).flat() || []
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -100,20 +102,20 @@ export default async function TagPage({ params }: PageProps) {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
-                        {post.profiles?.avatar_url ? (
+                        {post.profiles?.[0]?.avatar_url ? (
                           <img 
-                            src={post.profiles.avatar_url} 
-                            alt={post.profiles.username}
+                            src={post.profiles[0].avatar_url} 
+                            alt={post.profiles[0].username}
                             className="w-8 h-8 rounded-full"
                           />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
                             <span className="text-orange-600 font-semibold text-sm">
-                              {post.profiles?.username?.charAt(0).toUpperCase()}
+                              {post.profiles?.[0]?.username?.charAt(0).toUpperCase()}
                             </span>
                           </div>
                         )}
-                        <span className="font-medium text-gray-900">{post.profiles?.username}</span>
+                        <span className="font-medium text-gray-900">{post.profiles?.[0]?.username}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
