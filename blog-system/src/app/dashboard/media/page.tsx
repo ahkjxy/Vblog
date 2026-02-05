@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Image as ImageIcon, Upload, Search, X, Copy, Trash2, Eye } from 'lucide-react'
+import { Image as ImageIcon, Upload, Search, Copy, Trash2, Eye } from 'lucide-react'
 import { Modal, ModalBody, ModalFooter, ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
@@ -156,7 +156,7 @@ export default function MediaPage() {
       success('文件上传成功')
       loadFiles()
     } catch (err) {
-      const error = err as Error
+      const error = err as { message?: string }
       showError(error.message || '上传失败')
       console.error(err)
     } finally {
@@ -245,8 +245,9 @@ export default function MediaPage() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
-    handleUpload(e.dataTransfer.files)
-  }, [])
+    const files = e.dataTransfer.files
+    handleUpload(files)
+  }, [handleUpload])
 
   // 格式化文件大小
   const formatFileSize = (bytes: number) => {
