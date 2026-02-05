@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
-import { ArrowRight, Calendar, Eye, User } from 'lucide-react'
+import { ArrowRight, Calendar, Eye } from 'lucide-react'
 
 export default async function HomePage() {
   const supabase = await createClient()

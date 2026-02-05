@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/utils'
-import { MessageSquare, CheckCircle, XCircle } from 'lucide-react'
+import { MessageSquare, CheckCircle, XCircle, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function CommentsPage() {

@@ -1,4 +1,5 @@
-import { Book, Zap, Settings, Users, ShoppingBag, History } from 'lucide-react'
+import { Book, Zap, Settings, ShoppingBag, History } from 'lucide-react'
+import Link from 'next/link'
 
 export default function DocsPage() {
   return (
@@ -171,7 +172,7 @@ export default function DocsPage() {
             <div className="bg-white border rounded-2xl p-6">
               <h3 className="font-semibold mb-2">如何设置管理员权限？</h3>
               <p className="text-gray-600">
-                在"系统设置"的成员管理中，可以为特定成员分配管理员角色，管理员拥有完整的系统配置权限。
+                在&ldquo;系统设置&rdquo;的成员管理中，可以为特定成员分配管理员角色，管理员拥有完整的系统配置权限。
               </p>
             </div>
             <div className="bg-white border rounded-2xl p-6">
@@ -191,18 +192,18 @@ export default function DocsPage() {
               查看我们的 API 文档或联系技术支持团队
             </p>
             <div className="flex gap-4 justify-center">
-              <a
+              <Link
                 href="/api"
                 className="inline-block px-8 py-3 bg-white text-orange-600 rounded-full hover:bg-orange-50 transition-all font-medium"
               >
                 API 文档
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/support"
                 className="inline-block px-8 py-3 bg-orange-600 text-white rounded-full hover:bg-orange-700 transition-all font-medium border-2 border-white"
               >
                 联系支持
-              </a>
+              </Link>
             </div>
           </div>
         </div>

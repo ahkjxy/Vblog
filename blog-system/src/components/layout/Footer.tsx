@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export function Footer() {
   return (
     <footer className="border-t mt-auto bg-gray-50">
@@ -12,25 +14,25 @@ export function Footer() {
           <div>
             <h4 className="font-medium mb-4 text-sm">产品</h4>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><a href="/blog" className="hover:text-gray-900 transition-colors">文章</a></li>
-              <li><a href="/categories" className="hover:text-gray-900 transition-colors">分类</a></li>
-              <li><a href="/tags" className="hover:text-gray-900 transition-colors">标签</a></li>
+              <li><Link href="/blog" className="hover:text-gray-900 transition-colors">文章</Link></li>
+              <li><Link href="/categories" className="hover:text-gray-900 transition-colors">分类</Link></li>
+              <li><Link href="/tags" className="hover:text-gray-900 transition-colors">标签</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="font-medium mb-4 text-sm">资源</h4>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><a href="/docs" className="hover:text-gray-900 transition-colors">文档</a></li>
-              <li><a href="/api" className="hover:text-gray-900 transition-colors">API</a></li>
-              <li><a href="/support" className="hover:text-gray-900 transition-colors">支持</a></li>
+              <li><Link href="/docs" className="hover:text-gray-900 transition-colors">文档</Link></li>
+              <li><Link href="/api" className="hover:text-gray-900 transition-colors">API</Link></li>
+              <li><Link href="/support" className="hover:text-gray-900 transition-colors">支持</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="font-medium mb-4 text-sm">公司</h4>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><a href="/about" className="hover:text-gray-900 transition-colors">关于</a></li>
-              <li><a href="/contact" className="hover:text-gray-900 transition-colors">联系</a></li>
-              <li><a href="/privacy" className="hover:text-gray-900 transition-colors">隐私政策</a></li>
+              <li><Link href="/about" className="hover:text-gray-900 transition-colors">关于</Link></li>
+              <li><Link href="/contact" className="hover:text-gray-900 transition-colors">联系</Link></li>
+              <li><Link href="/privacy" className="hover:text-gray-900 transition-colors">隐私政策</Link></li>
             </ul>
           </div>
         </div>

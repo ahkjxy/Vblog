@@ -1,21 +1,56 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { TipTapEditor } from '@/components/editor/TipTapEditor'
 import { generateSlug } from '@/lib/utils'
 
-export default function NewPostPage() {
+interface PageProps {
+  params: Promise<{ id: string }>
+}
+
+export default function EditPostPage({ params }: PageProps) {
+  const [id, setId] = useState<string>('')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState<Record<string, unknown> | null>(null)
   const [excerpt, setExcerpt] = useState('')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    params.then(p => {
+      setId(p.id)
+      loadPost(p.id)
+    })
+  }, [])
+
+  const loadPost = async (postId: string) => {
+    try {
+      const { data: post, error: fetchError } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('id', postId)
+        .single()
+
+      if (fetchError) throw fetchError
+      if (!post) throw new Error('文章未找到')
+
+      setTitle(post.title)
+      setContent(post.content)
+      setExcerpt(post.excerpt || '')
+      setStatus(post.status)
+      setLoading(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load post')
+      setLoading(false)
+    }
+  }
 
   const handleImageUpload = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop()
@@ -37,59 +72,105 @@ export default function NewPostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    setSaving(true)
     setError(null)
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('未登录')
 
-      // Generate unique slug
-      let slug = generateSlug(title)
-      let slugExists = true
-      let counter = 1
+      // Get current post to check if title changed
+      const { data: currentPost } = await supabase
+        .from('posts')
+        .select('title, slug')
+        .eq('id', id)
+        .single()
 
-      // Check if slug exists and add counter if needed
-      while (slugExists) {
-        const { data: existingPost } = await supabase
-          .from('posts')
-          .select('id')
-          .eq('slug', slug)
-          .single()
+      let slug = currentPost?.slug || generateSlug(title)
 
-        if (!existingPost) {
-          slugExists = false
-        } else {
-          slug = `${generateSlug(title)}-${counter}`
-          counter++
+      // If title changed, generate new slug and check for duplicates
+      if (currentPost && currentPost.title !== title) {
+        slug = generateSlug(title)
+        let slugExists = true
+        let counter = 1
+
+        while (slugExists) {
+          const { data: existingPost } = await supabase
+            .from('posts')
+            .select('id')
+            .eq('slug', slug)
+            .neq('id', id)
+            .single()
+
+          if (!existingPost) {
+            slugExists = false
+          } else {
+            slug = `${generateSlug(title)}-${counter}`
+            counter++
+          }
         }
       }
 
-      const { error: insertError } = await supabase
-        .from('posts')
-        .insert({
-          title,
-          slug,
-          content,
-          excerpt,
-          status,
-          author_id: user.id,
-          published_at: status === 'published' ? new Date().toISOString() : null,
-        })
+      const updateData: Record<string, unknown> = {
+        title,
+        slug,
+        content,
+        excerpt,
+        status,
+      }
 
-      if (insertError) throw insertError
+      // Set published_at if changing from draft to published
+      if (status === 'published' && currentPost?.status !== 'published') {
+        updateData.published_at = new Date().toISOString()
+      }
+
+      const { error: updateError } = await supabase
+        .from('posts')
+        .update(updateData)
+        .eq('id', id)
+
+      if (updateError) throw updateError
 
       router.push('/dashboard/posts')
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
-      setLoading(false)
+      setSaving(false)
     }
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('确定要删除这篇文章吗？此操作无法撤销。')) return
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', id)
+
+      if (deleteError) throw deleteError
+
+      router.push('/dashboard/posts')
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete post')
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl">
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
+          <p className="mt-4 text-gray-600">加载中...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="max-w-4xl">
-      <h1 className="text-3xl font-bold mb-8">新建文章</h1>
+      <h1 className="text-3xl font-bold mb-8">编辑文章</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
@@ -156,10 +237,10 @@ export default function NewPostPage() {
         <div className="flex gap-4">
           <button
             type="submit"
-            disabled={loading}
+            disabled={saving}
             className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
           >
-            {loading ? '保存中...' : status === 'published' ? '发布' : '保存草稿'}
+            {saving ? '保存中...' : '保存更改'}
           </button>
           <button
             type="button"
@@ -167,6 +248,13 @@ export default function NewPostPage() {
             className="px-6 py-2 border rounded-lg hover:bg-gray-50 transition-colors"
           >
             取消
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors ml-auto"
+          >
+            删除文章
           </button>
         </div>
       </form>
