@@ -93,7 +93,7 @@ export default function SupportPage() {
                 <div>
                   <h3 className="font-semibold mb-2">无法登录账号</h3>
                   <p className="text-gray-600 mb-2">
-                    请检查邮箱和密码是否正确。如果忘记密码，可以使用"忘记密码"功能重置。
+                    请检查邮箱和密码是否正确。如果忘记密码，可以使用&ldquo;忘记密码&rdquo;功能重置。
                   </p>
                   <a href="/auth/login" className="text-orange-600 hover:text-orange-700 text-sm font-medium">
                     前往登录页 →
@@ -126,7 +126,7 @@ export default function SupportPage() {
                 <div>
                   <h3 className="font-semibold mb-2">如何修改个人信息</h3>
                   <p className="text-gray-600 mb-2">
-                    登录后进入"系统设置"，在成员管理中可以修改个人信息和头像。
+                    登录后进入&ldquo;系统设置&rdquo;，在成员管理中可以修改个人信息和头像。
                   </p>
                   <a href="/dashboard/settings" className="text-orange-600 hover:text-orange-700 text-sm font-medium">
                     前往设置 →

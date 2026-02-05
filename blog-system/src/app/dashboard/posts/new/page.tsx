@@ -8,7 +8,7 @@ import { generateSlug } from '@/lib/utils'
 
 export default function NewPostPage() {
   const [title, setTitle] = useState('')
-  const [content, setContent] = useState<any>(null)
+  const [content, setContent] = useState<Record<string, unknown> | null>(null)
   const [excerpt, setExcerpt] = useState('')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [loading, setLoading] = useState(false)
@@ -62,8 +62,8 @@ export default function NewPostPage() {
 
       router.push('/dashboard/posts')
       router.refresh()
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
       setLoading(false)
     }
   }

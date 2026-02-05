@@ -1,4 +1,5 @@
-import { Zap, Users, Target, Heart } from 'lucide-react'
+import { Zap, Target, Heart } from 'lucide-react'
+import Link from 'next/link'
 
 export default function AboutPage() {
   return (
@@ -42,7 +43,7 @@ export default function AboutPage() {
 
             <div className="bg-white border rounded-2xl p-8">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-blue-600" />
+                <Heart className="w-6 h-6 text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold mb-3">以人为本</h3>
               <p className="text-gray-600">
@@ -96,12 +97,12 @@ export default function AboutPage() {
             <p className="text-orange-50 mb-8 max-w-2xl mx-auto">
               开始使用元气银行，让家庭激励变得更加简单高效
             </p>
-            <a
+            <Link
               href="/auth/signup"
               className="inline-block px-8 py-3 bg-white text-orange-600 rounded-full hover:bg-orange-50 transition-all font-medium"
             >
               免费开始
-            </a>
+            </Link>
           </div>
         </div>
       </div>

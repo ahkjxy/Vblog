@@ -1,10 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
-import { Image, Upload, Trash2, Search } from 'lucide-react'
+import { Image, Upload, Search } from 'lucide-react'
 
 export default async function MediaPage() {
-  const supabase = await createClient()
-  
   // 这里可以添加媒体库的查询逻辑
+  // const supabase = await createClient()
   // const { data: media } = await supabase.storage.from('media').list()
 
   return (

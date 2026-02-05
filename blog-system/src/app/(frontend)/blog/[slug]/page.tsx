@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
 
+import Link from 'next/link'
+
 interface PageProps {
   params: Promise<{ slug: string }>
 }
@@ -65,7 +67,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             {/* Categories */}
             {post.post_categories && post.post_categories.length > 0 && (
               <div className="flex gap-2 mb-6">
-                {post.post_categories.map((pc: any) => (
+                {post.post_categories.map((pc: { categories: { slug: string; name: string } }) => (
                   <a
                     key={pc.categories.slug}
                     href={`/categories/${pc.categories.slug}`}
@@ -131,7 +133,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             <div className="max-w-3xl mx-auto">
               <h3 className="text-sm font-semibold text-gray-500 mb-4">标签</h3>
               <div className="flex flex-wrap gap-2">
-                {post.post_tags.map((pt: any) => (
+                {post.post_tags.map((pt: { tags: { slug: string; name: string } }) => (
                   <a
                     key={pt.tags.slug}
                     href={`/tags/${pt.tags.slug}`}
@@ -174,12 +176,12 @@ export default async function BlogPostPage({ params }: PageProps) {
         {/* Back to Blog */}
         <div className="px-6 py-8">
           <div className="max-w-3xl mx-auto text-center">
-            <a 
+            <Link 
               href="/blog"
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-full hover:shadow-lg transition-all font-medium"
             >
               ← 返回文章列表
-            </a>
+            </Link>
           </div>
         </div>
       </article>
@@ -187,18 +189,28 @@ export default async function BlogPostPage({ params }: PageProps) {
   )
 }
 
-function renderContent(content: any): string {
+interface ContentNode {
+  type: string
+  content?: Array<{ text?: string }>
+  attrs?: { level: number }
+}
+
+interface TipTapContent {
+  content?: ContentNode[]
+}
+
+function renderContent(content: TipTapContent | null): string {
   // Simple TipTap JSON to HTML converter
   if (!content || !content.content) return ''
   
-  return content.content.map((node: any) => {
+  return content.content.map((node: ContentNode) => {
     if (node.type === 'paragraph') {
-      const text = node.content?.map((c: any) => c.text || '').join('') || ''
+      const text = node.content?.map((c) => c.text || '').join('') || ''
       return `<p>${text}</p>`
     }
     if (node.type === 'heading') {
-      const text = node.content?.map((c: any) => c.text || '').join('') || ''
-      return `<h${node.attrs.level}>${text}</h${node.attrs.level}>`
+      const text = node.content?.map((c) => c.text || '').join('') || ''
+      return `<h${node.attrs?.level}>${text}</h${node.attrs?.level}>`
     }
     return ''
   }).join('')

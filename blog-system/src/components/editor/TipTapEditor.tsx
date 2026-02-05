@@ -16,8 +16,8 @@ import {
 } from 'lucide-react'
 
 interface TipTapEditorProps {
-  content: any
-  onChange: (content: any) => void
+  content: Record<string, unknown> | null
+  onChange: (content: Record<string, unknown>) => void
   onImageUpload?: (file: File) => Promise<string>
 }
 

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/utils'
-import { MessageSquare, ThumbsUp, Trash2, CheckCircle, XCircle } from 'lucide-react'
+import { MessageSquare, CheckCircle, XCircle } from 'lucide-react'
+import Link from 'next/link'
 
 export default async function CommentsPage() {
   const supabase = await createClient()
@@ -104,12 +105,12 @@ export default async function CommentsPage() {
                     <p className="text-gray-700 mb-2">{comment.content}</p>
                     
                     {comment.posts && (
-                      <a 
+                      <Link 
                         href={`/blog/${comment.posts.slug}`}
                         className="text-sm text-[#FF4D94] hover:text-[#7C4DFF] transition-colors"
                       >
                         评论于: {comment.posts.title}
-                      </a>
+                      </Link>
                     )}
                   </div>
 

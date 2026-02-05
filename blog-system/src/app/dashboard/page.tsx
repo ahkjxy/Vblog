@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { FileText, Eye, MessageSquare, Users } from 'lucide-react'
+import { FileText, Eye, MessageSquare } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
