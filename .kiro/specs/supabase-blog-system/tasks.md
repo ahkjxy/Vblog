@@ -14,198 +14,198 @@ This task list covers the implementation of all missing and incomplete dashboard
 ## 1. Category Management (CRUD Operations)
 
 ### 1.1 Create Category Functionality
-- [ ] 1.1.1 Create modal/dialog component for adding new categories
-- [ ] 1.1.2 Add form with fields: name, slug (auto-generated), description
-- [ ] 1.1.3 Implement slug generation from category name
-- [ ] 1.1.4 Add validation for required fields
-- [ ] 1.1.5 Implement duplicate slug checking
-- [ ] 1.1.6 Connect to Supabase insert operation
-- [ ] 1.1.7 Add success/error notifications
-- [ ] 1.1.8 Refresh category list after creation
+- [x] 1.1.1 Create modal/dialog component for adding new categories
+- [x] 1.1.2 Add form with fields: name, slug (auto-generated), description
+- [x] 1.1.3 Implement slug generation from category name
+- [x] 1.1.4 Add validation for required fields
+- [x] 1.1.5 Implement duplicate slug checking
+- [x] 1.1.6 Connect to Supabase insert operation
+- [x] 1.1.7 Add success/error notifications
+- [x] 1.1.8 Refresh category list after creation
 
 ### 1.2 Edit Category Functionality
-- [ ] 1.2.1 Create edit modal/dialog component
-- [ ] 1.2.2 Pre-populate form with existing category data
-- [ ] 1.2.3 Allow manual slug editing with uniqueness validation
-- [ ] 1.2.4 Implement update operation via Supabase
-- [ ] 1.2.5 Add success/error notifications
-- [ ] 1.2.6 Refresh category list after update
+- [x] 1.2.1 Create edit modal/dialog component
+- [x] 1.2.2 Pre-populate form with existing category data
+- [x] 1.2.3 Allow manual slug editing with uniqueness validation
+- [x] 1.2.4 Implement update operation via Supabase
+- [x] 1.2.5 Add success/error notifications
+- [x] 1.2.6 Refresh category list after update
 
 ### 1.3 Delete Category Functionality
-- [ ] 1.3.1 Add delete button with confirmation dialog
-- [ ] 1.3.2 Check if category is used by any posts before deletion
-- [ ] 1.3.3 Show warning if category has associated posts
-- [ ] 1.3.4 Implement delete operation via Supabase
-- [ ] 1.3.5 Add success/error notifications
-- [ ] 1.3.6 Refresh category list after deletion
+- [x] 1.3.1 Add delete button with confirmation dialog
+- [x] 1.3.2 Check if category is used by any posts before deletion
+- [x] 1.3.3 Show warning if category has associated posts
+- [x] 1.3.4 Implement delete operation via Supabase
+- [x] 1.3.5 Add success/error notifications
+- [x] 1.3.6 Refresh category list after deletion
 
 ---
 
 ## 2. Tag Management (CRUD Operations)
 
 ### 2.1 Create Tag Functionality
-- [ ] 2.1.1 Create modal/dialog component for adding new tags
-- [ ] 2.1.2 Add form with fields: name, slug (auto-generated)
-- [ ] 2.1.3 Implement slug generation from tag name
-- [ ] 2.1.4 Add validation for required fields
-- [ ] 2.1.5 Implement duplicate slug checking
-- [ ] 2.1.6 Connect to Supabase insert operation
-- [ ] 2.1.7 Add success/error notifications
-- [ ] 2.1.8 Refresh tag list after creation
+- [x] 2.1.1 Create modal/dialog component for adding new tags
+- [x] 2.1.2 Add form with fields: name, slug (auto-generated)
+- [x] 2.1.3 Implement slug generation from tag name
+- [x] 2.1.4 Add validation for required fields
+- [x] 2.1.5 Implement duplicate slug checking
+- [x] 2.1.6 Connect to Supabase insert operation
+- [x] 2.1.7 Add success/error notifications
+- [x] 2.1.8 Refresh tag list after creation
 
 ### 2.2 Edit Tag Functionality
-- [ ] 2.2.1 Create edit modal/dialog component
-- [ ] 2.2.2 Pre-populate form with existing tag data
-- [ ] 2.2.3 Allow manual slug editing with uniqueness validation
-- [ ] 2.2.4 Implement update operation via Supabase
-- [ ] 2.2.5 Add success/error notifications
-- [ ] 2.2.6 Refresh tag list after update
+- [x] 2.2.1 Create edit modal/dialog component
+- [x] 2.2.2 Pre-populate form with existing tag data
+- [x] 2.2.3 Allow manual slug editing with uniqueness validation
+- [x] 2.2.4 Implement update operation via Supabase
+- [x] 2.2.5 Add success/error notifications
+- [x] 2.2.6 Refresh tag list after update
 
 ### 2.3 Delete Tag Functionality
-- [ ] 2.3.1 Add delete button with confirmation dialog
-- [ ] 2.3.2 Check if tag is used by any posts before deletion
-- [ ] 2.3.3 Show warning if tag has associated posts
-- [ ] 2.3.4 Implement delete operation via Supabase
-- [ ] 2.3.5 Add success/error notifications
-- [ ] 2.3.6 Refresh tag list after deletion
+- [x] 2.3.1 Add delete button with confirmation dialog
+- [x] 2.3.2 Check if tag is used by any posts before deletion
+- [x] 2.3.3 Show warning if tag has associated posts
+- [x] 2.3.4 Implement delete operation via Supabase
+- [x] 2.3.5 Add success/error notifications
+- [x] 2.3.6 Refresh tag list after deletion
 
 ---
 
 ## 3. Comment Management (Moderation Features)
 
 ### 3.1 Comment Approval System
-- [ ] 3.1.1 Add status filter dropdown (All, Pending, Approved, Rejected)
-- [ ] 3.1.2 Display comment status badge with color coding
-- [ ] 3.1.3 Add "Approve" button for pending comments
-- [ ] 3.1.4 Implement approve operation (update status to 'approved')
-- [ ] 3.1.5 Add success notification on approval
-- [ ] 3.1.6 Refresh comment list after approval
+- [x] 3.1.1 Add status filter dropdown (All, Pending, Approved, Rejected)
+- [x] 3.1.2 Display comment status badge with color coding
+- [x] 3.1.3 Add "Approve" button for pending comments
+- [x] 3.1.4 Implement approve operation (update status to 'approved')
+- [x] 3.1.5 Add success notification on approval
+- [x] 3.1.6 Refresh comment list after approval
 
 ### 3.2 Comment Rejection System
-- [ ] 3.2.1 Add "Reject" button for pending comments
-- [ ] 3.2.2 Implement reject operation (update status to 'rejected')
-- [ ] 3.2.3 Add success notification on rejection
-- [ ] 3.2.4 Refresh comment list after rejection
+- [x] 3.2.1 Add "Reject" button for pending comments
+- [x] 3.2.2 Implement reject operation (update status to 'rejected')
+- [x] 3.2.3 Add success notification on rejection
+- [x] 3.2.4 Refresh comment list after rejection
 
 ### 3.3 Comment Deletion
-- [ ] 3.3.1 Add delete button with confirmation dialog
-- [ ] 3.3.2 Implement delete operation via Supabase
-- [ ] 3.3.3 Add success/error notifications
-- [ ] 3.3.4 Refresh comment list after deletion
+- [x] 3.3.1 Add delete button with confirmation dialog
+- [x] 3.3.2 Implement delete operation via Supabase
+- [x] 3.3.3 Add success/error notifications
+- [x] 3.3.4 Refresh comment list after deletion
 
 ### 3.4 Bulk Actions
-- [ ] 3.4.1 Add checkbox selection for multiple comments
-- [ ] 3.4.2 Add "Select All" checkbox
-- [ ] 3.4.3 Add bulk approve button
-- [ ] 3.4.4 Add bulk reject button
-- [ ] 3.4.5 Add bulk delete button
-- [ ] 3.4.6 Implement bulk operations
+- [x] 3.4.1 Add checkbox selection for multiple comments
+- [x] 3.4.2 Add "Select All" checkbox
+- [x] 3.4.3 Add bulk approve button
+- [x] 3.4.4 Add bulk reject button
+- [x] 3.4.5 Add bulk delete button
+- [x] 3.4.6 Implement bulk operations
 
 ---
 
 ## 4. Media Library (Complete Implementation)
 
 ### 4.1 File Upload Functionality
-- [ ] 4.1.1 Implement drag-and-drop file upload
-- [ ] 4.1.2 Add click-to-browse file selection
-- [ ] 4.1.3 Validate file type (JPEG, PNG, GIF, WebP)
-- [ ] 4.1.4 Validate file size (max 5MB)
-- [ ] 4.1.5 Show upload progress indicator
-- [ ] 4.1.6 Upload files to Supabase Storage
-- [ ] 4.1.7 Generate unique filenames with user ID and timestamp
-- [ ] 4.1.8 Add success/error notifications
-- [ ] 4.1.9 Refresh media grid after upload
+- [x] 4.1.1 Implement drag-and-drop file upload
+- [x] 4.1.2 Add click-to-browse file selection
+- [x] 4.1.3 Validate file type (JPEG, PNG, GIF, WebP)
+- [x] 4.1.4 Validate file size (max 5MB)
+- [x] 4.1.5 Show upload progress indicator
+- [x] 4.1.6 Upload files to Supabase Storage
+- [x] 4.1.7 Generate unique filenames with user ID and timestamp
+- [x] 4.1.8 Add success/error notifications
+- [x] 4.1.9 Refresh media grid after upload
 
 ### 4.2 Media Display
-- [ ] 4.2.1 Fetch all media files from Supabase Storage
-- [ ] 4.2.2 Display files in responsive grid layout
-- [ ] 4.2.3 Show thumbnail previews for images
-- [ ] 4.2.4 Display file metadata (name, size, upload date)
-- [ ] 4.2.5 Add loading state while fetching files
-- [ ] 4.2.6 Handle empty state when no files exist
+- [x] 4.2.1 Fetch all media files from Supabase Storage
+- [x] 4.2.2 Display files in responsive grid layout
+- [x] 4.2.3 Show thumbnail previews for images
+- [x] 4.2.4 Display file metadata (name, size, upload date)
+- [x] 4.2.5 Add loading state while fetching files
+- [x] 4.2.6 Handle empty state when no files exist
 
 ### 4.3 Media Search and Filter
-- [ ] 4.3.1 Implement search functionality by filename
-- [ ] 4.3.2 Add filter by file type
-- [ ] 4.3.3 Add filter by upload date
-- [ ] 4.3.4 Add sort options (newest, oldest, name)
+- [x] 4.3.1 Implement search functionality by filename
+- [x] 4.3.2 Add filter by file type
+- [x] 4.3.3 Add filter by upload date
+- [x] 4.3.4 Add sort options (newest, oldest, name)
 
 ### 4.4 Media Actions
-- [ ] 4.4.1 Add "Copy URL" button for each file
-- [ ] 4.4.2 Add "Delete" button with confirmation
-- [ ] 4.4.3 Implement delete operation from Supabase Storage
-- [ ] 4.4.4 Add image preview modal on click
-- [ ] 4.4.5 Add bulk selection and deletion
+- [x] 4.4.1 Add "Copy URL" button for each file
+- [x] 4.4.2 Add "Delete" button with confirmation
+- [x] 4.4.3 Implement delete operation from Supabase Storage
+- [x] 4.4.4 Add image preview modal on click
+- [x] 4.4.5 Add bulk selection and deletion
 
 ---
 
 ## 5. User Management Page
 
 ### 5.1 Create User Management Page
-- [ ] 5.1.1 Create `/dashboard/users/page.tsx` file
-- [ ] 5.1.2 Add page layout with title and description
-- [ ] 5.1.3 Fetch all users from profiles table
-- [ ] 5.1.4 Display users in table format
+- [x] 5.1.1 Create `/dashboard/users/page.tsx` file
+- [x] 5.1.2 Add page layout with title and description
+- [x] 5.1.3 Fetch all users from profiles table
+- [x] 5.1.4 Display users in table format
 
 ### 5.2 User List Display
-- [ ] 5.2.1 Show user avatar or initial
-- [ ] 5.2.2 Display username and email
-- [ ] 5.2.3 Show user role with badge
-- [ ] 5.2.4 Display account creation date
+- [x] 5.2.1 Show user avatar or initial
+- [x] 5.2.2 Display username and email
+- [x] 5.2.3 Show user role with badge
+- [x] 5.2.4 Display account creation date
 - [ ] 5.2.5 Show last login date (if available)
 - [ ] 5.2.6 Add user status indicator (active/inactive)
 
 ### 5.3 Role Management
-- [ ] 5.3.1 Add role dropdown for each user (admin, editor, author)
-- [ ] 5.3.2 Implement role update functionality
-- [ ] 5.3.3 Add confirmation dialog for role changes
-- [ ] 5.3.4 Restrict role changes (admins only)
-- [ ] 5.3.5 Add success/error notifications
-- [ ] 5.3.6 Refresh user list after role update
+- [x] 5.3.1 Add role dropdown for each user (admin, editor, author)
+- [x] 5.3.2 Implement role update functionality
+- [x] 5.3.3 Add confirmation dialog for role changes
+- [x] 5.3.4 Restrict role changes (admins only)
+- [x] 5.3.5 Add success/error notifications
+- [x] 5.3.6 Refresh user list after role update
 
 ### 5.4 User Search and Filter
-- [ ] 5.4.1 Add search by username or email
-- [ ] 5.4.2 Add filter by role
+- [x] 5.4.1 Add search by username or email
+- [x] 5.4.2 Add filter by role
 - [ ] 5.4.3 Add filter by status
 - [ ] 5.4.4 Add sort options
 
 ### 5.5 User Actions
 - [ ] 5.5.1 Add "View Profile" button
 - [ ] 5.5.2 Add "Deactivate/Activate" user button
-- [ ] 5.5.3 Add "Delete User" button (with confirmation)
-- [ ] 5.5.4 Implement user deletion (admin only)
+- [x] 5.5.3 Add "Delete User" button (with confirmation)
+- [x] 5.5.4 Implement user deletion (admin only)
 
 ---
 
 ## 6. System Settings Page
 
 ### 6.1 Create Settings Page
-- [ ] 6.1.1 Create `/dashboard/settings/page.tsx` file
-- [ ] 6.1.2 Add page layout with tabs/sections
+- [x] 6.1.1 Create `/dashboard/settings/page.tsx` file
+- [x] 6.1.2 Add page layout with tabs/sections
 - [ ] 6.1.3 Fetch settings from settings table
 
 ### 6.2 General Settings Section
-- [ ] 6.2.1 Add site title field
-- [ ] 6.2.2 Add site description field
-- [ ] 6.2.3 Add site URL field
+- [x] 6.2.1 Add site title field
+- [x] 6.2.2 Add site description field
+- [x] 6.2.3 Add site URL field
 - [ ] 6.2.4 Add site logo upload
 - [ ] 6.2.5 Add favicon upload
-- [ ] 6.2.6 Implement save functionality
+- [x] 6.2.6 Implement save functionality
 
 ### 6.3 SEO Settings Section
-- [ ] 6.3.1 Add default meta title field
-- [ ] 6.3.2 Add default meta description field
-- [ ] 6.3.3 Add default meta keywords field
+- [x] 6.3.1 Add default meta title field
+- [x] 6.3.2 Add default meta description field
+- [x] 6.3.3 Add default meta keywords field
 - [ ] 6.3.4 Add Open Graph image upload
 - [ ] 6.3.5 Add Twitter card settings
-- [ ] 6.3.6 Implement save functionality
+- [x] 6.3.6 Implement save functionality
 
 ### 6.4 Comment Settings Section
-- [ ] 6.4.1 Add toggle for comment moderation
-- [ ] 6.4.2 Add toggle for anonymous comments
-- [ ] 6.4.3 Add comment approval requirement setting
+- [x] 6.4.1 Add toggle for comment moderation
+- [x] 6.4.2 Add toggle for anonymous comments
+- [x] 6.4.3 Add comment approval requirement setting
 - [ ] 6.4.4 Add comment notification settings
-- [ ] 6.4.5 Implement save functionality
+- [x] 6.4.5 Implement save functionality
 
 ### 6.5 Email Settings Section
 - [ ] 6.5.1 Add SMTP configuration fields
@@ -224,14 +224,14 @@ This task list covers the implementation of all missing and incomplete dashboard
 ## 7. Dashboard Navigation Updates
 
 ### 7.1 Add Missing Menu Items
-- [ ] 7.1.1 Add "用户" (Users) menu item to dashboard layout
-- [ ] 7.1.2 Add "设置" (Settings) menu item to dashboard layout
-- [ ] 7.1.3 Update navigation icons
-- [ ] 7.1.4 Add active state styling for new menu items
+- [x] 7.1.1 Add "用户" (Users) menu item to dashboard layout
+- [x] 7.1.2 Add "设置" (Settings) menu item to dashboard layout
+- [x] 7.1.3 Update navigation icons
+- [x] 7.1.4 Add active state styling for new menu items
 
 ### 7.2 Update Dashboard Layout
-- [ ] 7.2.1 Ensure all menu items link to correct routes
-- [ ] 7.2.2 Add role-based menu visibility (hide admin-only items)
+- [x] 7.2.1 Ensure all menu items link to correct routes
+- [x] 7.2.2 Add role-based menu visibility (hide admin-only items)
 - [ ] 7.2.3 Update mobile navigation
 
 ---
@@ -239,33 +239,33 @@ This task list covers the implementation of all missing and incomplete dashboard
 ## 8. Shared Components
 
 ### 8.1 Modal/Dialog Component
-- [ ] 8.1.1 Create reusable modal component
-- [ ] 8.1.2 Add close button and backdrop click handling
-- [ ] 8.1.3 Add animation transitions
-- [ ] 8.1.4 Make responsive for mobile
+- [x] 8.1.1 Create reusable modal component
+- [x] 8.1.2 Add close button and backdrop click handling
+- [x] 8.1.3 Add animation transitions
+- [x] 8.1.4 Make responsive for mobile
 
 ### 8.2 Confirmation Dialog Component
-- [ ] 8.2.1 Create reusable confirmation dialog
-- [ ] 8.2.2 Add customizable title and message
-- [ ] 8.2.3 Add confirm/cancel buttons
-- [ ] 8.2.4 Add danger variant for destructive actions
+- [x] 8.2.1 Create reusable confirmation dialog
+- [x] 8.2.2 Add customizable title and message
+- [x] 8.2.3 Add confirm/cancel buttons
+- [x] 8.2.4 Add danger variant for destructive actions
 
 ### 8.3 Toast Notification Component
-- [ ] 8.3.1 Create toast notification system
-- [ ] 8.3.2 Add success, error, warning, info variants
-- [ ] 8.3.3 Add auto-dismiss functionality
-- [ ] 8.3.4 Add close button
-- [ ] 8.3.5 Position toasts in top-right corner
+- [x] 8.3.1 Create toast notification system
+- [x] 8.3.2 Add success, error, warning, info variants
+- [x] 8.3.3 Add auto-dismiss functionality
+- [x] 8.3.4 Add close button
+- [x] 8.3.5 Position toasts in top-right corner
 
 ### 8.4 Loading Spinner Component
-- [ ] 8.4.1 Create reusable loading spinner
-- [ ] 8.4.2 Add different sizes (small, medium, large)
-- [ ] 8.4.3 Add overlay variant for full-page loading
+- [x] 8.4.1 Create reusable loading spinner
+- [x] 8.4.2 Add different sizes (small, medium, large)
+- [x] 8.4.3 Add overlay variant for full-page loading
 
 ### 8.5 Empty State Component
-- [ ] 8.5.1 Create reusable empty state component
-- [ ] 8.5.2 Add customizable icon, title, and description
-- [ ] 8.5.3 Add optional action button
+- [x] 8.5.1 Create reusable empty state component
+- [x] 8.5.2 Add customizable icon, title, and description
+- [x] 8.5.3 Add optional action button
 
 ---
 
