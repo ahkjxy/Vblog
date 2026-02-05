@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { Calendar, Eye, User, ArrowRight } from 'lucide-react'
+import { FamilyBankCTA } from '@/components/FamilyBankCTA'
 
 export default async function BlogListPage() {
   const supabase = await createClient()
@@ -106,7 +107,9 @@ export default async function BlogListPage() {
       {/* CTA */}
       {posts && posts.length > 0 && (
         <div className="container mx-auto px-6 pb-16">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <FamilyBankCTA />
+            
             <div className="bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-3xl p-12 text-center">
               <h2 className="text-3xl font-bold mb-4">分享你的故事</h2>
               <p className="text-orange-50 mb-8 max-w-2xl mx-auto">

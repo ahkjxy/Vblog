@@ -4,12 +4,17 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { TipTapEditor } from '@/components/editor/TipTapEditor'
+import { MarkdownEditor } from '@/components/editor/MarkdownEditor'
 import { generateSlug } from '@/lib/utils'
+
+type EditorType = 'markdown' | 'rich'
 
 export default function NewPostPage() {
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
+  const [editorType, setEditorType] = useState<EditorType>('markdown')
   const [content, setContent] = useState<Record<string, unknown> | null>(null)
+  const [markdownContent, setMarkdownContent] = useState('')
   const [excerpt, setExcerpt] = useState('')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [loading, setLoading] = useState(false)
@@ -79,7 +84,7 @@ export default function NewPostPage() {
         .insert({
           title,
           slug: finalSlug,
-          content,
+          content: editorType === 'markdown' ? markdownContent : content,
           excerpt,
           status,
           author_id: user.id,
@@ -155,13 +160,48 @@ export default function NewPostPage() {
 
         <div>
           <label className="block text-sm font-medium mb-2">
+            编辑器类型
+          </label>
+          <div className="flex gap-4 mb-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                value="markdown"
+                checked={editorType === 'markdown'}
+                onChange={(e) => setEditorType(e.target.value as EditorType)}
+                className="w-4 h-4"
+              />
+              <span>Markdown</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                value="rich"
+                checked={editorType === 'rich'}
+                onChange={(e) => setEditorType(e.target.value as EditorType)}
+                className="w-4 h-4"
+              />
+              <span>富文本编辑器</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">
             内容
           </label>
-          <TipTapEditor
-            content={content}
-            onChange={setContent}
-            onImageUpload={handleImageUpload}
-          />
+          {editorType === 'markdown' ? (
+            <MarkdownEditor
+              content={markdownContent}
+              onChange={setMarkdownContent}
+            />
+          ) : (
+            <TipTapEditor
+              content={content}
+              onChange={setContent}
+              onImageUpload={handleImageUpload}
+            />
+          )}
         </div>
 
         <div>
