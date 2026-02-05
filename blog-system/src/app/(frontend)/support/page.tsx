@@ -1,5 +1,8 @@
+'use client'
+
 import { MessageCircle, Mail, Phone, Clock, HelpCircle, Zap, Book, Code, Sparkles, ArrowRight, Send } from 'lucide-react'
 import Link from 'next/link'
+import { openCustomerSupport } from '@/components/CustomerSupport'
 
 export default function SupportPage() {
   return (
@@ -32,7 +35,7 @@ export default function SupportPage() {
                 title: '在线客服',
                 desc: '实时聊天支持',
                 action: '开始对话',
-                href: '/contact',
+                onClick: () => openCustomerSupport(),
                 gradient: 'from-purple-100 to-pink-100',
                 color: 'text-purple-600',
                 btnColor: 'from-purple-600 to-pink-600'
@@ -64,13 +67,23 @@ export default function SupportPage() {
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-gray-900">{method.title}</h3>
                 <p className="text-gray-600 mb-6">{method.desc}</p>
-                <a 
-                  href={method.href}
-                  className={`inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${method.btnColor} text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all`}
-                >
-                  {method.action}
-                  <ArrowRight className="w-4 h-4" />
-                </a>
+                {method.onClick ? (
+                  <button 
+                    onClick={method.onClick}
+                    className={`inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${method.btnColor} text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all`}
+                  >
+                    {method.action}
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <a 
+                    href={method.href}
+                    className={`inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${method.btnColor} text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all`}
+                  >
+                    {method.action}
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                )}
               </div>
             ))}
           </div>

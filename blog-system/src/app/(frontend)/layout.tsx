@@ -1,5 +1,6 @@
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { CustomerSupport } from '@/components/CustomerSupport'
 
 export default function FrontendLayout({
   children,
@@ -11,6 +12,7 @@ export default function FrontendLayout({
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
+      <CustomerSupport />
     </div>
   )
 }
