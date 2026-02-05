@@ -290,7 +290,7 @@ export default function NewPostPage() {
         {/* 分类选择 */}
         <div>
           <label className="block text-sm font-medium mb-2">
-            分类 {selectedCategories.length === 0 && <span className="text-gray-400">(未选择将归入"未分类")</span>}
+            分类 {selectedCategories.length === 0 && <span className="text-gray-400">(未选择将归入&ldquo;未分类&rdquo;)</span>}
           </label>
           <div className="flex flex-wrap gap-2">
             {categories.map(category => (
