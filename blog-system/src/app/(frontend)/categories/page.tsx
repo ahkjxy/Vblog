@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { FolderOpen } from 'lucide-react'
+import { FolderOpen, ArrowRight } from 'lucide-react'
 
 export default async function CategoriesPage() {
   const supabase = await createClient()
@@ -11,15 +11,18 @@ export default async function CategoriesPage() {
     .order('name', { ascending: true })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border-b">
-        <div className="container mx-auto px-6 py-16">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-block px-3 py-1 bg-white rounded-full text-sm font-medium text-orange-600 mb-4">
+      <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-white border-b border-purple-100">
+        <div className="container mx-auto px-6 py-20">
+          <div className="max-w-6xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-sm font-bold text-purple-600 mb-6 shadow-sm border border-purple-100">
+              <FolderOpen className="w-4 h-4" />
               分类目录
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">文章分类</h1>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              文章分类
+            </h1>
             <p className="text-xl text-gray-600">
               浏览不同主题的文章内容
             </p>
@@ -28,43 +31,56 @@ export default async function CategoriesPage() {
       </div>
 
       {/* Categories Grid */}
-      <div className="container mx-auto px-6 py-16">
-        <div className="max-w-5xl mx-auto">
+      <div className="container mx-auto px-6 py-20">
+        <div className="max-w-6xl mx-auto">
           {categories && categories.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {categories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={`/categories/${category.slug}`}
-                  className="group"
-                >
-                  <div className="bg-white rounded-2xl p-8 hover:shadow-lg transition-all border border-gray-100 h-full">
-                    <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <FolderOpen className="w-6 h-6 text-orange-600" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {categories.map((category, index) => {
+                const gradients = [
+                  { from: 'from-purple-500', to: 'to-pink-500', bg: 'from-purple-100 to-pink-100' },
+                  { from: 'from-pink-500', to: 'to-rose-500', bg: 'from-pink-100 to-rose-100' },
+                  { from: 'from-purple-600', to: 'to-indigo-500', bg: 'from-purple-100 to-indigo-100' },
+                  { from: 'from-fuchsia-500', to: 'to-pink-500', bg: 'from-fuchsia-100 to-pink-100' },
+                ]
+                const gradient = gradients[index % gradients.length]
+                
+                return (
+                  <Link
+                    key={category.id}
+                    href={`/categories/${category.slug}`}
+                    className="group"
+                  >
+                    <div className="bg-white rounded-2xl p-8 hover:shadow-2xl transition-all border border-gray-100 hover:border-purple-200 h-full flex flex-col">
+                      <div className={`w-14 h-14 bg-gradient-to-br ${gradient.bg} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-md`}>
+                        <FolderOpen className={`w-7 h-7 bg-gradient-to-br ${gradient.from} ${gradient.to} bg-clip-text text-transparent`} style={{WebkitTextFillColor: 'transparent', WebkitBackgroundClip: 'text', backgroundClip: 'text'}} />
+                      </div>
+                      <h2 className="text-2xl font-bold mb-3 group-hover:text-purple-600 transition-colors">
+                        {category.name}
+                      </h2>
+                      {category.description && (
+                        <p className="text-gray-600 text-base mb-6 line-clamp-2 flex-1 leading-relaxed">
+                          {category.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                        <span className="text-sm font-semibold text-gray-500">
+                          {category.post_categories?.length || 0} 篇文章
+                        </span>
+                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
+                      </div>
                     </div>
-                    <h2 className="text-xl font-bold mb-2 group-hover:text-orange-600 transition-colors">
-                      {category.name}
-                    </h2>
-                    {category.description && (
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                        {category.description}
-                      </p>
-                    )}
-                    <p className="text-sm text-gray-500">
-                      {category.post_categories?.length || 0} 篇文章
-                    </p>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                )
+              })}
             </div>
           ) : (
-            <div className="text-center py-16 bg-white rounded-2xl">
+            <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed border-purple-200">
               <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FolderOpen className="w-8 h-8 text-orange-600" />
+                <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg">
+                  <FolderOpen className="w-12 h-12 text-purple-600" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">暂无分类</h3>
-                <p className="text-gray-600">还没有创建任何分类</p>
+                <h3 className="text-3xl font-bold mb-4 text-gray-900">暂无分类</h3>
+                <p className="text-gray-600 text-lg">还没有创建任何分类</p>
               </div>
             </div>
           )}

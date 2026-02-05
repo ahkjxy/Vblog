@@ -12,11 +12,14 @@ interface Comment {
   content: string
   status: 'pending' | 'approved' | 'rejected'
   created_at: string
-  user_id: string
+  user_id: string | null
   post_id: string
+  author_name: string
+  author_email: string
   profiles: {
     username: string
     avatar_url: string | null
+    role: string
   } | null
   posts: {
     title: string
@@ -46,7 +49,7 @@ export default function CommentsPage() {
         .from('comments')
         .select(`
           *,
-          profiles(username, avatar_url),
+          profiles(username, avatar_url, role),
           posts(title, slug)
         `)
         .order('created_at', { ascending: false })
@@ -405,19 +408,43 @@ export default function CommentsPage() {
                         <img
                           src={comment.profiles.avatar_url}
                           alt={comment.profiles.username}
-                          className="w-10 h-10 rounded-full ring-2 ring-gray-100"
+                          className="w-12 h-12 rounded-full ring-2 ring-gray-200"
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold">
-                          {comment.profiles?.username?.charAt(0).toUpperCase()}
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold text-lg">
+                          {comment.user_id 
+                            ? comment.profiles?.username?.charAt(0).toUpperCase()
+                            : comment.author_name?.charAt(0).toUpperCase() || '?'
+                          }
                         </div>
                       )}
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-semibold">{comment.profiles?.username}</span>
+                      {/* User Info */}
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">
+                            {comment.user_id ? comment.profiles?.username : comment.author_name}
+                          </span>
+                          {comment.profiles?.role && (
+                            <span className={cn(
+                              'px-2 py-0.5 rounded text-xs font-medium',
+                              comment.profiles.role === 'admin' && 'bg-purple-100 text-purple-700',
+                              comment.profiles.role === 'editor' && 'bg-blue-100 text-blue-700',
+                              comment.profiles.role === 'author' && 'bg-green-100 text-green-700'
+                            )}>
+                              {comment.profiles.role === 'admin' ? '管理员' : 
+                               comment.profiles.role === 'editor' ? '编辑' : '作者'}
+                            </span>
+                          )}
+                          {!comment.user_id && (
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                              访客
+                            </span>
+                          )}
+                        </div>
                         <span className="text-gray-400">·</span>
                         <span className="text-sm text-gray-600">{formatDate(comment.created_at)}</span>
                         <span className={cn('px-2 py-1 rounded-full text-xs font-medium', badge.style)}>
@@ -425,14 +452,27 @@ export default function CommentsPage() {
                         </span>
                       </div>
 
-                      <p className="text-gray-700 mb-2">{comment.content}</p>
+                      {/* Email (for anonymous users) */}
+                      {!comment.user_id && comment.author_email && (
+                        <div className="text-sm text-gray-500 mb-2">
+                          📧 {comment.author_email}
+                        </div>
+                      )}
 
+                      {/* Comment Content */}
+                      <p className="text-gray-700 mb-3 leading-relaxed">{comment.content}</p>
+
+                      {/* Post Link */}
                       {comment.posts && (
                         <Link
                           href={`/blog/${comment.posts.slug}`}
-                          className="text-sm text-purple-600 hover:text-pink-600 transition-colors"
+                          target="_blank"
+                          className="inline-flex items-center gap-1 text-sm text-purple-600 hover:text-pink-600 transition-colors"
                         >
-                          评论于: {comment.posts.title}
+                          <span>评论于: {comment.posts.title}</span>
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
                         </Link>
                       )}
                     </div>

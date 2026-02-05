@@ -4,7 +4,6 @@ import { formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { MarkdownContent } from '@/components/MarkdownContent'
-import { FamilyBankCTA } from '@/components/FamilyBankCTA'
 import { Comments } from '@/components/Comments'
 
 interface PageProps {
@@ -173,13 +172,6 @@ export default async function BlogPostPage({ params }: PageProps) {
             </div>
           </div>
         )}
-
-        {/* Family Bank CTA */}
-        <div className="px-6 sm:px-8 py-12 sm:py-16 bg-white">
-          <div className="max-w-4xl mx-auto">
-            <FamilyBankCTA variant="compact" />
-          </div>
-        </div>
 
         {/* Comments Section */}
         <div className="px-6 sm:px-8 py-12 sm:py-16 bg-gray-50">
