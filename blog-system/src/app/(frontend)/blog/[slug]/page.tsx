@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { MarkdownContent } from '@/components/MarkdownContent'
 import { FamilyBankCTA } from '@/components/FamilyBankCTA'
+import { Comments } from '@/components/Comments'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -180,8 +181,15 @@ export default async function BlogPostPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Back to Blog */}
+        {/* Comments Section */}
         <div className="px-6 sm:px-8 py-12 sm:py-16 bg-gray-50">
+          <div className="max-w-4xl mx-auto">
+            <Comments postId={post.id} />
+          </div>
+        </div>
+
+        {/* Back to Blog */}
+        <div className="px-6 sm:px-8 py-12 sm:py-16 bg-white border-t border-gray-200">
           <div className="max-w-4xl mx-auto text-center">
             <Link 
               href="/blog"

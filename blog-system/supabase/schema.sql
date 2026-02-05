@@ -68,6 +68,8 @@ CREATE TABLE comments (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
   user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  author_name VARCHAR(100),
+  author_email VARCHAR(255),
   content TEXT NOT NULL,
   status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
@@ -90,6 +92,8 @@ CREATE INDEX idx_posts_published_at ON posts(published_at DESC);
 CREATE INDEX idx_posts_slug ON posts(slug);
 CREATE INDEX idx_comments_post_id ON comments(post_id);
 CREATE INDEX idx_comments_user_id ON comments(user_id);
+CREATE INDEX idx_comments_status ON comments(status);
+CREATE INDEX idx_comments_created_at ON comments(created_at DESC);
 CREATE INDEX idx_post_categories_post_id ON post_categories(post_id);
 CREATE INDEX idx_post_categories_category_id ON post_categories(category_id);
 CREATE INDEX idx_post_tags_post_id ON post_tags(post_id);
