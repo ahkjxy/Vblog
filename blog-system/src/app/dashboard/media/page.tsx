@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Image as ImageIcon, Upload, Search, X, Copy, Trash2, Eye, Download } from 'lucide-react'
+import { Image as ImageIcon, Upload, Search, X, Copy, Trash2, Eye } from 'lucide-react'
 import { Modal, ModalBody, ModalFooter, ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
@@ -11,7 +11,7 @@ interface MediaFile {
   id: string
   created_at: string
   updated_at: string
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
 }
 
 export default function MediaPage() {
@@ -73,7 +73,7 @@ export default function MediaPage() {
 
   // 搜索和排序
   useEffect(() => {
-    let result = files.filter(file =>
+    const result = files.filter(file =>
       file.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
@@ -155,8 +155,9 @@ export default function MediaPage() {
 
       success('文件上传成功')
       loadFiles()
-    } catch (err: any) {
-      showError(err.message || '上传失败')
+    } catch (err) {
+      const error = err as Error
+      showError(error.message || '上传失败')
       console.error(err)
     } finally {
       setUploading(false)
@@ -447,7 +448,7 @@ export default function MediaPage() {
                   <div className="p-3">
                     <p className="text-sm font-medium truncate mb-1">{file.name}</p>
                     <p className="text-xs text-gray-500">
-                      {formatFileSize(file.metadata?.size || 0)}
+                      {formatFileSize((file.metadata?.size as number) || 0)}
                     </p>
                   </div>
 
@@ -504,8 +505,8 @@ export default function MediaPage() {
             />
             <div className="mt-4 space-y-2">
               <p className="text-sm"><strong>文件名:</strong> {previewFile.name}</p>
-              <p className="text-sm"><strong>大小:</strong> {formatFileSize(previewFile.metadata?.size || 0)}</p>
-              <p className="text-sm"><strong>类型:</strong> {previewFile.metadata?.mimetype || '未知'}</p>
+              <p className="text-sm"><strong>大小:</strong> {formatFileSize((previewFile.metadata?.size as number) || 0)}</p>
+              <p className="text-sm"><strong>类型:</strong> {(previewFile.metadata?.mimetype as string) || '未知'}</p>
               <p className="text-sm"><strong>上传时间:</strong> {formatDate(previewFile.created_at)}</p>
             </div>
           </ModalBody>

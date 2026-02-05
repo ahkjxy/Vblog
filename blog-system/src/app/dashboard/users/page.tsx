@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Users as UsersIcon, Search, Shield, Edit2, Trash2, UserX, UserCheck } from 'lucide-react'
+import { Users as UsersIcon, Search, Shield, Edit2, Trash2 } from 'lucide-react'
 import { Modal, ModalBody, ModalFooter, ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
@@ -376,7 +376,7 @@ export default function UsersPage() {
               </p>
               <select
                 value={newRole}
-                onChange={(e) => setNewRole(e.target.value as any)}
+                onChange={(e) => setNewRole(e.target.value as 'admin' | 'editor' | 'author')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="author">作者</option>

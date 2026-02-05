@@ -4,17 +4,7 @@ import Link from 'next/link'
 import { Logo } from '@/components/Logo'
 import { ToastProvider } from '@/components/ui'
 import { DashboardNav } from '@/components/dashboard/DashboardNav'
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Image, 
-  FolderOpen, 
-  Tag, 
-  MessageSquare, 
-  Users, 
-  Settings,
-  LogOut
-} from 'lucide-react'
+import { LogOut } from 'lucide-react'
 
 export default async function DashboardLayout({
   children,
