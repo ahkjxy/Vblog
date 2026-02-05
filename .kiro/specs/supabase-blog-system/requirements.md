@@ -1,297 +1,280 @@
-# 需求文档
+# Requirements Document: Supabase Blog System
+
+## Introduction
+
+This document specifies the requirements for a modern, full-stack blog system built with Next.js 14 and Supabase. The system provides content management capabilities, user authentication, real-time features, and a clean, modern interface inspired by familybank.chat. The platform supports multiple user roles (admin, editor, author) and includes comprehensive content management features including posts, categories, tags, comments, and media management.
+
+## Glossary
+
+- **Blog_System**: The complete application including frontend, backend, and database
+- **Supabase**: Backend-as-a-Service platform providing PostgreSQL database, authentication, storage, and edge functions
+- **Next_App**: The Next.js 14 frontend application
+- **Auth_Service**: Supabase authentication service managing user sessions and OAuth
+- **Database**: PostgreSQL database managed by Supabase
+- **Storage_Service**: Supabase storage for media files
+- **RLS**: Row Level Security - PostgreSQL security policies controlling data access
+- **Post**: A blog article with content, metadata, and status
+- **Draft**: A post that is not yet published
+- **Published_Post**: A post visible to public users
+- **Archived_Post**: A post removed from public view but retained in database
+- **User_Profile**: Extended user information beyond authentication data
+- **Admin**: User role with full system access
+- **Editor**: User role with content management permissions
+- **Author**: User role with post creation permissions
+- **Rich_Text_Editor**: TipTap-based editor for post content
+- **Media_Library**: Collection of uploaded images and files
+- **SEO_Metadata**: Search engine optimization data including title, description, and keywords
+- **Slug**: URL-friendly identifier for posts
+- **Full_Text_Search**: PostgreSQL text search capability
+- **Real_Time_Subscription**: Supabase real-time data updates
+- **Edge_Function**: Serverless function running on Supabase edge network
+- **SSR**: Server-Side Rendering in Next.js
+- **Middleware**: Next.js middleware for route protection
+
+## Requirements
+
+### Requirement 1: Database Schema and Structure
+
+**User Story:** As a system architect, I want a well-structured PostgreSQL database with proper relationships and security, so that data is organized efficiently and access is controlled.
+
+#### Acceptance Criteria
+
+1. THE Database SHALL include a profiles table extending Supabase auth.users with additional user information
+2. THE Database SHALL include a posts table with columns for title, content, slug, status, author_id, published_at, created_at, updated_at, view_count, and SEO metadata
+3. THE Database SHALL include a categories table with name, slug, and description columns
+4. THE Database SHALL include a tags table with name and slug columns
+5. THE Database SHALL include a post_categories junction table linking posts to categories
+6. THE Database SHALL include a post_tags junction table linking posts to tags
+7. THE Database SHALL include a comments table with post_id, user_id, content, and timestamps
+8. THE Database SHALL include a settings table for system configuration
+9. THE Database SHALL enable uuid-ossp extension for UUID generation
+10. THE Database SHALL enable moddatetime extension for automatic timestamp updates
+11. WHEN any table is created, THE Database SHALL include appropriate indexes for foreign keys and frequently queried columns
+12. THE Database SHALL implement full-text search indexes on posts.title and posts.content
+
+### Requirement 2: Row Level Security Policies
+
+**User Story:** As a security engineer, I want comprehensive RLS policies on all tables, so that users can only access data they are authorized to see.
+
+#### Acceptance Criteria
+
+1. WHEN a user queries the profiles table, THE Database SHALL return only profiles the user is authorized to view
+2. WHEN a user queries the posts table, THE Database SHALL return published posts to all users and draft posts only to the author or admin/editor roles
+3. WHEN a user attempts to insert a post, THE Database SHALL allow the operation only if the user has author, editor, or admin role
+4. WHEN a user attempts to update a post, THE Database SHALL allow the operation only if the user is the post author or has editor/admin role
+5. WHEN a user attempts to delete a post, THE Database SHALL allow the operation only if the user has admin role
+6. WHEN a user queries categories or tags, THE Database SHALL return all records to authenticated users
+7. WHEN a user attempts to modify categories or tags, THE Database SHALL allow the operation only if the user has editor or admin role
+8. WHEN a user queries comments, THE Database SHALL return all approved comments on published posts
+9. WHEN a user attempts to insert a comment, THE Database SHALL allow the operation only if the user is authenticated
+10. WHEN a user attempts to update or delete a comment, THE Database SHALL allow the operation only if the user is the comment author or has admin role
+
+### Requirement 3: Authentication System
 
-## 简介
+**User Story:** As a user, I want to authenticate using email/password or OAuth providers, so that I can securely access the system.
 
-本文档定义了一个基于 Supabase 的现代化全栈博客系统的需求。该系统使用 Next.js 14、TypeScript 和 Tailwind CSS 构建前端，使用 Supabase（PostgreSQL、Auth、Storage、Edge Functions）作为后端基础设施。系统支持多用户协作、内容管理、评论互动和媒体管理等核心功能。
+#### Acceptance Criteria
 
-## 术语表
+1. WHEN a user provides valid email and password credentials, THE Auth_Service SHALL create a session and return authentication tokens
+2. WHEN a user provides invalid credentials, THE Auth_Service SHALL reject the authentication attempt and return an error message
+3. WHEN a user initiates OAuth authentication with GitHub or Google, THE Auth_Service SHALL redirect to the provider and complete the authentication flow
+4. WHEN a new user successfully authenticates, THE Database SHALL create a corresponding profile record
+5. WHEN a user logs out, THE Auth_Service SHALL invalidate the session tokens
+6. WHEN an authenticated user's session expires, THE Auth_Service SHALL require re-authentication
+7. THE Auth_Service SHALL store user roles (admin, editor, author) in the profiles table
+8. WHEN a user accesses a protected route, THE Middleware SHALL verify authentication status and role permissions
 
-- **System**: 整个博客系统，包括前端和后端组件
-- **User**: 使用系统的任何人，包括访客、作者、编辑和管理员
-- **Admin**: 具有完全系统访问权限的管理员用户
-- **Editor**: 可以管理所有文章和评论的编辑用户
-- **Author**: 可以创建和管理自己文章的作者用户
-- **Post**: 博客文章，包含标题、内容、元数据等
-- **Category**: 文章分类，用于组织内容
-- **Tag**: 文章标签，用于内容标记和检索
-- **Comment**: 用户对文章的评论
-- **Draft**: 草稿状态的文章，未公开发布
-- **Published**: 已发布状态的文章，公开可见
-- **Archived**: 归档状态的文章，不在主列表显示
-- **RLS**: 行级安全策略（Row Level Security），Supabase 的数据访问控制机制
-- **Storage**: Supabase 存储服务，用于管理媒体文件
-- **Rich_Text_Editor**: 富文本编辑器（TipTap），用于文章内容编辑
+### Requirement 4: User Profile Management
 
-## 需求
+**User Story:** As a user, I want to manage my profile information, so that I can maintain accurate account details.
 
-### 需求 1：用户认证和授权
+#### Acceptance Criteria
 
-**用户故事：** 作为用户，我希望能够通过多种方式登录系统，以便安全地访问和管理内容。
+1. WHEN a user views their profile, THE Next_App SHALL display username, email, bio, avatar URL, and role
+2. WHEN a user updates their profile information, THE Database SHALL persist the changes and return the updated profile
+3. WHEN a user uploads a profile avatar, THE Storage_Service SHALL store the image and THE Database SHALL update the avatar URL
+4. WHEN an admin views user profiles, THE Next_App SHALL display all users with their roles and status
+5. WHEN an admin updates a user's role, THE Database SHALL update the role and apply new permissions immediately
+
+### Requirement 5: Rich Text Content Editor
 
-#### 验收标准
+**User Story:** As an author, I want a rich text editor for creating posts, so that I can format content with headings, lists, links, and images.
 
-1. WHEN 用户选择 GitHub 或 Google 登录 THEN THE System SHALL 通过 Supabase Auth 完成 OAuth 认证流程
-2. WHEN 用户成功认证 THEN THE System SHALL 在 profiles 表中创建或更新用户配置文件
-3. WHEN 用户访问受保护的资源 THEN THE System SHALL 验证用户的认证状态和角色权限
-4. THE System SHALL 为每个用户分配一个角色（admin、editor 或 author）
-5. WHEN 用户登出 THEN THE System SHALL 清除认证会话并重定向到首页
+#### Acceptance Criteria
 
-### 需求 2：用户资料管理
+1. THE Rich_Text_Editor SHALL support headings (H1-H6), paragraphs, bold, italic, underline, and strikethrough formatting
+2. THE Rich_Text_Editor SHALL support ordered lists, unordered lists, and blockquotes
+3. THE Rich_Text_Editor SHALL support inserting and editing hyperlinks
+4. THE Rich_Text_Editor SHALL support inserting images with alt text
+5. WHEN a user uploads an image in the editor, THE Storage_Service SHALL store the image and THE Rich_Text_Editor SHALL insert the image URL
+6. THE Rich_Text_Editor SHALL store content in a structured format compatible with TipTap
+7. WHEN a user saves a post, THE Database SHALL persist the rich text content
 
-**用户故事：** 作为已认证用户，我希望能够管理我的个人资料，以便展示我的身份信息。
+### Requirement 6: Post Management
 
-#### 验收标准
+**User Story:** As an author, I want to create, edit, and manage blog posts, so that I can publish content to the blog.
 
-1. WHEN 用户更新头像 THEN THE System SHALL 上传图片到 Supabase Storage 并更新 profiles 表
-2. WHEN 用户更新简介或其他资料 THEN THE System SHALL 验证输入并保存到 profiles 表
-3. THE System SHALL 在用户资料页面显示用户的头像、用户名、简介和发布的文章列表
-4. WHEN 用户上传头像 THEN THE System SHALL 验证文件类型（仅允许图片格式）和大小（最大 5MB）
+#### Acceptance Criteria
 
-### 需求 3：文章创建和编辑
+1. WHEN a user with author role creates a post, THE Database SHALL store the post with status set to draft
+2. WHEN a user saves a post, THE Blog_System SHALL automatically generate a URL-friendly slug from the title
+3. WHEN a slug already exists, THE Blog_System SHALL append a numeric suffix to ensure uniqueness
+4. WHEN a user sets a post status to published, THE Database SHALL set the published_at timestamp
+5. WHEN a user sets a post status to archived, THE Database SHALL update the status and THE Next_App SHALL hide the post from public view
+6. WHEN a user schedules a post, THE Database SHALL store the scheduled publication time
+7. WHEN the scheduled time arrives, THE Edge_Function SHALL update the post status to published
+8. WHEN a user adds SEO metadata, THE Database SHALL store title, description, and keywords
+9. WHEN a user assigns categories to a post, THE Database SHALL create records in the post_categories junction table
+10. WHEN a user assigns tags to a post, THE Database SHALL create records in the post_tags junction table
 
-**用户故事：** 作为作者，我希望能够创建和编辑文章，以便发布内容到博客。
+### Requirement 7: Media Management
 
-#### 验收标准
+**User Story:** As an author, I want to upload and manage images, so that I can include media in my blog posts.
 
-1. WHEN 作者创建新文章 THEN THE System SHALL 使用 Rich_Text_Editor 提供富文本编辑功能
-2. WHEN 作者保存文章 THEN THE System SHALL 验证必填字段（标题、内容）并存储到 posts 表
-3. WHEN 作者上传封面图片 THEN THE System SHALL 上传到 Storage 并关联到文章
-4. THE System SHALL 支持文章状态设置（Draft、Published、Archived）
-5. WHEN 作者编辑已发布文章 THEN THE System SHALL 保留原始发布时间并更新修改时间
-6. WHEN 作者输入文章内容 THEN THE System SHALL 自动生成摘要（前 200 字符）如果未手动提供
-7. THE System SHALL 允许作者设置 SEO 元数据（meta title、meta description、slug）
+#### Acceptance Criteria
 
-### 需求 4：文章权限控制
+1. WHEN a user uploads an image file, THE Storage_Service SHALL validate the file type is an allowed image format (JPEG, PNG, GIF, WebP)
+2. WHEN a user uploads an image file, THE Storage_Service SHALL validate the file size does not exceed 5MB
+3. WHEN a valid image is uploaded, THE Storage_Service SHALL store the file and return a public URL
+4. WHEN an invalid file is uploaded, THE Storage_Service SHALL reject the upload and return an error message
+5. WHEN a user views the media library, THE Next_App SHALL display all uploaded images with thumbnails
+6. WHEN a user deletes an image from the media library, THE Storage_Service SHALL remove the file
+7. THE Storage_Service SHALL organize uploaded files by user ID and upload date
 
-**用户故事：** 作为系统管理员，我希望通过 RLS 策略控制文章访问权限，以确保数据安全。
+### Requirement 8: Frontend Blog Display
 
-#### 验收标准
+**User Story:** As a visitor, I want to browse blog posts, categories, and tags, so that I can discover and read content.
 
-1. WHEN 访客查询文章 THEN THE System SHALL 仅返回状态为 Published 的文章
-2. WHEN Author 查询文章 THEN THE System SHALL 返回该作者创建的所有文章
-3. WHEN Editor 或 Admin 查询文章 THEN THE System SHALL 返回所有文章
-4. WHEN Author 尝试更新文章 THEN THE System SHALL 仅允许更新自己创建的文章
-5. WHEN Editor 或 Admin 尝试更新文章 THEN THE System SHALL 允许更新任何文章
-6. WHEN Author 尝试删除文章 THEN THE System SHALL 仅允许删除自己创建的文章
-7. WHEN Admin 尝试删除文章 THEN THE System SHALL 允许删除任何文章
+#### Acceptance Criteria
 
-### 需求 5：文章浏览和搜索
+1. WHEN a visitor accesses the homepage, THE Next_App SHALL display a list of published posts ordered by published_at descending
+2. WHEN a visitor clicks on a post, THE Next_App SHALL display the full post content with title, author, date, categories, tags, and formatted content
+3. WHEN a visitor accesses a category page, THE Next_App SHALL display all published posts in that category
+4. WHEN a visitor accesses a tag page, THE Next_App SHALL display all published posts with that tag
+5. WHEN a visitor views a post, THE Database SHALL increment the view_count
+6. THE Next_App SHALL render post pages using SSR for SEO optimization
+7. THE Next_App SHALL display responsive layouts that work on mobile, tablet, and desktop devices
+8. THE Next_App SHALL follow the clean, modern design style of familybank.chat
 
-**用户故事：** 作为访客，我希望能够浏览和搜索文章，以便找到感兴趣的内容。
+### Requirement 9: Search Functionality
 
-#### 验收标准
+**User Story:** As a visitor, I want to search for blog posts, so that I can find content on specific topics.
 
-1. WHEN 访客访问首页 THEN THE System SHALL 显示已发布文章列表，按发布时间倒序排列
-2. WHEN 访客查看文章详情 THEN THE System SHALL 增加该文章的浏览量计数
-3. WHEN 访客输入搜索关键词 THEN THE System SHALL 使用全文搜索返回匹配的文章
-4. THE System SHALL 支持按分类筛选文章
-5. THE System SHALL 支持按标签筛选文章
-6. WHEN 显示文章列表 THEN THE System SHALL 包含分页功能（每页 10 篇文章）
-7. WHEN 访客访问不存在的文章 THEN THE System SHALL 返回 404 错误页面
+#### Acceptance Criteria
 
-### 需求 6：分类管理
+1. WHEN a user enters a search query, THE Database SHALL perform full-text search on post titles and content
+2. WHEN search results are returned, THE Next_App SHALL display matching posts with highlighted search terms
+3. WHEN no results are found, THE Next_App SHALL display a message indicating no matches
+4. THE Database SHALL rank search results by relevance
+5. THE Database SHALL return only published posts in search results
 
-**用户故事：** 作为管理员，我希望能够管理文章分类，以便组织博客内容。
+### Requirement 10: Comment System
 
-#### 验收标准
+**User Story:** As a reader, I want to comment on blog posts, so that I can engage with the content and author.
 
-1. WHEN Admin 创建分类 THEN THE System SHALL 验证分类名称唯一性并存储到 categories 表
-2. WHEN Admin 更新分类 THEN THE System SHALL 更新 categories 表并保持与文章的关联
-3. WHEN Admin 删除分类 THEN THE System SHALL 检查是否有文章使用该分类
-4. IF 分类被文章使用 THEN THE System SHALL 阻止删除并提示错误信息
-5. THE System SHALL 允许为分类设置名称、slug 和描述
-6. WHEN 访客按分类浏览 THEN THE System SHALL 显示该分类下的所有已发布文章
+#### Acceptance Criteria
 
-### 需求 7：标签管理
+1. WHEN an authenticated user submits a comment on a published post, THE Database SHALL store the comment with pending approval status
+2. WHEN an admin approves a comment, THE Database SHALL update the comment status to approved
+3. WHEN a comment is approved, THE Next_App SHALL display the comment on the post page
+4. WHEN a user views a post, THE Next_App SHALL display all approved comments ordered by created_at ascending
+5. WHEN a user deletes their own comment, THE Database SHALL remove the comment record
+6. WHEN an admin deletes any comment, THE Database SHALL remove the comment record
 
-**用户故事：** 作为作者，我希望能够为文章添加标签，以便更好地标记和检索内容。
+### Requirement 11: Admin Dashboard
 
-#### 验收标准
+**User Story:** As an admin, I want a dashboard to manage all aspects of the blog system, so that I can oversee content and users.
 
-1. WHEN 作者为文章添加标签 THEN THE System SHALL 在 tags 表中创建标签（如果不存在）并建立关联
-2. WHEN 作者移除文章标签 THEN THE System SHALL 删除 post_tags 表中的关联记录
-3. THE System SHALL 支持一篇文章关联多个标签
-4. THE System SHALL 支持一个标签关联多篇文章
-5. WHEN Admin 删除标签 THEN THE System SHALL 删除所有相关的 post_tags 关联记录
-6. WHEN 访客按标签浏览 THEN THE System SHALL 显示该标签下的所有已发布文章
-7. THE System SHALL 在文章详情页显示所有关联的标签
+#### Acceptance Criteria
 
-### 需求 8：评论系统
+1. WHEN an admin accesses the dashboard, THE Next_App SHALL display overview statistics including total posts, total users, total comments, and total views
+2. WHEN an admin accesses the posts management page, THE Next_App SHALL display all posts with filters for status, author, category, and date
+3. WHEN an admin accesses the media library, THE Next_App SHALL display all uploaded files with search and filter capabilities
+4. WHEN an admin accesses category management, THE Next_App SHALL display all categories with create, edit, and delete operations
+5. WHEN an admin accesses tag management, THE Next_App SHALL display all tags with create, edit, and delete operations
+6. WHEN an admin accesses user management, THE Next_App SHALL display all users with role assignment capabilities
+7. WHEN an admin accesses settings, THE Next_App SHALL display system configuration options
+8. THE Middleware SHALL restrict dashboard access to users with admin or editor roles
 
-**用户故事：** 作为已认证用户，我希望能够对文章发表评论，以便与作者和其他读者互动。
+### Requirement 12: Real-Time Updates
 
-#### 验收标准
+**User Story:** As a user, I want to see real-time updates when content changes, so that I always see current information.
 
-1. WHEN 已认证用户提交评论 THEN THE System SHALL 验证内容非空并存储到 comments 表
-2. WHEN 用户回复评论 THEN THE System SHALL 创建嵌套评论并设置 parent_id 引用
-3. THE System SHALL 为新评论设置状态为"待审核"
-4. WHEN Editor 或 Admin 审核评论 THEN THE System SHALL 允许将状态更改为"已批准"或"垃圾评论"
-5. WHEN 显示文章评论 THEN THE System SHALL 仅显示状态为"已批准"的评论
-6. WHEN 用户删除自己的评论 THEN THE System SHALL 标记评论为已删除或物理删除
-7. WHEN Admin 删除任何评论 THEN THE System SHALL 允许删除操作
-8. THE System SHALL 按时间顺序显示评论，嵌套评论显示在父评论下方
+#### Acceptance Criteria
 
-### 需求 9：媒体管理
+1. WHEN a post is published, THE Real_Time_Subscription SHALL notify connected clients
+2. WHEN a comment is approved, THE Real_Time_Subscription SHALL notify clients viewing that post
+3. WHEN the dashboard is open, THE Real_Time_Subscription SHALL update statistics in real-time
+4. THE Next_App SHALL establish Supabase real-time subscriptions for posts and comments tables
+5. WHEN a subscription receives an update, THE Next_App SHALL update the UI without requiring a page refresh
 
-**用户故事：** 作为作者，我希望能够上传和管理媒体文件，以便在文章中使用图片。
+### Requirement 13: Type Safety and Code Generation
 
-#### 验收标准
+**User Story:** As a developer, I want TypeScript types generated from the database schema, so that I have type safety throughout the application.
 
-1. WHEN 用户上传图片 THEN THE System SHALL 验证文件类型（jpg、png、gif、webp）和大小（最大 10MB）
-2. WHEN 图片上传成功 THEN THE System SHALL 存储到 Supabase Storage 并返回公开 URL
-3. THE System SHALL 在 Rich_Text_Editor 中提供图片插入功能
-4. WHEN 用户访问媒体库 THEN THE System SHALL 显示该用户上传的所有媒体文件
-5. WHEN 用户删除媒体文件 THEN THE System SHALL 从 Storage 中删除文件
-6. THE System SHALL 为上传的图片生成缩略图（用于媒体库显示）
-7. THE System SHALL 使用 Supabase Storage 的 RLS 策略控制媒体文件访问权限
+#### Acceptance Criteria
 
-### 需求 10：管理后台仪表盘
+1. THE Blog_System SHALL use Supabase CLI to generate TypeScript types from the database schema
+2. THE Next_App SHALL import and use generated types for all database operations
+3. WHEN the database schema changes, THE Blog_System SHALL regenerate TypeScript types
+4. THE Next_App SHALL use TypeScript strict mode for maximum type safety
 
-**用户故事：** 作为管理员，我希望能够查看系统统计数据，以便了解博客运营状况。
+### Requirement 14: Route Protection and Middleware
 
-#### 验收标准
+**User Story:** As a security engineer, I want protected routes that require authentication and authorization, so that unauthorized users cannot access restricted areas.
 
-1. WHEN Admin 访问仪表盘 THEN THE System SHALL 显示文章总数、评论总数、用户总数
-2. THE System SHALL 显示最近 7 天的文章发布趋势图表
-3. THE System SHALL 显示最受欢迎的文章列表（按浏览量排序）
-4. THE System SHALL 显示待审核评论数量
-5. THE System SHALL 显示最近发布的文章列表（最多 5 篇）
-6. WHEN 统计数据更新 THEN THE System SHALL 使用 Supabase 实时订阅自动刷新仪表盘
+#### Acceptance Criteria
 
-### 需求 11：管理后台文章管理
+1. WHEN an unauthenticated user attempts to access a dashboard route, THE Middleware SHALL redirect to the login page
+2. WHEN an authenticated user without admin or editor role attempts to access the dashboard, THE Middleware SHALL redirect to an unauthorized page
+3. WHEN an authenticated user with appropriate role accesses a protected route, THE Middleware SHALL allow the request to proceed
+4. THE Middleware SHALL verify authentication status on every protected route request
+5. THE Middleware SHALL check user roles from the database for authorization decisions
 
-**用户故事：** 作为编辑，我希望能够在管理后台管理所有文章，以便高效地进行内容管理。
+### Requirement 15: Edge Functions for Custom Logic
 
-#### 验收标准
+**User Story:** As a developer, I want serverless edge functions for custom backend logic, so that I can implement features beyond standard database operations.
 
-1. WHEN Editor 访问文章管理页面 THEN THE System SHALL 显示所有文章列表（包括草稿和已发布）
-2. THE System SHALL 支持按状态、作者、分类筛选文章
-3. THE System SHALL 支持批量操作（批量删除、批量更改状态）
-4. WHEN Editor 点击编辑按钮 THEN THE System SHALL 导航到文章编辑页面
-5. THE System SHALL 在列表中显示文章标题、作者、状态、发布时间、浏览量
-6. THE System SHALL 支持文章列表的排序（按时间、浏览量等）
+#### Acceptance Criteria
 
-### 需求 12：系统设置
+1. THE Blog_System SHALL include an edge function for scheduled post publishing
+2. THE Edge_Function SHALL run periodically to check for posts with scheduled publication times that have passed
+3. WHEN a scheduled post's time has arrived, THE Edge_Function SHALL update the post status to published
+4. THE Blog_System SHALL include an edge function for generating post slugs with uniqueness validation
+5. THE Edge_Function SHALL be deployable via Supabase CLI
 
-**用户故事：** 作为管理员，我希望能够配置系统设置，以便自定义博客行为。
+### Requirement 16: Environment Configuration
 
-#### 验收标准
+**User Story:** As a developer, I want environment-based configuration, so that I can deploy to different environments with appropriate settings.
 
-1. WHEN Admin 更新系统设置 THEN THE System SHALL 验证输入并存储到 settings 表
-2. THE System SHALL 支持配置博客标题、副标题、描述
-3. THE System SHALL 支持配置每页显示文章数量
-4. THE System SHALL 支持配置评论是否需要审核
-5. THE System SHALL 支持配置允许的文件上传类型和大小限制
-6. WHEN 系统设置更新 THEN THE System SHALL 立即应用新配置（无需重启）
+#### Acceptance Criteria
 
-### 需求 13：前端响应式设计
+1. THE Next_App SHALL read NEXT_PUBLIC_SUPABASE_URL from environment variables
+2. THE Next_App SHALL read NEXT_PUBLIC_SUPABASE_ANON_KEY from environment variables
+3. THE Next_App SHALL read SUPABASE_SERVICE_ROLE_KEY from environment variables for server-side operations
+4. THE Next_App SHALL read NEXT_PUBLIC_SITE_URL from environment variables
+5. WHEN required environment variables are missing, THE Next_App SHALL fail to start with a clear error message
 
-**用户故事：** 作为移动设备用户，我希望博客在不同设备上都能良好显示，以便随时随地阅读内容。
+### Requirement 17: SEO Optimization
 
-#### 验收标准
+**User Story:** As a content creator, I want SEO-optimized pages, so that my blog posts rank well in search engines.
 
-1. THE System SHALL 在桌面设备（>1024px）上使用多列布局
-2. THE System SHALL 在平板设备（768px-1024px）上使用自适应布局
-3. THE System SHALL 在移动设备（<768px）上使用单列布局
-4. WHEN 用户在移动设备上访问 THEN THE System SHALL 显示汉堡菜单导航
-5. THE System SHALL 确保所有交互元素在触摸屏上易于点击（最小 44x44px）
-6. THE System SHALL 优化图片加载（使用 Next.js Image 组件）
+#### Acceptance Criteria
 
-### 需求 14：SEO 优化
+1. WHEN a post page is rendered, THE Next_App SHALL include meta tags for title, description, and keywords from SEO metadata
+2. WHEN a post page is rendered, THE Next_App SHALL include Open Graph tags for social media sharing
+3. WHEN a post page is rendered, THE Next_App SHALL include structured data (JSON-LD) for articles
+4. THE Next_App SHALL generate a sitemap.xml file listing all published posts
+5. THE Next_App SHALL generate a robots.txt file with appropriate crawling rules
+6. THE Next_App SHALL use semantic HTML elements for proper content structure
 
-**用户故事：** 作为博客所有者，我希望博客对搜索引擎友好，以便提高内容的可发现性。
+### Requirement 18: Analytics Integration
 
-#### 验收标准
+**User Story:** As a blog owner, I want analytics on post views and user engagement, so that I can understand content performance.
 
-1. THE System SHALL 为每篇文章生成唯一的 SEO 友好 URL（使用 slug）
-2. THE System SHALL 在文章页面设置正确的 meta 标签（title、description、og:image）
-3. THE System SHALL 生成 sitemap.xml 文件
-4. THE System SHALL 生成 robots.txt 文件
-5. THE System SHALL 使用语义化 HTML 标签（article、header、nav 等）
-6. THE System SHALL 为图片设置 alt 属性
-7. THE System SHALL 使用 Next.js 的服务端渲染（SSR）确保内容可被爬虫索引
+#### Acceptance Criteria
 
-### 需求 15：性能优化
-
-**用户故事：** 作为用户，我希望博客加载速度快，以便获得良好的浏览体验。
-
-#### 验收标准
-
-1. THE System SHALL 使用 Next.js 静态生成（SSG）预渲染文章列表和详情页
-2. THE System SHALL 使用增量静态再生成（ISR）在文章更新时重新生成页面
-3. THE System SHALL 实现代码分割，按需加载组件
-4. THE System SHALL 使用 Next.js Image 组件优化图片加载
-5. THE System SHALL 实现图片懒加载
-6. THE System SHALL 压缩和缓存静态资源
-7. WHEN 首页加载 THEN THE System SHALL 在 3 秒内完成首次内容绘制（FCP）
-
-### 需求 16：实时数据更新
-
-**用户故事：** 作为管理员，我希望在管理后台看到实时数据更新，以便及时了解系统变化。
-
-#### 验收标准
-
-1. WHEN 新评论提交 THEN THE System SHALL 使用 Supabase 实时订阅通知管理员
-2. WHEN 新文章发布 THEN THE System SHALL 实时更新仪表盘统计数据
-3. WHEN 文章浏览量变化 THEN THE System SHALL 实时更新文章列表中的浏览量显示
-4. THE System SHALL 在管理后台建立 WebSocket 连接以接收实时更新
-5. WHEN 连接断开 THEN THE System SHALL 自动重连并恢复订阅
-
-### 需求 17：数据验证和约束
-
-**用户故事：** 作为系统架构师，我希望在数据库层面实施数据验证，以确保数据完整性。
-
-#### 验收标准
-
-1. THE System SHALL 在 posts 表中设置 title 字段为非空且最大长度 200 字符
-2. THE System SHALL 在 posts 表中设置 slug 字段为唯一且非空
-3. THE System SHALL 在 categories 表中设置 name 字段为唯一且非空
-4. THE System SHALL 在 comments 表中设置 content 字段为非空
-5. THE System SHALL 使用外键约束确保数据引用完整性
-6. THE System SHALL 在 posts 表中设置 status 字段仅允许 'draft'、'published'、'archived' 值
-7. THE System SHALL 在 comments 表中设置 status 字段仅允许 'pending'、'approved'、'spam' 值
-
-### 需求 18：错误处理
-
-**用户故事：** 作为用户，我希望在发生错误时看到友好的错误提示，以便了解问题并采取行动。
-
-#### 验收标准
-
-1. WHEN 数据库操作失败 THEN THE System SHALL 记录错误日志并向用户显示友好的错误消息
-2. WHEN 文件上传失败 THEN THE System SHALL 显示具体的失败原因（文件过大、格式不支持等）
-3. WHEN 用户访问未授权资源 THEN THE System SHALL 返回 403 错误页面
-4. WHEN 用户访问不存在的页面 THEN THE System SHALL 返回 404 错误页面
-5. WHEN 服务器错误发生 THEN THE System SHALL 返回 500 错误页面并记录详细错误信息
-6. THE System SHALL 在表单验证失败时显示字段级错误提示
-7. WHEN API 请求失败 THEN THE System SHALL 实现重试机制（最多 3 次）
-
-### 需求 19：类型安全
-
-**用户故事：** 作为开发者，我希望整个代码库使用 TypeScript，以便在编译时捕获类型错误。
-
-#### 验收标准
-
-1. THE System SHALL 为所有 Supabase 数据库表生成 TypeScript 类型定义
-2. THE System SHALL 为所有 API 响应定义 TypeScript 接口
-3. THE System SHALL 为所有 React 组件的 props 定义 TypeScript 类型
-4. THE System SHALL 启用严格的 TypeScript 配置（strict mode）
-5. THE System SHALL 在构建时进行类型检查，类型错误应导致构建失败
-6. THE System SHALL 避免使用 any 类型（除非绝对必要）
-
-### 需求 20：数据库架构和 RLS 策略
-
-**用户故事：** 作为系统架构师，我希望设计安全的数据库架构，以便保护用户数据。
-
-#### 验收标准
-
-1. THE System SHALL 创建 profiles 表存储用户配置（id、username、avatar_url、bio、role）
-2. THE System SHALL 创建 posts 表存储文章（id、title、content、slug、status、author_id、cover_image、views、published_at、created_at、updated_at）
-3. THE System SHALL 创建 categories 表存储分类（id、name、slug、description）
-4. THE System SHALL 创建 tags 表存储标签（id、name、slug）
-5. THE System SHALL 创建 post_categories 表存储文章-分类关联（post_id、category_id）
-6. THE System SHALL 创建 post_tags 表存储文章-标签关联（post_id、tag_id）
-7. THE System SHALL 创建 comments 表存储评论（id、post_id、user_id、parent_id、content、status、created_at）
-8. THE System SHALL 创建 settings 表存储系统设置（key、value）
-9. THE System SHALL 为所有表启用 RLS 策略
-10. THE System SHALL 实现基于角色的 RLS 策略以控制数据访问
-
+1. WHEN a visitor views a post, THE Database SHALL increment the view_count for that post
+2. WHEN an admin views the dashboard, THE Next_App SHALL display view counts for all posts
+3. THE Next_App SHALL display trending posts based on view counts over the past 7 days
+4. THE Next_App SHALL integrate with external analytics services via environment configuration
