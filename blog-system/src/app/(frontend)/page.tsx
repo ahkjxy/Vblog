@@ -7,17 +7,20 @@ import { FamilyBankCTA } from '@/components/FamilyBankCTA'
 export default async function HomePage() {
   const supabase = await createClient()
   
+  // 只查询 admin 角色用户的文章
   const { data: posts } = await supabase
     .from('posts')
-    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url)')
+    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url, role)')
     .eq('status', 'published')
+    .eq('profiles.role', 'admin')
     .order('published_at', { ascending: false })
     .limit(12)
 
   const { data: featuredPost } = await supabase
     .from('posts')
-    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url)')
+    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url, role)')
     .eq('status', 'published')
+    .eq('profiles.role', 'admin')
     .order('view_count', { ascending: false })
     .limit(1)
     .single()

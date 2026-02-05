@@ -111,7 +111,7 @@ export default function PrivacyPage() {
               如对本隐私政策有任何疑问，请联系我们：
             </p>
             <ul className="list-none text-gray-600 space-y-2">
-              <li>邮箱：privacy@familybank.chat</li>
+              <li>邮箱：ahkjxy@qq.com</li>
               <li>地址：中国</li>
             </ul>
           </section>
