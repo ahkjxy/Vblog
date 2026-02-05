@@ -7,20 +7,28 @@ import { FamilyBankCTA } from '@/components/FamilyBankCTA'
 export default async function HomePage() {
   const supabase = await createClient()
   
-  // 只查询 admin 角色用户的文章
+  // 先获取所有 admin 角色的用户 ID
+  const { data: adminProfiles } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('role', 'admin')
+  
+  const adminIds = adminProfiles?.map(p => p.id) || []
+  
+  // 查询 admin 用户的文章
   const { data: posts } = await supabase
     .from('posts')
-    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url, role)')
+    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url)')
     .eq('status', 'published')
-    .eq('profiles.role', 'admin')
+    .in('author_id', adminIds.length > 0 ? adminIds : ['00000000-0000-0000-0000-000000000000']) // 如果没有 admin，使用一个不存在的 ID
     .order('published_at', { ascending: false })
     .limit(12)
 
   const { data: featuredPost } = await supabase
     .from('posts')
-    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url, role)')
+    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url)')
     .eq('status', 'published')
-    .eq('profiles.role', 'admin')
+    .in('author_id', adminIds.length > 0 ? adminIds : ['00000000-0000-0000-0000-000000000000'])
     .order('view_count', { ascending: false })
     .limit(1)
     .single()
