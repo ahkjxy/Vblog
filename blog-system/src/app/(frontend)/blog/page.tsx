@@ -15,17 +15,24 @@ export default async function BlogListPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero */}
-      <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border-b">
+      {/* Hero with Family Bank CTA */}
+      <div className="bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-50 border-b">
         <div className="container mx-auto px-6 py-16">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-block px-3 py-1 bg-white rounded-full text-sm font-medium text-orange-600 mb-4">
-              元气银行博客
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <div className="inline-block px-3 py-1 bg-white rounded-full text-sm font-medium text-orange-600 mb-4">
+                元气银行博客
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">所有文章</h1>
+              <p className="text-xl text-gray-600">
+                共 {posts?.length || 0} 篇文章，分享家庭管理的智慧与经验
+              </p>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">所有文章</h1>
-            <p className="text-xl text-gray-600">
-              共 {posts?.length || 0} 篇文章，分享家庭管理的智慧与经验
-            </p>
+            
+            {/* Family Bank CTA */}
+            <div className="mt-12">
+              <FamilyBankCTA variant="compact" />
+            </div>
           </div>
         </div>
       </div>
@@ -106,22 +113,26 @@ export default async function BlogListPage() {
 
       {/* CTA */}
       {posts && posts.length > 0 && (
-        <div className="container mx-auto px-6 pb-16">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <FamilyBankCTA />
-            
-            <div className="bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-3xl p-12 text-center">
-              <h2 className="text-3xl font-bold mb-4">分享你的故事</h2>
-              <p className="text-orange-50 mb-8 max-w-2xl mx-auto">
-                加入元气银行社区，分享你的家庭管理经验
-              </p>
-              <Link
-                href="/auth/signup"
-                className="inline-flex items-center gap-2 px-8 py-3 bg-white text-orange-600 rounded-full hover:bg-orange-50 transition-all font-medium"
-              >
-                免费注册
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+        <div className="bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+          <div className="container mx-auto px-6 py-20">
+            <div className="max-w-5xl mx-auto space-y-12">
+              {/* Main Family Bank CTA */}
+              <FamilyBankCTA />
+              
+              {/* Secondary CTA */}
+              <div className="bg-white rounded-3xl p-10 shadow-xl text-center border border-gray-100">
+                <h2 className="text-3xl font-bold mb-4">分享你的故事</h2>
+                <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+                  加入元气银行社区，分享你的家庭管理经验
+                </p>
+                <Link
+                  href="/auth/signup"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-full hover:shadow-xl hover:scale-105 transition-all font-medium text-lg"
+                >
+                  免费注册
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>
