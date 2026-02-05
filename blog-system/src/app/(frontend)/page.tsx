@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
-import { ArrowRight, Calendar, Eye } from 'lucide-react'
+import { ArrowRight, Eye } from 'lucide-react'
 import { FamilyBankCTA } from '@/components/FamilyBankCTA'
 
 export default async function HomePage() {

@@ -196,9 +196,14 @@ export default async function BlogPostPage({ params }: PageProps) {
   )
 }
 
+interface TextNode {
+  text?: string
+  marks?: Array<{ type: string }>
+}
+
 interface ContentNode {
   type: string
-  content?: Array<{ text?: string; marks?: Array<{ type: string }> }>
+  content?: Array<ContentNode | TextNode>
   attrs?: { level?: number; src?: string; alt?: string }
   text?: string
 }
@@ -251,7 +256,7 @@ function renderTipTapContent(content: TipTapContent): string {
     if (node.type === 'paragraph') {
       const text = node.content?.map((c) => {
         let txt = c.text || ''
-        if (c.marks) {
+        if ('marks' in c && c.marks) {
           c.marks.forEach(mark => {
             if (mark.type === 'bold') txt = `<strong>${txt}</strong>`
             if (mark.type === 'italic') txt = `<em>${txt}</em>`
@@ -268,19 +273,29 @@ function renderTipTapContent(content: TipTapContent): string {
       return `<h${level}>${text}</h${level}>`
     }
     if (node.type === 'bulletList') {
-      const items = node.content?.map(item => {
-        const text = item.content?.map(p => 
-          p.content?.map(c => c.text || '').join('') || ''
-        ).join('') || ''
+      const items = node.content?.map((item) => {
+        const itemNode = item as ContentNode
+        const text = itemNode.content?.map((p) => {
+          const pNode = p as ContentNode
+          return pNode.content?.map((c) => {
+            const textNode = c as TextNode
+            return textNode.text || ''
+          }).join('') || ''
+        }).join('') || ''
         return `<li>${text}</li>`
       }).join('') || ''
       return `<ul>${items}</ul>`
     }
     if (node.type === 'orderedList') {
-      const items = node.content?.map(item => {
-        const text = item.content?.map(p => 
-          p.content?.map(c => c.text || '').join('') || ''
-        ).join('') || ''
+      const items = node.content?.map((item) => {
+        const itemNode = item as ContentNode
+        const text = itemNode.content?.map((p) => {
+          const pNode = p as ContentNode
+          return pNode.content?.map((c) => {
+            const textNode = c as TextNode
+            return textNode.text || ''
+          }).join('') || ''
+        }).join('') || ''
         return `<li>${text}</li>`
       }).join('') || ''
       return `<ol>${items}</ol>`
@@ -290,9 +305,13 @@ function renderTipTapContent(content: TipTapContent): string {
       return `<pre><code>${text}</code></pre>`
     }
     if (node.type === 'blockquote') {
-      const text = node.content?.map(p => 
-        p.content?.map(c => c.text || '').join('') || ''
-      ).join('') || ''
+      const text = node.content?.map((p) => {
+        const pNode = p as ContentNode
+        return pNode.content?.map((c) => {
+          const textNode = c as TextNode
+          return textNode.text || ''
+        }).join('') || ''
+      }).join('') || ''
       return `<blockquote>${text}</blockquote>`
     }
     if (node.type === 'image') {

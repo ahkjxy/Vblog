@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { TipTapEditor } from '@/components/editor/TipTapEditor'
-import { generateSlug } from '@/lib/utils'
 
 interface PageProps {
   params: Promise<{ id: string }>
