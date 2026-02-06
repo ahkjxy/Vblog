@@ -4,11 +4,26 @@ import { formatDate, formatAuthorName } from '@/lib/utils'
 import { Calendar, Eye, User, ArrowRight } from 'lucide-react'
 import { FamilyBankCTA } from '@/components/FamilyBankCTA'
 
+// 定义文章类型
+type PostWithProfile = {
+  id: string
+  title: string
+  slug: string
+  excerpt: string | null
+  published_at: string | null
+  view_count: number
+  author_id: string
+  profiles: {
+    name: string
+    avatar_url: string | null
+  } | null
+}
+
 export default async function BlogListPage() {
   const supabase = await createClient()
   
   // 尝试查询带 review_status 的文章，如果字段不存在则回退到只查询 published
-  let posts = null;
+  let posts: PostWithProfile[] | null = null;
   try {
     const { data, error } = await supabase
       .from('posts')
@@ -48,9 +63,9 @@ export default async function BlogListPage() {
         `)
         .eq('status', 'published')
         .order('published_at', { ascending: false })
-      posts = fallbackData
+      posts = fallbackData as unknown as PostWithProfile[]
     } else {
-      posts = data
+      posts = data as unknown as PostWithProfile[]
     }
   } catch (err) {
     // 如果出错，尝试不带 review_status 的查询
@@ -71,7 +86,7 @@ export default async function BlogListPage() {
       `)
       .eq('status', 'published')
       .order('published_at', { ascending: false })
-    posts = fallbackData
+    posts = fallbackData as unknown as PostWithProfile[]
   }
 
   return (
