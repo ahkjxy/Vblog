@@ -19,19 +19,19 @@ export default async function DashboardLayout({
   }
 
   // 获取当前用户的 profile
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('name, role, avatar_url, family_id')
     .eq('id', user.id)
     .maybeSingle()
 
-  // 如果没有 profile，重定向到登录页
-  if (!profile) {
-    redirect('/auth/login')
-  }
+  // 如果没有 profile，使用默认值（不重定向，因为用户可能只在 family-points-bank 有数据）
+  const userName = profile?.name || user.email?.split('@')[0] || '用户'
+  const userRole = profile?.role || 'author'
+  const userAvatar = profile?.avatar_url
 
   // 获取家长的名字（用于显示"进入 XX 的家庭"）
-  let familyAdminName = profile?.name || '我'
+  let familyAdminName = userName
   if (profile?.family_id) {
     const { data: adminProfiles } = await supabase
       .from('profiles')
@@ -54,7 +54,8 @@ export default async function DashboardLayout({
     { href: '/dashboard/comments', icon: 'MessageSquare', label: '评论' },
   ]
 
-  if (profile?.role === 'admin') {
+  // 只有 admin 角色才能看到用户和设置菜单
+  if (userRole === 'admin') {
     navItems.push(
       { href: '/dashboard/users', icon: 'Users', label: '用户' },
       { href: '/dashboard/settings', icon: 'Settings', label: '设置' }
@@ -86,23 +87,23 @@ export default async function DashboardLayout({
             {/* User Profile */}
             <div className="p-5">
               <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 shadow-sm mb-6">
-                {profile?.avatar_url ? (
+                {userAvatar ? (
                   <img 
-                    src={profile.avatar_url} 
-                    alt={profile.name}
+                    src={userAvatar} 
+                    alt={userName}
                     className="w-12 h-12 rounded-full border-2 border-white shadow-md"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md border-2 border-white">
                     <span className="text-white font-bold">
-                      {profile?.name?.charAt(0).toUpperCase()}
+                      {userName.charAt(0).toUpperCase()}
                     </span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm truncate text-gray-900">{profile?.name}</div>
+                  <div className="font-bold text-sm truncate text-gray-900">{userName}</div>
                   <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-white rounded-full text-xs font-medium text-purple-700 border border-purple-200">
-                    {profile?.role === 'admin' ? '管理员' : profile?.role === 'editor' ? '编辑' : '作者'}
+                    {userRole === 'admin' ? '管理员' : userRole === 'editor' ? '编辑' : '作者'}
                   </div>
                 </div>
               </div>
