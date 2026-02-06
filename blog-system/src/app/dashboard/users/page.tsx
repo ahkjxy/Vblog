@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Users as UsersIcon, Search, Shield, Edit2, Trash2 } from 'lucide-react'
+import { Users as UsersIcon, Search, Shield, Trash2 } from 'lucide-react'
 import { Modal, ModalBody, ModalFooter, ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
