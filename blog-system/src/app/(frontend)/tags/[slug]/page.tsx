@@ -56,11 +56,13 @@ export default async function TagPage({ params }: PageProps) {
         published_at,
         view_count,
         status,
-        profiles(name, avatar_url)
+        review_status,
+        profiles!posts_author_id_fkey(name, avatar_url)
       )
     `)
     .eq('tag_id', tag.id)
     .eq('posts.status', 'published')
+    .eq('posts.review_status', 'approved')
 
   const posts = postTags?.map(pt => pt.posts).filter(Boolean).flat() || []
 

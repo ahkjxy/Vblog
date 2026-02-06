@@ -70,7 +70,7 @@ export default function UsersPage() {
       if (error) throw error
       
       // 标记超级管理员家庭的用户，并区分家庭角色和博客角色
-      const usersWithFamily = (data || []).map(user => {
+      const usersWithFamily = (data || []).map((user: any) => {
         const isSuperAdminFamily = user.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
         
         // 判断家庭角色：

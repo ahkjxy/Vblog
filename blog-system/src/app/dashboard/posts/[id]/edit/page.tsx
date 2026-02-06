@@ -93,11 +93,11 @@ export default function EditPostPage({ params }: PageProps) {
         .eq('post_id', postId)
       
       if (postCategories) {
-        setSelectedCategories(postCategories.map(pc => pc.category_id))
+        setSelectedCategories(postCategories.map((pc: { category_id: string }) => pc.category_id))
       }
       
       if (postTags) {
-        setSelectedTags(postTags.map(pt => pt.tag_id))
+        setSelectedTags(postTags.map((pt: { tag_id: string }) => pt.tag_id))
       }
       
       setLoading(false)

@@ -14,7 +14,7 @@ export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
 
   useEffect(() => {
     // 检查用户登录状态
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(({ data: { user } }: { data: { user: any } }) => {
       setIsLoggedIn(!!user)
     })
   }, [supabase])
