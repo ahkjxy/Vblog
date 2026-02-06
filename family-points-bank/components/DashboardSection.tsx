@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Profile, Transaction, Reward, Task } from "../types";
 import { Icon } from "./Icon";
+import { BlogPosts } from "./BlogPosts";
 import { formatDateTime } from "../utils/datetime";
 import { PillTabs } from "./PillTabs";
 import { calculateLevelInfo, LEVELS, getProfileTotalEarned, ROLE_LABELS } from "../utils/leveling";
@@ -616,6 +617,9 @@ export function DashboardSection({
           </div>
         </div>
       </div>
+
+      {/* 博客文章区域 */}
+      <BlogPosts />
     </div>
   );
 }

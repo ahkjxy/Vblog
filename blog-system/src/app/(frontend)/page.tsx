@@ -7,31 +7,72 @@ import { FamilyBankCTA } from '@/components/FamilyBankCTA'
 export default async function HomePage() {
   const supabase = await createClient()
   
-  // 先获取所有 admin 角色的用户 ID
-  const { data: adminProfiles } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('role', 'admin')
+  // 尝试查询带 review_status 的文章，如果字段不存在则回退
+  let posts = null;
+  let featuredPost = null;
   
-  const adminIds = adminProfiles?.map(p => p.id) || []
-  
-  // 查询 admin 用户的文章
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
-    .eq('status', 'published')
-    .in('author_id', adminIds.length > 0 ? adminIds : ['00000000-0000-0000-0000-000000000000'])
-    .order('published_at', { ascending: false })
-    .limit(6)
+  try {
+    const { data: postsData, error: postsError } = await supabase
+      .from('posts')
+      .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
+      .eq('status', 'published')
+      .eq('review_status', 'approved')
+      .order('published_at', { ascending: false })
+      .limit(6)
+    
+    if (postsError && postsError.code === '42703') {
+      const { data: fallbackData } = await supabase
+        .from('posts')
+        .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+        .limit(6)
+      posts = fallbackData
+    } else {
+      posts = postsData
+    }
+  } catch (err) {
+    const { data: fallbackData } = await supabase
+      .from('posts')
+      .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(6)
+    posts = fallbackData
+  }
 
-  const { data: featuredPost } = await supabase
-    .from('posts')
-    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
-    .eq('status', 'published')
-    .in('author_id', adminIds.length > 0 ? adminIds : ['00000000-0000-0000-0000-000000000000'])
-    .order('view_count', { ascending: false })
-    .limit(1)
-    .single()
+  try {
+    const { data: featuredData, error: featuredError } = await supabase
+      .from('posts')
+      .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
+      .eq('status', 'published')
+      .eq('review_status', 'approved')
+      .order('view_count', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    
+    if (featuredError && featuredError.code === '42703') {
+      const { data: fallbackData } = await supabase
+        .from('posts')
+        .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
+        .eq('status', 'published')
+        .order('view_count', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      featuredPost = fallbackData
+    } else {
+      featuredPost = featuredData
+    }
+  } catch (err) {
+    const { data: fallbackData } = await supabase
+      .from('posts')
+      .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
+      .eq('status', 'published')
+      .order('view_count', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    featuredPost = fallbackData
+  }
 
   // 获取分类及其文章数
   const { data: categories } = await supabase

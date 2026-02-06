@@ -101,6 +101,9 @@ export interface Database {
           content: Json
           excerpt: string | null
           status: 'draft' | 'published' | 'archived'
+          review_status: 'pending' | 'approved' | 'rejected'
+          reviewed_by: string | null
+          reviewed_at: string | null
           author_id: string
           published_at: string | null
           scheduled_at: string | null
@@ -118,6 +121,9 @@ export interface Database {
           content: Json
           excerpt?: string | null
           status?: 'draft' | 'published' | 'archived'
+          review_status?: 'pending' | 'approved' | 'rejected'
+          reviewed_by?: string | null
+          reviewed_at?: string | null
           author_id: string
           published_at?: string | null
           scheduled_at?: string | null
@@ -135,6 +141,9 @@ export interface Database {
           content?: Json
           excerpt?: string | null
           status?: 'draft' | 'published' | 'archived'
+          review_status?: 'pending' | 'approved' | 'rejected'
+          reviewed_by?: string | null
+          reviewed_at?: string | null
           author_id?: string
           published_at?: string | null
           scheduled_at?: string | null

@@ -7,11 +7,36 @@ import { FamilyBankCTA } from '@/components/FamilyBankCTA'
 export default async function BlogListPage() {
   const supabase = await createClient()
   
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
+  // 尝试查询带 review_status 的文章，如果字段不存在则回退到只查询 published
+  let posts = null;
+  try {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
+      .eq('status', 'published')
+      .eq('review_status', 'approved')
+      .order('published_at', { ascending: false })
+    
+    if (error && error.code === '42703') {
+      // 字段不存在，回退到只查询 published
+      const { data: fallbackData } = await supabase
+        .from('posts')
+        .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+      posts = fallbackData
+    } else {
+      posts = data
+    }
+  } catch (err) {
+    // 如果出错，尝试不带 review_status 的查询
+    const { data: fallbackData } = await supabase
+      .from('posts')
+      .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+    posts = fallbackData
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">

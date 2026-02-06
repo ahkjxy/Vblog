@@ -1,4 +1,5 @@
 export { Sidebar } from "./Sidebar";
+export { BlogPosts } from "./BlogPosts";
 export { HeaderBar } from "./HeaderBar";
 export { DashboardSection } from "./DashboardSection";
 export { EarnSection } from "./EarnSection";

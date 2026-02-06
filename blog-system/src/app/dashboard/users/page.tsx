@@ -10,10 +10,19 @@ interface User {
   id: string
   name: string
   email: string
-  role: 'admin' | 'editor' | 'author'
+  role: 'admin' | 'editor' | 'author' | 'child'  // 博客角色或家庭角色
   avatar_url: string | null
+  avatar_color: string | null
   bio: string | null
+  family_id: string | null
   created_at: string
+  family?: {
+    id: string
+    name: string
+  }
+  family_role?: 'admin' | 'child'  // 家庭中的角色
+  blog_role?: 'admin' | 'editor' | 'author'  // 博客系统的角色
+  is_super_admin_family?: boolean
 }
 
 type RoleFilter = 'all' | 'admin' | 'editor' | 'author'
@@ -39,10 +48,10 @@ export default function UsersPage() {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       if (!currentUser) return
 
-      // 获取当前用户角色
+      // 获取当前用户角色和家庭ID
       const { data: currentProfile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, family_id')
         .eq('id', currentUser.id)
         .maybeSingle()
 
@@ -50,13 +59,59 @@ export default function UsersPage() {
         setCurrentUserRole(currentProfile.role)
       }
 
+      // 获取所有用户及其家庭信息
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          families:family_id (
+            id,
+            name
+          )
+        `)
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setUsers(data || [])
+      
+      // 标记超级管理员家庭的用户，并区分家庭角色和博客角色
+      const usersWithFamily = (data || []).map(user => {
+        const isSuperAdminFamily = user.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
+        
+        // 如果是超管家庭，role='admin' 表示家长（超级管理员）
+        // 如果不是超管家庭，role='admin' 可能是博客管理员
+        let family_role: 'admin' | 'child' | undefined
+        let blog_role: 'admin' | 'editor' | 'author' | undefined
+        
+        if (isSuperAdminFamily) {
+          // 超管家庭：admin=家长，child=孩子
+          if (user.role === 'admin') {
+            family_role = 'admin'
+            blog_role = 'admin' // 超管家庭的家长也是博客超级管理员
+          } else if (user.role === 'child') {
+            family_role = 'child'
+          } else {
+            // editor, author 等
+            blog_role = user.role as 'admin' | 'editor' | 'author'
+          }
+        } else {
+          // 其他家庭
+          if (user.role === 'child') {
+            family_role = 'child'
+          } else if (['admin', 'editor', 'author'].includes(user.role)) {
+            blog_role = user.role as 'admin' | 'editor' | 'author'
+          }
+        }
+        
+        return {
+          ...user,
+          family: user.families,
+          family_role,
+          blog_role,
+          is_super_admin_family: isSuperAdminFamily
+        }
+      })
+      
+      setUsers(usersWithFamily)
     } catch (err) {
       showError('加载用户列表失败')
       console.error(err)
@@ -92,7 +147,8 @@ export default function UsersPage() {
   // 打开角色更改对话框
   const openRoleDialog = (user: User) => {
     setSelectedUser(user)
-    setNewRole(user.role)
+    // 只能更改博客角色，如果用户有博客角色就使用它，否则默认为 author
+    setNewRole(user.blog_role || 'author')
     setIsRoleDialogOpen(true)
   }
 
@@ -120,6 +176,13 @@ export default function UsersPage() {
   // 删除用户
   const handleDeleteUser = async () => {
     if (!selectedUser) return
+
+    // 检查是否是超级管理员家庭的用户
+    if (selectedUser.is_super_admin_family) {
+      showError('无法删除超级管理员家庭的用户')
+      setIsDeleteDialogOpen(false)
+      return
+    }
 
     try {
       // 注意：实际删除用户需要使用 Supabase Admin API
@@ -150,14 +213,26 @@ export default function UsersPage() {
   }
 
   // 获取角色徽章样式
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role: string, type: 'blog' | 'family' = 'blog', isSuperAdmin = false) => {
+    if (type === 'family') {
+      const styles = {
+        admin: 'bg-purple-100 text-purple-800',
+        child: 'bg-orange-100 text-orange-800',
+      }
+      const labels = {
+        admin: isSuperAdmin ? '超级管理员' : '家长',
+        child: '孩子',
+      }
+      return { style: styles[role as keyof typeof styles], label: labels[role as keyof typeof labels] }
+    }
+    
     const styles = {
-      admin: 'bg-red-100 text-red-800',
+      admin: isSuperAdmin ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800' : 'bg-red-100 text-red-800',
       editor: 'bg-blue-100 text-blue-800',
       author: 'bg-green-100 text-green-800',
     }
     const labels = {
-      admin: '管理员',
+      admin: isSuperAdmin ? '超级管理员' : '管理员',
       editor: '编辑',
       author: '作者',
     }
@@ -290,6 +365,9 @@ export default function UsersPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">用户</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">邮箱</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">用户ID</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">家庭</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">家庭ID</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">角色</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">注册时间</th>
                 <th className="px-6 py-3 text-right text-sm font-medium text-gray-600">操作</th>
@@ -297,7 +375,6 @@ export default function UsersPage() {
             </thead>
             <tbody className="divide-y">
               {filteredUsers.map((user) => {
-                const badge = getRoleBadge(user.role)
                 return (
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
@@ -308,6 +385,13 @@ export default function UsersPage() {
                             alt={user.name}
                             className="w-10 h-10 rounded-full ring-2 ring-gray-100"
                           />
+                        ) : user.avatar_color ? (
+                          <div 
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ring-2 ring-gray-100"
+                            style={{ backgroundColor: user.avatar_color }}
+                          >
+                            {user.name.slice(-1)}
+                          </div>
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold">
                             {user.name.charAt(0).toUpperCase()}
@@ -323,11 +407,67 @@ export default function UsersPage() {
                         </div>
                       </div>
                     </td>
+                    <td className="px-6 py-4">
+                      <div className="text-xs font-mono text-gray-500 max-w-[200px] truncate" title={user.id}>
+                        {user.id}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
                     <td className="px-6 py-4">
-                      <span className={cn('px-2 py-1 rounded-full text-xs font-medium', badge.style)}>
-                        {badge.label}
-                      </span>
+                      {user.family ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-700">{user.family.name}</span>
+                          {user.is_super_admin_family && (
+                            <span className="px-2 py-0.5 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-medium">
+                              超管家庭
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {user.family_id ? (
+                        <div className="text-xs font-mono text-gray-500 max-w-[200px] truncate" title={user.family_id}>
+                          {user.family_id}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="space-y-1.5">
+                        {/* 家庭名称 */}
+                        {user.family && (
+                          <div className="text-xs text-gray-500">
+                            {user.family.name}
+                          </div>
+                        )}
+                        
+                        {/* 家庭角色 */}
+                        {user.family_role && (
+                          <div>
+                            <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', getRoleBadge(user.family_role, 'family', user.is_super_admin_family && user.family_role === 'admin').style)}>
+                              {getRoleBadge(user.family_role, 'family', user.is_super_admin_family && user.family_role === 'admin').label}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* 博客角色 */}
+                        {user.blog_role && (
+                          <div>
+                            <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', getRoleBadge(user.blog_role, 'blog', user.is_super_admin_family && user.blog_role === 'admin').style)}>
+                              {getRoleBadge(user.blog_role, 'blog', user.is_super_admin_family && user.blog_role === 'admin').label}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* 如果既没有家庭角色也没有博客角色 */}
+                        {!user.family_role && !user.blog_role && (
+                          <span className="text-sm text-gray-400">-</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {formatDate(user.created_at)}
@@ -346,8 +486,14 @@ export default function UsersPage() {
                             setSelectedUser(user)
                             setIsDeleteDialogOpen(true)
                           }}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="删除用户"
+                          disabled={user.is_super_admin_family}
+                          className={cn(
+                            "p-2 rounded-lg transition-colors",
+                            user.is_super_admin_family
+                              ? "text-gray-300 cursor-not-allowed"
+                              : "text-red-600 hover:bg-red-50"
+                          )}
+                          title={user.is_super_admin_family ? "超级管理员家庭的用户不能删除" : "删除用户"}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -372,8 +518,13 @@ export default function UsersPage() {
           <ModalBody>
             <div className="space-y-4">
               <p className="text-gray-700">
-                为用户 <strong>{selectedUser.name}</strong> 选择新角色：
+                为用户 <strong>{selectedUser.name}</strong> 选择新的博客角色：
               </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                <p className="font-medium mb-1">提示：</p>
+                <p>这里只能更改博客系统的角色（管理员/编辑/作者）。</p>
+                <p>家庭角色（家长/孩子）由家庭积分系统管理。</p>
+              </div>
               <select
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value as 'admin' | 'editor' | 'author')}
@@ -408,7 +559,11 @@ export default function UsersPage() {
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDeleteUser}
         title="删除用户"
-        message={`确定要删除用户"${selectedUser?.name}"吗？此操作将删除该用户的所有数据，且无法撤销。`}
+        message={
+          selectedUser?.is_super_admin_family
+            ? `无法删除用户"${selectedUser?.name}"，因为该用户属于超级管理员家庭。`
+            : `确定要删除用户"${selectedUser?.name}"吗？此操作将删除该用户的所有数据，且无法撤销。`
+        }
         confirmText="删除"
         cancelText="取消"
         variant="danger"

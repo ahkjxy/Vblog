@@ -14,12 +14,36 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params
   const supabase = await createClient()
   
-  const { data: post } = await supabase
-    .from('posts')
-    .select('title, seo_title, seo_description, excerpt')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single()
+  let post = null;
+  try {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('title, seo_title, seo_description, excerpt')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .eq('review_status', 'approved')
+      .maybeSingle()
+    
+    if (error && error.code === '42703') {
+      const { data: fallbackData } = await supabase
+        .from('posts')
+        .select('title, seo_title, seo_description, excerpt')
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .maybeSingle()
+      post = fallbackData
+    } else {
+      post = data
+    }
+  } catch (err) {
+    const { data: fallbackData } = await supabase
+      .from('posts')
+      .select('title, seo_title, seo_description, excerpt')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .maybeSingle()
+    post = fallbackData
+  }
 
   if (!post) {
     return {
@@ -37,17 +61,51 @@ export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params
   const supabase = await createClient()
   
-  const { data: post } = await supabase
-    .from('posts')
-    .select(`
-      *,
-      profiles(name, avatar_url, bio),
-      post_categories(categories(name, slug)),
-      post_tags(tags(name, slug))
-    `)
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single()
+  let post = null;
+  try {
+    const { data, error } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        profiles(name, avatar_url, bio),
+        post_categories(categories(name, slug)),
+        post_tags(tags(name, slug))
+      `)
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .eq('review_status', 'approved')
+      .maybeSingle()
+    
+    if (error && error.code === '42703') {
+      const { data: fallbackData } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles(name, avatar_url, bio),
+          post_categories(categories(name, slug)),
+          post_tags(tags(name, slug))
+        `)
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .maybeSingle()
+      post = fallbackData
+    } else {
+      post = data
+    }
+  } catch (err) {
+    const { data: fallbackData } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        profiles(name, avatar_url, bio),
+        post_categories(categories(name, slug)),
+        post_tags(tags(name, slug))
+      `)
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .maybeSingle()
+    post = fallbackData
+  }
 
   if (!post) {
     notFound()

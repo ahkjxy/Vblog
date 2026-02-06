@@ -6,10 +6,24 @@ import { formatDate } from '@/lib/utils'
 export default async function PostsPage() {
   const supabase = await createClient()
 
+  // 获取当前用户信息
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, family_id')
+    .eq('id', user?.id)
+    .maybeSingle()
+
+  const isSuperAdmin = profile?.role === 'admin' && 
+    profile?.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
+
   const { data: posts } = await supabase
     .from('posts')
-    .select('*, profiles(username)')
+    .select('*, profiles(name)')
     .order('created_at', { ascending: false })
+
+  // 检查是否有 review_status 字段
+  const hasReviewStatus = posts && posts.length > 0 && 'review_status' in posts[0]
 
   return (
     <div>
@@ -30,6 +44,9 @@ export default async function PostsPage() {
             <tr>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">标题</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">状态</th>
+              {hasReviewStatus && (
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">审核状态</th>
+              )}
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">作者</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">发布时间</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">阅读量</th>
@@ -53,6 +70,19 @@ export default async function PostsPage() {
                     {post.status === 'published' ? '已发布' : post.status === 'draft' ? '草稿' : '已归档'}
                   </span>
                 </td>
+                {hasReviewStatus && (
+                  <td className="px-6 py-4">
+                    <span className={`px-3 py-1 rounded-full text-xs ${
+                      post.review_status === 'approved' 
+                        ? 'bg-green-100 text-green-800' 
+                        : post.review_status === 'rejected'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {post.review_status === 'approved' ? '已通过' : post.review_status === 'rejected' ? '已拒绝' : '待审核'}
+                    </span>
+                  </td>
+                )}
                 <td className="px-6 py-4 text-sm text-gray-600">
                   {post.profiles?.name}
                 </td>
@@ -63,19 +93,32 @@ export default async function PostsPage() {
                   {post.view_count}
                 </td>
                 <td className="px-6 py-4">
-                  <Link
-                    href={`/dashboard/posts/${post.id}/edit`}
-                    className="text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    编辑
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/dashboard/posts/${post.id}/edit`}
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      编辑
+                    </Link>
+                    {hasReviewStatus && isSuperAdmin && post.review_status === 'pending' && (
+                      <>
+                        <span className="text-gray-300">|</span>
+                        <Link
+                          href={`/dashboard/posts/${post.id}/review`}
+                          className="text-sm text-green-600 hover:text-green-800"
+                        >
+                          审核
+                        </Link>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {!posts || posts.length === 0 && (
+        {(!posts || posts.length === 0) && (
           <div className="text-center py-12 text-gray-500">
             暂无文章
           </div>
