@@ -1,0 +1,32 @@
+-- 通用的创建 profile 脚本
+-- 只使用最基本的字段：id, name, role
+
+-- 为 ahkixy@qq.com 创建 profile
+INSERT INTO profiles (
+  id,
+  name,
+  role
+)
+SELECT 
+  id,
+  '王僚原',
+  'admin'
+FROM auth.users
+WHERE email = 'ahkixy@qq.com'
+ON CONFLICT (id) DO UPDATE SET
+  name = '王僚原',
+  role = 'admin';
+
+-- 验证
+SELECT 
+  u.email as 登录邮箱,
+  p.name as 显示名字,
+  p.role as 角色,
+  CASE 
+    WHEN p.role = 'admin'
+    THEN '✅ 成功！王僚原是超级管理员'
+    ELSE '❌ 失败'
+  END as 状态
+FROM auth.users u
+LEFT JOIN profiles p ON u.id = p.id
+WHERE u.email = 'ahkixy@qq.com';
