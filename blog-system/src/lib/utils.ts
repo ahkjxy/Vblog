@@ -49,3 +49,16 @@ export function formatDate(date: string): string {
     day: 'numeric'
   })
 }
+
+// 格式化作者显示名称为"XX的家庭"
+export function formatAuthorName(profile: any): string {
+  if (!profile) return '匿名用户'
+  
+  // 如果有 families 信息，显示为"XX的家庭"
+  if (profile.families?.name) {
+    return `${profile.families.name}的家庭`
+  }
+  
+  // 否则显示 profile 的 name
+  return profile.name || '匿名用户'
+}

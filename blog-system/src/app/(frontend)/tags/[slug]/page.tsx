@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatAuthorName } from '@/lib/utils'
 import { Calendar, Eye, ArrowRight } from 'lucide-react'
 import type { Metadata } from 'next'
 
@@ -130,7 +130,7 @@ export default async function TagPage({ params }: PageProps) {
                               </span>
                             </div>
                           )}
-                          <span className="font-semibold text-gray-900">{post.profiles?.[0]?.name}</span>
+                          <span className="font-semibold text-gray-900">{formatAuthorName(post.profiles?.[0])}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4" />

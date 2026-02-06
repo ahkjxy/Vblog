@@ -36,6 +36,10 @@ interface Comment {
   profiles?: {
     name?: string
     avatar_url?: string
+    family_id?: string
+    families?: {
+      name?: string
+    }
   }
 }
 
@@ -44,6 +48,19 @@ interface CommentsProps {
 }
 
 type ToastType = 'success' | 'error'
+
+// 格式化作者名称为"XX的家庭"
+function formatAuthorName(profile: any): string {
+  if (!profile) return '匿名用户'
+  
+  // 如果有 families 信息，显示为"XX的家庭"
+  if (profile.families?.name) {
+    return `${profile.families.name}的家庭`
+  }
+  
+  // 否则显示 profile 的 name
+  return profile.name || '匿名用户'
+}
 
 export function Comments({ postId }: CommentsProps) {
   const [comments, setComments] = useState<Comment[]>([])
@@ -120,7 +137,12 @@ export function Comments({ postId }: CommentsProps) {
         .from('comments')
         .select(`
           *,
-          profiles(name, avatar_url)
+          profiles(
+            name, 
+            avatar_url,
+            family_id,
+            families(name)
+          )
         `)
         .eq('post_id', postId)
         .eq('status', 'approved')
@@ -438,7 +460,7 @@ export function Comments({ postId }: CommentsProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-semibold text-gray-900">
-                      {comment.profiles?.name || comment.author_name}
+                      {comment.profiles ? formatAuthorName(comment.profiles) : comment.author_name}
                     </span>
                     <span className="text-sm text-gray-500">
                       {formatDate(comment.created_at)}

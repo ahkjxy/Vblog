@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatAuthorName } from '@/lib/utils'
 
 // 禁用缓存
 export const revalidate = 0
@@ -30,7 +30,14 @@ export default async function PostsPage() {
 
   const { data: posts, error } = await supabase
     .from('posts')
-    .select('*, profiles!posts_author_id_fkey(name)')
+    .select(`
+      *, 
+      profiles!posts_author_id_fkey(
+        name,
+        family_id,
+        families(name)
+      )
+    `)
     .order('created_at', { ascending: false })
 
   console.log('Posts query result:', { count: posts?.length, error })
@@ -97,7 +104,7 @@ export default async function PostsPage() {
                   </td>
                 )}
                 <td className="px-6 py-4 text-sm text-gray-600">
-                  {post.profiles?.name}
+                  {formatAuthorName(post.profiles)}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">
                   {post.published_at ? formatDate(post.published_at) : '-'}

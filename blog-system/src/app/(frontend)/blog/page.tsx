@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatAuthorName } from '@/lib/utils'
 import { Calendar, Eye, User, ArrowRight } from 'lucide-react'
 import { FamilyBankCTA } from '@/components/FamilyBankCTA'
 
@@ -12,7 +12,21 @@ export default async function BlogListPage() {
   try {
     const { data, error } = await supabase
       .from('posts')
-      .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
+      .select(`
+        id, 
+        title, 
+        slug, 
+        excerpt, 
+        published_at, 
+        view_count, 
+        author_id, 
+        profiles!posts_author_id_fkey(
+          name, 
+          avatar_url,
+          family_id,
+          families(name)
+        )
+      `)
       .eq('status', 'published')
       .eq('review_status', 'approved')
       .order('published_at', { ascending: false })
@@ -21,7 +35,21 @@ export default async function BlogListPage() {
       // 字段不存在，回退到只查询 published
       const { data: fallbackData } = await supabase
         .from('posts')
-        .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
+        .select(`
+          id, 
+          title, 
+          slug, 
+          excerpt, 
+          published_at, 
+          view_count, 
+          author_id, 
+          profiles!posts_author_id_fkey(
+            name, 
+            avatar_url,
+            family_id,
+            families(name)
+          )
+        `)
         .eq('status', 'published')
         .order('published_at', { ascending: false })
       posts = fallbackData
@@ -32,7 +60,21 @@ export default async function BlogListPage() {
     // 如果出错，尝试不带 review_status 的查询
     const { data: fallbackData } = await supabase
       .from('posts')
-      .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
+      .select(`
+        id, 
+        title, 
+        slug, 
+        excerpt, 
+        published_at, 
+        view_count, 
+        author_id, 
+        profiles!posts_author_id_fkey(
+          name, 
+          avatar_url,
+          family_id,
+          families(name)
+        )
+      `)
       .eq('status', 'published')
       .order('published_at', { ascending: false })
     posts = fallbackData
@@ -106,7 +148,7 @@ export default async function BlogListPage() {
                               <User className="w-5 h-5 text-white" />
                             </div>
                           )}
-                          <span className="font-semibold text-gray-900">{post.profiles?.[0]?.name}</span>
+                          <span className="font-semibold text-gray-900">{formatAuthorName(post.profiles?.[0])}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4" />

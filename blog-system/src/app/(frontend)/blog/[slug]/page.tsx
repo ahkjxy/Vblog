@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatAuthorName } from '@/lib/utils'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { MarkdownContent } from '@/components/MarkdownContent'
@@ -126,7 +126,13 @@ export default async function BlogPostPage({ params }: PageProps) {
       .from('posts')
       .select(`
         *,
-        profiles!posts_author_id_fkey(name, avatar_url, bio),
+        profiles!posts_author_id_fkey(
+          name, 
+          avatar_url, 
+          bio,
+          family_id,
+          families(name)
+        ),
         post_categories(categories(name, slug)),
         post_tags(tags(name, slug))
       `)
@@ -150,7 +156,13 @@ export default async function BlogPostPage({ params }: PageProps) {
         .from('posts')
         .select(`
           *,
-          profiles!posts_author_id_fkey(name, avatar_url, bio),
+          profiles!posts_author_id_fkey(
+            name, 
+            avatar_url, 
+            bio,
+            family_id,
+            families(name)
+          ),
           post_categories(categories(name, slug)),
           post_tags(tags(name, slug))
         `)
@@ -173,7 +185,13 @@ export default async function BlogPostPage({ params }: PageProps) {
       .from('posts')
       .select(`
         *,
-        profiles!posts_author_id_fkey(name, avatar_url, bio),
+        profiles!posts_author_id_fkey(
+          name, 
+          avatar_url, 
+          bio,
+          family_id,
+          families(name)
+        ),
         post_categories(categories(name, slug)),
         post_tags(tags(name, slug))
       `)
@@ -258,7 +276,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                   </div>
                 )}
                 <div>
-                  <div className="font-semibold text-gray-900">{post.profiles?.name}</div>
+                  <div className="font-semibold text-gray-900">{formatAuthorName(post.profiles)}</div>
                   {post.profiles?.bio && (
                     <div className="text-xs text-gray-600 line-clamp-1">{post.profiles.bio}</div>
                   )}
@@ -320,7 +338,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                 )}
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">关于作者</h3>
-                  <p className="text-xl font-semibold text-gray-900 mb-3">{post.profiles.name}</p>
+                  <p className="text-xl font-semibold text-gray-900 mb-3">{formatAuthorName(post.profiles)}</p>
                   <p className="text-gray-700 leading-[1.7] text-base">{post.profiles.bio}</p>
                 </div>
               </div>
