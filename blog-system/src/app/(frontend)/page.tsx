@@ -4,12 +4,31 @@ import { formatDate, formatAuthorName } from '@/lib/utils'
 import { ArrowRight, Eye, FolderOpen, Tag, MessageCircle, BookOpen, FileText } from 'lucide-react'
 import { FamilyBankCTA } from '@/components/FamilyBankCTA'
 
+// 禁用静态生成，每次请求都重新获取数据
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+// 定义文章类型
+type PostWithProfile = {
+  id: string
+  title: string
+  slug: string
+  excerpt: string | null
+  published_at: string | null
+  view_count: number
+  author_id: string
+  profiles: {
+    name: string
+    avatar_url: string | null
+  } | null
+}
+
 export default async function HomePage() {
   const supabase = await createClient()
   
   // 尝试查询带 review_status 的文章，如果字段不存在则回退
-  let posts = null;
-  let featuredPost = null;
+  let posts: PostWithProfile[] | null = null;
+  let featuredPost: PostWithProfile | null = null;
   
   try {
     const { data: postsData, error: postsError } = await supabase
@@ -32,6 +51,9 @@ export default async function HomePage() {
       .order('published_at', { ascending: false })
       .limit(6)
     
+    console.log('查询结果:', JSON.stringify(postsData, null, 2))
+    console.log('查询错误:', postsError)
+    
     if (postsError && postsError.code === '42703') {
       const { data: fallbackData } = await supabase
         .from('posts')
@@ -51,11 +73,12 @@ export default async function HomePage() {
         .eq('status', 'published')
         .order('published_at', { ascending: false })
         .limit(6)
-      posts = fallbackData
+      posts = fallbackData as unknown as PostWithProfile[]
     } else {
-      posts = postsData
+      posts = postsData as unknown as PostWithProfile[]
     }
   } catch (err) {
+    console.error('查询异常:', err)
     const { data: fallbackData } = await supabase
       .from('posts')
       .select(`
@@ -74,7 +97,7 @@ export default async function HomePage() {
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(6)
-    posts = fallbackData
+    posts = fallbackData as unknown as PostWithProfile[]
   }
 
   try {
@@ -119,9 +142,9 @@ export default async function HomePage() {
         .order('view_count', { ascending: false })
         .limit(1)
         .maybeSingle()
-      featuredPost = fallbackData
+      featuredPost = fallbackData as unknown as PostWithProfile
     } else {
-      featuredPost = featuredData
+      featuredPost = featuredData as unknown as PostWithProfile
     }
   } catch (err) {
     const { data: fallbackData } = await supabase
@@ -143,7 +166,7 @@ export default async function HomePage() {
       .order('view_count', { ascending: false })
       .limit(1)
       .maybeSingle()
-    featuredPost = fallbackData
+    featuredPost = fallbackData as unknown as PostWithProfile
   }
 
   // 获取分类及其文章数
@@ -252,19 +275,19 @@ export default async function HomePage() {
                 )}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    {featuredPost.profiles?.[0]?.avatar_url ? (
+                    {featuredPost.profiles?.avatar_url ? (
                       <img 
-                        src={featuredPost.profiles[0].avatar_url} 
-                        alt={featuredPost.profiles[0].name}
+                        src={featuredPost.profiles.avatar_url} 
+                        alt={featuredPost.profiles.name}
                         className="w-14 h-14 rounded-full ring-4 ring-purple-100 shadow-md"
                       />
                     ) : (
                       <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-md ring-4 ring-purple-100">
-                        {featuredPost.profiles?.[0]?.name?.charAt(0).toUpperCase()}
+                        {featuredPost.profiles?.name?.charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div>
-                      <div className="font-bold text-gray-900 text-lg">{formatAuthorName(featuredPost.profiles?.[0])}</div>
+                      <div className="font-bold text-gray-900 text-lg">{formatAuthorName(featuredPost.profiles)}</div>
                       <div className="flex items-center gap-3 text-sm text-gray-500">
                         <span>{formatDate(featuredPost.published_at!)}</span>
                         <span>•</span>
@@ -332,18 +355,18 @@ export default async function HomePage() {
                         
                         <div className="flex items-center justify-between pt-5 border-t border-gray-100">
                           <div className="flex items-center gap-3">
-                            {post.profiles?.[0]?.avatar_url ? (
+                            {post.profiles?.avatar_url ? (
                               <img 
-                                src={post.profiles[0].avatar_url} 
-                                alt={post.profiles[0].name}
+                                src={post.profiles.avatar_url} 
+                                alt={post.profiles.name}
                                 className="w-9 h-9 rounded-full ring-2 ring-gray-100"
                               />
                             ) : (
                               <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${gradient.from} ${gradient.to} flex items-center justify-center text-white text-sm font-bold shadow-sm`}>
-                                {post.profiles?.[0]?.name?.charAt(0).toUpperCase()}
+                                {post.profiles?.name?.charAt(0).toUpperCase()}
                               </div>
                             )}
-                            <span className="font-semibold text-gray-900 text-sm">{formatAuthorName(post.profiles?.[0])}</span>
+                            <span className="font-semibold text-gray-900 text-sm">{formatAuthorName(post.profiles)}</span>
                           </div>
                           <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full">
                             <Eye className="w-3.5 h-3.5" />
