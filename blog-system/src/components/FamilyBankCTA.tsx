@@ -21,8 +21,8 @@ export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
 
   // 根据登录状态决定跳转链接
   const familyBankUrl = isLoggedIn 
-    ? 'https://fpb-omega.vercel.app/dashboard' 
-    : 'https://fpb-omega.vercel.app'
+    ? 'https://www.familybank.chat/dashboard' 
+    : 'https://www.familybank.chat'
 
   if (variant === 'banner') {
     return (

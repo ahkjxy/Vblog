@@ -50,13 +50,13 @@
 ## 阶段 2: 环境配置
 
 ### 2.1 更新 blog-system 环境变量
-- [ ] 2.1.1 备份当前 `.env.local` 文件
-- [ ] 2.1.2 更新 `NEXT_PUBLIC_SUPABASE_URL` 为 family-points-bank 的 URL
-- [ ] 2.1.3 更新 `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- [ ] 2.1.4 更新 `SUPABASE_SERVICE_ROLE_KEY`
-- [ ] 2.1.5 添加 `NEXT_PUBLIC_FAMILY_BANK_URL`
-- [ ] 2.1.6 更新 `NEXT_PUBLIC_SITE_URL`
-- [ ] 2.1.7 更新 `.env.local.example` 模板
+- [x] 2.1.1 备份当前 `.env.local` 文件
+- [x] 2.1.2 更新 `NEXT_PUBLIC_SUPABASE_URL` 为 family-points-bank 的 URL
+- [x] 2.1.3 更新 `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- [x] 2.1.4 更新 `SUPABASE_SERVICE_ROLE_KEY`
+- [x] 2.1.5 添加 `NEXT_PUBLIC_FAMILY_BANK_URL`
+- [x] 2.1.6 更新 `NEXT_PUBLIC_SITE_URL`
+- [x] 2.1.7 更新 `.env.local.example` 模板
 
 ### 2.2 验证配置
 - [ ] 2.2.1 运行 `verify-env.js` 验证环境变量
@@ -116,6 +116,8 @@
 - [x] 3.7.2 更新关于页面 `src/app/(frontend)/about/page.tsx`
 - [x] 3.7.3 更新支持页面 `src/app/(frontend)/support/page.tsx`（已使用正确的函数）
 - [x] 3.7.4 检查所有页面的 family-points-bank 链接（docs、api、privacy 页面无需更新）
+- [x] 3.7.5 更新 Footer 组件 `src/components/layout/Footer.tsx`
+- [x] 3.7.6 更新 CustomerSupport 组件中的 FAQ 答案
 
 ---
 

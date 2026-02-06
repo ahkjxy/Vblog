@@ -324,7 +324,7 @@ export default function AuthPage() {
           <p>
             还没有元气银行账号？
             <a 
-              href="https://fpb-omega.vercel.app" 
+              href="https://www.familybank.chat" 
               className="text-[#FF4D94] hover:text-[#7C4DFF] font-bold ml-1 transition-colors"
             >
               前往注册
