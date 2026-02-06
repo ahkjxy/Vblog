@@ -71,7 +71,7 @@ export default function UsersPage() {
         return
       }
 
-      // 获取所有用户（只显示 admin 角色的，不显示 child）
+      // 获取所有用户（包括 admin 和 child）
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -81,7 +81,6 @@ export default function UsersPage() {
             name
           )
         `)
-        .eq('role', 'admin')
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -516,7 +515,9 @@ export default function UsersPage() {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2 text-sm">
                             <Mail className="w-4 h-4 text-gray-400" />
-                            {user.email ? (
+                            {user.role === 'child' ? (
+                              <span className="text-gray-400 italic">无邮箱</span>
+                            ) : user.email ? (
                               <span className="text-gray-600">{user.email}</span>
                             ) : (
                               <span className="text-gray-400 text-xs font-mono">
@@ -530,9 +531,13 @@ export default function UsersPage() {
                             <span className="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200">
                               ⭐ 超级管理员
                             </span>
-                          ) : (
+                          ) : user.role === 'admin' ? (
                             <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                               家长
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                              孩子
                             </span>
                           )}
                         </td>
