@@ -233,9 +233,12 @@ export default async function HomePage() {
 
   // 处理评论数据，确保类型正确，并格式化作者名称
   const commentsWithPosts = recentComments?.map(comment => {
+    // 处理 profiles 可能是数组的情况
+    const profile = Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles
+    
     // 格式化作者名称：如果有 user_id 和 profiles，显示"XX的家庭"，否则显示原名
-    const displayName = comment.user_id && comment.profiles 
-      ? `${comment.profiles.name}的家庭`
+    const displayName = comment.user_id && profile 
+      ? `${profile.name}的家庭`
       : comment.author_name
     
     return {
