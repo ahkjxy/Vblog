@@ -9,6 +9,7 @@ interface BlogPost {
   excerpt: string | null;
   published_at: string;
   view_count: number;
+  comment_count?: number;
   profiles: {
     name: string;
   } | null;
@@ -25,51 +26,64 @@ export function BlogPosts() {
 
   const loadPosts = async () => {
     try {
-      // 先尝试查询带 review_status 的
-      let query = supabase
+      // 获取所有已发布的文章
+      let postsQuery = supabase
         .from('posts')
         .select('id, title, slug, excerpt, published_at, view_count, profiles!posts_author_id_fkey(name)')
-        .eq('status', 'published')
-        .order('published_at', { ascending: false })
-        .limit(3);
+        .eq('status', 'published');
 
-      // 尝试添加 review_status 过滤，如果字段不存在会失败
+      // 尝试添加 review_status 过滤
+      let postsData: any[] = [];
       try {
-        const { data, error } = await query.eq('review_status', 'approved');
-        if (error) {
-          // 如果是字段不存在的错误，重新查询不带 review_status
-          if (error.code === '42703') {
-            const { data: fallbackData, error: fallbackError } = await supabase
-              .from('posts')
-              .select('id, title, slug, excerpt, published_at, view_count, profiles!posts_author_id_fkey(name)')
-              .eq('status', 'published')
-              .order('published_at', { ascending: false })
-              .limit(3);
-            
-            if (fallbackError) throw fallbackError;
-            setPosts(fallbackData as any || []);
-          } else {
-            throw error;
-          }
+        const { data, error } = await postsQuery.eq('review_status', 'approved');
+        if (error && error.code === '42703') {
+          // 字段不存在，重新查询
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('posts')
+            .select('id, title, slug, excerpt, published_at, view_count, profiles!posts_author_id_fkey(name)')
+            .eq('status', 'published');
+          if (fallbackError) throw fallbackError;
+          postsData = fallbackData || [];
+        } else if (error) {
+          throw error;
         } else {
-          setPosts(data as any || []);
+          postsData = data || [];
         }
       } catch (queryError: any) {
-        // 如果查询失败，尝试不带 review_status 的查询
         if (queryError.code === '42703') {
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('posts')
             .select('id, title, slug, excerpt, published_at, view_count, profiles!posts_author_id_fkey(name)')
-            .eq('status', 'published')
-            .order('published_at', { ascending: false })
-            .limit(3);
-          
+            .eq('status', 'published');
           if (fallbackError) throw fallbackError;
-          setPosts(fallbackData as any || []);
+          postsData = fallbackData || [];
         } else {
           throw queryError;
         }
       }
+
+      // 为每篇文章统计评论数
+      const postsWithCommentCount = await Promise.all(
+        postsData.map(async (post) => {
+          const { count } = await supabase
+            .from('comments')
+            .select('*', { count: 'exact', head: true })
+            .eq('post_id', post.id)
+            .eq('status', 'approved');
+          
+          return {
+            ...post,
+            comment_count: count || 0
+          };
+        })
+      );
+
+      // 按评论数排序，取前2条
+      const sortedPosts = postsWithCommentCount
+        .sort((a, b) => b.comment_count - a.comment_count)
+        .slice(0, 2);
+
+      setPosts(sortedPosts as any);
     } catch (err: any) {
       console.error('加载博客文章失败:', err);
       setError(err.message);
@@ -98,11 +112,11 @@ export function BlogPosts() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">最新博客</h3>
-            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">分享家庭管理的智慧与经验</p>
+            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">评论最多的文章</p>
           </div>
         </div>
         <div className="space-y-5 flex-1">
-          {[1, 2, 3].map((i) => (
+          {[1, 2].map((i) => (
             <div key={i} className="animate-pulse p-6 rounded-[28px] bg-gray-50/50 dark:bg-white/5">
               <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
@@ -119,8 +133,8 @@ export function BlogPosts() {
       <div className="bg-white dark:bg-[#111827] rounded-[40px] p-8 border border-gray-100 dark:border-white/5 shadow-sm mobile-card flex flex-col h-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">最新博客</h3>
-            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">分享家庭管理的智慧与经验</p>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">热门博客</h3>
+            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">评论最多的文章</p>
           </div>
         </div>
         <p className="text-sm text-red-600 dark:text-red-400">加载失败</p>
@@ -136,8 +150,8 @@ export function BlogPosts() {
     <div className="bg-white dark:bg-[#111827] rounded-[40px] p-8 border border-gray-100 dark:border-white/5 shadow-sm mobile-card flex flex-col h-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">最新博客</h3>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">分享家庭管理的智慧与经验</p>
+          <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">热门博客</h3>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">评论最多的文章</p>
         </div>
         <a
           href="https://blog.familybank.chat"
@@ -172,8 +186,8 @@ export function BlogPosts() {
                 {post.profiles?.name ? `${post.profiles.name}的家庭` : '未知作者'}
               </span>
               <span className="inline-flex items-center gap-2">
-                <Icon name="clock" size={14} className="flex-shrink-0" />
-                {formatDate(post.published_at)}
+                <Icon name="message-circle" size={14} className="flex-shrink-0" />
+                {post.comment_count || 0} 评论
               </span>
               <span className="inline-flex items-center gap-2">
                 <Icon name="eye" size={14} className="flex-shrink-0" />
