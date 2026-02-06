@@ -24,6 +24,7 @@ interface Comment {
   posts: {
     title: string
     slug: string
+    author_id: string
   } | null
 }
 
@@ -38,21 +39,52 @@ export default function CommentsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [commentToDelete, setCommentToDelete] = useState<Comment | null>(null)
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
 
   const supabase = createClient()
   const { success, error: showError } = useToast()
 
+  // 检查当前用户权限
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setCurrentUserId(user.id)
+        
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, family_id')
+          .eq('id', user.id)
+          .maybeSingle()
+        
+        const isAdmin = profile?.role === 'admin' && 
+          profile?.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
+        setIsSuperAdmin(isAdmin)
+      }
+    }
+    checkUser()
+  }, [])
+
   // 加载评论列表
   const loadComments = async () => {
     try {
-      const { data, error } = await supabase
+      // 构建查询
+      let query = supabase
         .from('comments')
         .select(`
           *,
           profiles(name, avatar_url, role),
-          posts(title, slug)
+          posts!inner(title, slug, author_id)
         `)
         .order('created_at', { ascending: false })
+      
+      // 如果不是超级管理员，只显示自己文章的评论
+      if (!isSuperAdmin && currentUserId) {
+        query = query.eq('posts.author_id', currentUserId)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
       setComments(data || [])
@@ -65,8 +97,10 @@ export default function CommentsPage() {
   }
 
   useEffect(() => {
-    loadComments()
-  }, [])
+    if (currentUserId !== null) {
+      loadComments()
+    }
+  }, [currentUserId, isSuperAdmin])
 
   // 过滤评论
   useEffect(() => {

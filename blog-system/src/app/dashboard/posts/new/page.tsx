@@ -192,7 +192,7 @@ export default function NewPostPage() {
           .from('posts')
           .select('id')
           .eq('slug', finalSlug)
-          .single()
+          .maybeSingle()  // 改用 maybeSingle，因为可能不存在
 
         if (!existingPost) {
           slugExists = false

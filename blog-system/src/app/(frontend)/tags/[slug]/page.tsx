@@ -9,6 +9,21 @@ interface PageProps {
   params: Promise<{ slug: string }>
 }
 
+type PostWithProfile = {
+  id: string
+  title: string
+  slug: string
+  excerpt: string | null
+  published_at: string | null
+  view_count: number
+  status: string
+  review_status: string
+  profiles: {
+    name: string
+    avatar_url: string | null
+  } | null
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const supabase = await createClient()
@@ -47,24 +62,33 @@ export default async function TagPage({ params }: PageProps) {
 
   const { data: postTags } = await supabase
     .from('post_tags')
-    .select(`
-      posts!inner(
-        id,
-        title,
-        slug,
-        excerpt,
-        published_at,
-        view_count,
-        status,
-        review_status,
-        profiles!posts_author_id_fkey(name, avatar_url)
-      )
-    `)
+    .select('post_id')
     .eq('tag_id', tag.id)
-    .eq('posts.status', 'published')
-    .eq('posts.review_status', 'approved')
 
-  const posts = postTags?.map(pt => pt.posts).filter(Boolean).flat() || []
+  const postIds = postTags?.map(pt => pt.post_id) || []
+
+  const { data: posts } = await supabase
+    .from('posts')
+    .select(`
+      id,
+      title,
+      slug,
+      excerpt,
+      published_at,
+      view_count,
+      status,
+      review_status,
+      profiles!posts_author_id_fkey(name, avatar_url)
+    `)
+    .in('id', postIds)
+    .eq('status', 'published')
+    .eq('review_status', 'approved')
+    .order('published_at', { ascending: false })
+
+  const postList = (posts || []).map(post => ({
+    ...post,
+    profiles: Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
+  })) as PostWithProfile[]
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -82,7 +106,7 @@ export default async function TagPage({ params }: PageProps) {
               #{tag.name}
             </h1>
             <p className="text-gray-600 text-lg">
-              共 {posts.length} 篇文章
+              共 {postList.length} 篇文章
             </p>
           </div>
         </div>
@@ -91,9 +115,9 @@ export default async function TagPage({ params }: PageProps) {
       {/* Posts List */}
       <div className="container mx-auto px-6 py-20">
         <div className="max-w-6xl mx-auto">
-          {posts.length > 0 ? (
+          {postList.length > 0 ? (
             <div className="space-y-6">
-              {posts.map((post, index) => {
+              {postList.map((post, index) => {
                 const gradients = [
                   { from: 'from-purple-500', to: 'to-pink-500' },
                   { from: 'from-pink-500', to: 'to-rose-500' },

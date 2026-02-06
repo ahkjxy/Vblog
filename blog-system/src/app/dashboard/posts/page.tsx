@@ -28,13 +28,21 @@ export default async function PostsPage() {
 
   console.log('Is super admin:', isSuperAdmin)
 
-  const { data: posts, error } = await supabase
+  // 构建查询，非超级管理员只能看到自己的文章
+  let postsQuery = supabase
     .from('posts')
     .select(`
       *, 
       profiles!posts_author_id_fkey(name)
     `)
     .order('created_at', { ascending: false })
+  
+  // 如果不是超级管理员，只显示自己的文章
+  if (!isSuperAdmin) {
+    postsQuery = postsQuery.eq('author_id', user?.id)
+  }
+  
+  const { data: posts, error } = await postsQuery
 
   console.log('Posts query result:', { count: posts?.length, error })
 

@@ -48,18 +48,19 @@ export default async function DashboardLayout({
     return '作者'
   }
 
+  // 根据用户权限动态生成导航菜单
   const navItems = [
     { href: '/dashboard', icon: 'LayoutDashboard', label: '概览' },
     { href: '/dashboard/posts', icon: 'FileText', label: '文章' },
-    { href: '/dashboard/media', icon: 'Image', label: '媒体库' },
-    { href: '/dashboard/categories', icon: 'FolderOpen', label: '分类' },
-    { href: '/dashboard/tags', icon: 'Tag', label: '标签' },
-    { href: '/dashboard/comments', icon: 'MessageSquare', label: '评论' },
   ]
 
-  // 只有 admin 角色才能看到用户和设置菜单
-  if (userRole === 'admin') {
+  // 只有超级管理员才能看到其他菜单
+  if (isSuperAdmin) {
     navItems.push(
+      { href: '/dashboard/media', icon: 'Image', label: '媒体库' },
+      { href: '/dashboard/categories', icon: 'FolderOpen', label: '分类' },
+      { href: '/dashboard/tags', icon: 'Tag', label: '标签' },
+      { href: '/dashboard/comments', icon: 'MessageSquare', label: '评论' },
       { href: '/dashboard/users', icon: 'Users', label: '用户' },
       { href: '/dashboard/settings', icon: 'Settings', label: '设置' }
     )

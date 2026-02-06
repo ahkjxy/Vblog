@@ -53,6 +53,8 @@ function AuthPageContent() {
         password: pw,
       })
 
+      console.log('登录尝试:', { signInData, signInError })
+
       if (!signInError && signInData?.session) {
         showToast('success', '登录成功，正在进入...')
         router.push('/dashboard')
@@ -67,42 +69,64 @@ function AuthPageContent() {
         return
       }
 
-      // 2. 如果是凭证错误，可能是用户不存在（需要注册）或者是密码错误
-      // 我们尝试注册来区分这两种情况
+      // 2. 如果是凭证错误，尝试注册（可能是新用户）
+      console.log('尝试注册新用户...')
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: em,
         password: pw,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
-            username: em.split('@')[0], // 使用邮箱前缀作为默认用户名
+            username: em.split('@')[0],
           }
         }
       })
 
+      console.log('注册尝试:', { signUpData, signUpError })
+
       if (signUpError) {
         // 注册失败
-        if (signUpError.message?.includes('User already registered') || 
-            signUpError.message?.includes('Database error')) {
-          // 注册报"用户已存在"，说明最初的"Invalid login credentials"是因为密码错误
+        console.error('注册错误:', signUpError)
+        
+        // 检查是否是用户已存在的错误
+        const userExistsErrors = [
+          'User already registered',
+          'Database error',
+          'already been registered',
+          'duplicate key value'
+        ]
+        
+        const isUserExists = userExistsErrors.some(msg => 
+          signUpError.message?.toLowerCase().includes(msg.toLowerCase())
+        )
+        
+        if (isUserExists) {
+          // 用户已存在，说明是密码错误
           showToast('error', '密码错误，如忘记密码请点击下方找回')
         } else {
           // 其他注册错误
-          showToast('error', signUpError.message)
+          showToast('error', `注册失败: ${signUpError.message}`)
         }
       } else {
         // 注册成功
+        console.log('注册成功:', signUpData)
+        
         if (signUpData?.session) {
+          // 自动登录成功
           showToast('success', '注册并登录成功，欢迎加入元气银行博客!')
           router.push('/dashboard')
           router.refresh()
-        } else {
-          // 需要验证邮件（取决于 Supabase 设置）
+        } else if (signUpData?.user) {
+          // 注册成功但需要验证邮件
           showToast('info', '注册成功！请前往邮箱验证链接以完成激活')
+        } else {
+          // 未知情况
+          showToast('error', '注册状态未知，请刷新页面重试')
         }
       }
 
     } catch (err) {
+      console.error('认证错误:', err)
       showToast('error', (err as Error)?.message || '操作失败')
     } finally {
       setLoading(false)

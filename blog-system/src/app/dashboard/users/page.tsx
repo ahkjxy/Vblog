@@ -34,6 +34,8 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [newRole, setNewRole] = useState<'admin' | 'editor' | 'author'>('author')
   const [currentUserRole, setCurrentUserRole] = useState<string>('')
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [accessDenied, setAccessDenied] = useState(false)
 
   const supabase = createClient()
   const { success, error: showError } = useToast()
@@ -53,6 +55,18 @@ export default function UsersPage() {
 
       if (currentProfile) {
         setCurrentUserRole(currentProfile.role)
+        
+        // 检查是否是超级管理员
+        const isAdmin = currentProfile.role === 'admin' && 
+          currentProfile.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
+        setIsSuperAdmin(isAdmin)
+        
+        // 如果不是超级管理员，拒绝访问
+        if (!isAdmin) {
+          setAccessDenied(true)
+          setLoading(false)
+          return
+        }
       }
 
       // 获取所有用户及其家庭信息
