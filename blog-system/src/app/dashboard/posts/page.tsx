@@ -3,24 +3,37 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
+// 禁用缓存
+export const revalidate = 0
+export const dynamic = 'force-dynamic'
+
 export default async function PostsPage() {
   const supabase = await createClient()
 
   // 获取当前用户信息
   const { data: { user } } = await supabase.auth.getUser()
+  
+  console.log('Current user:', user?.id)
+  
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, family_id')
     .eq('id', user?.id)
     .maybeSingle()
 
+  console.log('User profile:', profile)
+
   const isSuperAdmin = profile?.role === 'admin' && 
     profile?.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
 
-  const { data: posts } = await supabase
+  console.log('Is super admin:', isSuperAdmin)
+
+  const { data: posts, error } = await supabase
     .from('posts')
-    .select('*, profiles(name)')
+    .select('*, profiles!posts_author_id_fkey(name)')
     .order('created_at', { ascending: false })
+
+  console.log('Posts query result:', { count: posts?.length, error })
 
   // 检查是否有 review_status 字段
   const hasReviewStatus = posts && posts.length > 0 && 'review_status' in posts[0]

@@ -35,7 +35,6 @@ interface Comment {
   author_email: string
   profiles?: {
     name?: string
-    username?: string
     avatar_url?: string
   }
 }
@@ -94,7 +93,7 @@ export function Comments({ postId }: CommentsProps) {
         // 获取用户资料
         const { data: profile } = await supabase
           .from('profiles')
-          .select('name, username, avatar_url')
+          .select('name, avatar_url')
           .eq('id', user.id)
           .single()
         
@@ -121,7 +120,7 @@ export function Comments({ postId }: CommentsProps) {
         .from('comments')
         .select(`
           *,
-          profiles(name, avatar_url, username)
+          profiles(name, avatar_url)
         `)
         .eq('post_id', postId)
         .eq('status', 'approved')
@@ -172,13 +171,33 @@ export function Comments({ postId }: CommentsProps) {
     try {
       const { data: { user } } = await supabase.auth.getUser()
 
+      // 获取当前用户的 profile 信息
+      let isSuperAdmin = false
+      let userName = authorName.trim()
+      let userEmail = authorEmail.trim()
+      
+      if (user) {
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('role, family_id, name')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        isSuperAdmin = userProfile?.role === 'admin' && 
+                      userProfile?.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
+        
+        // 使用 profile 中的 name，如果没有则使用 email 前缀
+        userName = userProfile?.name || user.email?.split('@')[0] || '匿名用户'
+        userEmail = user.email || ''
+      }
+
       const commentData = {
         post_id: postId,
         content: content.trim(),
-        author_name: isLoggedIn ? currentUser?.name : authorName.trim(),
-        author_email: isLoggedIn ? user?.email : authorEmail.trim(),
+        author_name: userName,
+        author_email: userEmail,
         user_id: user?.id || null,
-        status: 'pending' as const
+        status: isSuperAdmin ? 'approved' : 'pending' as const // 超级管理员自动通过审核
       }
 
       const { error } = await supabase
@@ -187,11 +206,16 @@ export function Comments({ postId }: CommentsProps) {
 
       if (error) throw error
 
-      showToast('success', '评论已提交，等待审核后显示')
+      showToast('success', isSuperAdmin ? '评论已发布' : '评论已提交，等待审核后显示')
       setContent('')
       if (!isLoggedIn) {
         setAuthorName('')
         setAuthorEmail('')
+      }
+      
+      // 如果是超级管理员，立即刷新评论列表
+      if (isSuperAdmin) {
+        loadComments()
       }
     } catch (err) {
       console.error('提交评论失败:', err)

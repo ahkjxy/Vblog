@@ -9,6 +9,18 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
+interface Category {
+  id: string
+  name: string
+  slug: string
+}
+
+interface Tag {
+  id: string
+  name: string
+  slug: string
+}
+
 export default function EditPostPage({ params }: PageProps) {
   const [id, setId] = useState<string>('')
   const [title, setTitle] = useState('')
@@ -20,6 +32,12 @@ export default function EditPostPage({ params }: PageProps) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
+  // 分类和标签
+  const [categories, setCategories] = useState<Category[]>([])
+  const [tags, setTags] = useState<Tag[]>([])
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  
   const router = useRouter()
   const supabase = createClient()
 
@@ -28,7 +46,23 @@ export default function EditPostPage({ params }: PageProps) {
       setId(p.id)
       loadPost(p.id)
     })
+    loadCategoriesAndTags()
   }, [])
+
+  const loadCategoriesAndTags = async () => {
+    const { data: categoriesData } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name')
+    
+    const { data: tagsData } = await supabase
+      .from('tags')
+      .select('*')
+      .order('name')
+    
+    if (categoriesData) setCategories(categoriesData)
+    if (tagsData) setTags(tagsData)
+  }
 
   const loadPost = async (postId: string) => {
     try {
@@ -46,6 +80,26 @@ export default function EditPostPage({ params }: PageProps) {
       setContent(post.content)
       setExcerpt(post.excerpt || '')
       setStatus(post.status)
+      
+      // 加载文章的分类和标签
+      const { data: postCategories } = await supabase
+        .from('post_categories')
+        .select('category_id')
+        .eq('post_id', postId)
+      
+      const { data: postTags } = await supabase
+        .from('post_tags')
+        .select('tag_id')
+        .eq('post_id', postId)
+      
+      if (postCategories) {
+        setSelectedCategories(postCategories.map(pc => pc.category_id))
+      }
+      
+      if (postTags) {
+        setSelectedTags(postTags.map(pt => pt.tag_id))
+      }
+      
       setLoading(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load post')
@@ -79,6 +133,17 @@ export default function EditPostPage({ params }: PageProps) {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('未登录')
+
+      // 获取当前用户的 profile，判断是否是超级管理员
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('role, family_id')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      // 判断是否是超级管理员
+      const isSuperAdmin = userProfile?.role === 'admin' && 
+                          userProfile?.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
 
       // Get current post to check if slug changed
       const { data: currentPost } = await supabase
@@ -124,12 +189,57 @@ export default function EditPostPage({ params }: PageProps) {
         updateData.published_at = new Date().toISOString()
       }
 
+      // 超级管理员发布的文章自动审核通过
+      if (isSuperAdmin && status === 'published') {
+        updateData.review_status = 'approved'
+        updateData.reviewed_by = user.id
+        updateData.reviewed_at = new Date().toISOString()
+      }
+
       const { error: updateError } = await supabase
         .from('posts')
         .update(updateData)
         .eq('id', id)
 
       if (updateError) throw updateError
+
+      // 更新分类关联
+      // 先删除旧的关联
+      await supabase
+        .from('post_categories')
+        .delete()
+        .eq('post_id', id)
+      
+      // 插入新的关联
+      if (selectedCategories.length > 0) {
+        const categoryRelations = selectedCategories.map(categoryId => ({
+          post_id: id,
+          category_id: categoryId
+        }))
+        
+        await supabase
+          .from('post_categories')
+          .insert(categoryRelations)
+      }
+
+      // 更新标签关联
+      // 先删除旧的关联
+      await supabase
+        .from('post_tags')
+        .delete()
+        .eq('post_id', id)
+      
+      // 插入新的关联
+      if (selectedTags.length > 0) {
+        const tagRelations = selectedTags.map(tagId => ({
+          post_id: id,
+          tag_id: tagId
+        }))
+        
+        await supabase
+          .from('post_tags')
+          .insert(tagRelations)
+      }
 
       router.push('/dashboard/posts')
       router.refresh()
@@ -224,6 +334,82 @@ export default function EditPostPage({ params }: PageProps) {
             placeholder="输入文章摘要"
             rows={3}
           />
+        </div>
+
+        {/* 分类选择 */}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            分类 {selectedCategories.length === 0 && <span className="text-gray-400">(未选择将归入&ldquo;未分类&rdquo;)</span>}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {categories.map(category => (
+              <label
+                key={category.id}
+                className={`px-4 py-2 rounded-lg border-2 cursor-pointer transition-all ${
+                  selectedCategories.includes(category.id)
+                    ? 'border-purple-500 bg-purple-50 text-purple-700'
+                    : 'border-gray-200 hover:border-purple-300'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedCategories.includes(category.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedCategories([...selectedCategories, category.id])
+                    } else {
+                      setSelectedCategories(selectedCategories.filter(cid => cid !== category.id))
+                    }
+                  }}
+                  className="sr-only"
+                />
+                <span className="text-sm font-medium">{category.name}</span>
+              </label>
+            ))}
+          </div>
+          {categories.length === 0 && (
+            <p className="text-sm text-gray-500 mt-2">
+              暂无分类，请先在<a href="/dashboard/categories" className="text-purple-600 hover:underline">分类管理</a>中创建
+            </p>
+          )}
+        </div>
+
+        {/* 标签选择 */}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            标签 <span className="text-gray-400">(可选)</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {tags.map(tag => (
+              <label
+                key={tag.id}
+                className={`px-3 py-1.5 rounded-full border-2 cursor-pointer transition-all text-sm ${
+                  selectedTags.includes(tag.id)
+                    ? 'border-pink-500 bg-pink-50 text-pink-700'
+                    : 'border-gray-200 hover:border-pink-300'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedTags.includes(tag.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedTags([...selectedTags, tag.id])
+                    } else {
+                      setSelectedTags(selectedTags.filter(tid => tid !== tag.id))
+                    }
+                  }}
+                  className="sr-only"
+                />
+                <span>#{tag.name}</span>
+              </label>
+            ))}
+          </div>
+          {tags.length === 0 && (
+            <p className="text-sm text-gray-500 mt-2">
+              暂无标签，请先在<a href="/dashboard/tags" className="text-purple-600 hover:underline">标签管理</a>中创建
+            </p>
+          )}
         </div>
 
         <div>

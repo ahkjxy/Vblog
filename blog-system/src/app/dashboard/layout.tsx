@@ -31,12 +31,6 @@ export default async function DashboardLayout({
     .eq('user_id', user.id)
     .maybeSingle()
 
-  const { data: familyData } = familyMember?.family_id ? await supabase
-    .from('families')
-    .select('*')
-    .eq('id', familyMember.family_id)
-    .maybeSingle() : { data: null }
-
   // 博客系统的超级管理员判断：必须同时满足 role='admin' 且 family_id 是超管家庭
   const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
   const isSuperAdmin = userProfile?.role === 'admin' && userProfile?.family_id === SUPER_ADMIN_FAMILY_ID
@@ -45,6 +39,14 @@ export default async function DashboardLayout({
   const userName = userProfile?.name || user.email?.split('@')[0] || '用户'
   const userRole = userProfile?.role || 'author'
   const userAvatar = userProfile?.avatar_url
+
+  // 获取角色显示名称
+  const getRoleLabel = () => {
+    if (isSuperAdmin) return '超级管理员'
+    if (userRole === 'admin') return '管理员'
+    if (userRole === 'editor') return '编辑'
+    return '作者'
+  }
 
   const navItems = [
     { href: '/dashboard', icon: 'LayoutDashboard', label: '概览' },
@@ -61,20 +63,6 @@ export default async function DashboardLayout({
       { href: '/dashboard/users', icon: 'Users', label: '用户' },
       { href: '/dashboard/settings', icon: 'Settings', label: '设置' }
     )
-  }
-
-  // Debug info - 可以在开发时查看
-  const debugInfo = {
-    user: {
-      id: user.id,
-      email: user.email,
-    },
-    userProfile: userProfile,
-    computed: {
-      isSuperAdmin,
-      userName,
-      userRole,
-    }
   }
 
   // 在控制台打印调试信息
@@ -134,7 +122,7 @@ export default async function DashboardLayout({
                         ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200' 
                         : 'bg-white text-purple-700 border-purple-200'
                     }`}>
-                      {isSuperAdmin ? '超级管理员' : userRole === 'admin' ? '管理员' : userRole === 'editor' ? '编辑' : '作者'}
+                      {getRoleLabel()}
                     </div>
                   </div>
                 </div>
@@ -169,151 +157,6 @@ export default async function DashboardLayout({
 
           {/* Main content */}
           <main className="flex-1 ml-72 p-8">
-            {/* Debug Info Bar - 始终显示 */}
-            <div className="mb-4 bg-gradient-to-r from-purple-100 to-pink-100 border-2 border-purple-300 rounded-xl p-4 shadow-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-purple-900">🐛 调试信息</h3>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  isSuperAdmin 
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' 
-                    : 'bg-red-500 text-white'
-                }`}>
-                  {isSuperAdmin ? '✅ 超级管理员' : '❌ 非超管'}
-                </span>
-              </div>
-              
-              {/* 用户信息 */}
-              <div className="bg-white rounded-lg p-4 mb-3 border border-purple-200">
-                <div className="font-semibold text-purple-700 mb-2">👤 用户信息</div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div><span className="text-gray-600">ID:</span> <code className="bg-gray-100 px-1 rounded text-xs">{user.id}</code></div>
-                  <div><span className="text-gray-600">Email:</span> {user.email}</div>
-                </div>
-              </div>
-
-              {/* Profile 信息 */}
-              <div className="bg-white rounded-lg p-4 mb-3 border border-purple-200">
-                <div className="font-semibold text-blue-700 mb-2">📋 Profile 信息</div>
-                {userProfile ? (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div><span className="text-gray-600">ID:</span> {userProfile.id}</div>
-                      <div><span className="text-gray-600">Name:</span> <span className="font-bold">{userProfile.name || '无'}</span></div>
-                      <div><span className="text-gray-600">Role:</span> <span className="font-bold">{userProfile.role || '无'}</span></div>
-                      <div><span className="text-gray-600">Family ID:</span> {userProfile.family_id || '无'}</div>
-                      <div><span className="text-gray-600">Balance:</span> {userProfile.balance || 0}</div>
-                      <div><span className="text-gray-600">Level:</span> {userProfile.level || 0}</div>
-                      <div><span className="text-gray-600">Experience:</span> {userProfile.experience || 0}</div>
-                      <div><span className="text-gray-600">Avatar Color:</span> {userProfile.avatar_color || '无'}</div>
-                      <div><span className="text-gray-600">Avatar URL:</span> {userProfile.avatar_url || '无'}</div>
-                      <div><span className="text-gray-600">Bio:</span> {userProfile.bio || '无'}</div>
-                    </div>
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-gray-600">查看完整 JSON</summary>
-                      <pre className="mt-2 text-xs bg-gray-50 p-2 rounded overflow-auto max-h-40">{JSON.stringify(userProfile, null, 2)}</pre>
-                    </details>
-                  </div>
-                ) : (
-                  <div className="text-red-600 text-sm">❌ Profile 不存在！</div>
-                )}
-              </div>
-
-              {/* Family Member 信息 */}
-              <div className="bg-white rounded-lg p-4 mb-3 border border-purple-200">
-                <div className="font-semibold text-green-700 mb-2">👥 Family Member 信息</div>
-                {familyMember ? (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div><span className="text-gray-600">ID:</span> {familyMember.id}</div>
-                      <div><span className="text-gray-600">User ID:</span> {familyMember.user_id}</div>
-                      <div><span className="text-gray-600">Family ID:</span> {familyMember.family_id}</div>
-                      <div><span className="text-gray-600">Role:</span> <span className="font-bold">{familyMember.role}</span></div>
-                    </div>
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-gray-600">查看完整 JSON</summary>
-                      <pre className="mt-2 text-xs bg-gray-50 p-2 rounded overflow-auto">{JSON.stringify(familyMember, null, 2)}</pre>
-                    </details>
-                  </div>
-                ) : (
-                  <div className="text-gray-500 text-sm">无 Family Member 记录</div>
-                )}
-              </div>
-
-              {/* Family 信息 */}
-              <div className="bg-white rounded-lg p-4 mb-3 border border-purple-200">
-                <div className="font-semibold text-orange-700 mb-2">🏠 Family 信息</div>
-                {familyData ? (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      {Object.entries(familyData).map(([key, value]) => (
-                        <div key={key}>
-                          <span className="text-gray-600">{key}:</span> {String(value)}
-                        </div>
-                      ))}
-                    </div>
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-gray-600">查看完整 JSON</summary>
-                      <pre className="mt-2 text-xs bg-gray-50 p-2 rounded overflow-auto">{JSON.stringify(familyData, null, 2)}</pre>
-                    </details>
-                  </div>
-                ) : (
-                  <div className="text-gray-500 text-sm">无 Family 记录</div>
-                )}
-              </div>
-
-              {/* 计算结果 */}
-              <div className="bg-white rounded-lg p-4 border border-purple-200">
-                <div className="font-semibold text-pink-700 mb-2">⚙️ 计算结果</div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div><span className="text-gray-600">Display Name:</span> <span className="font-bold">{userName}</span></div>
-                  <div><span className="text-gray-600">Display Role:</span> <span className="font-bold">{userRole}</span></div>
-                  <div>
-                    <span className="text-gray-600">Is Super Admin:</span>{' '}
-                    <span className={isSuperAdmin ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
-                      {isSuperAdmin ? '✅ 是' : '❌ 否'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 超管判断条件 */}
-              <div className="mt-3 bg-white rounded-lg p-4 border-2 border-red-300">
-                <div className="font-semibold text-red-700 mb-2">🔍 超管判断条件（必须同时满足）</div>
-                <div className="text-xs space-y-1">
-                  <div>
-                    <span className="text-gray-600">1️⃣ role === 'admin':</span>{' '}
-                    <span className={`font-bold ${userProfile?.role === 'admin' ? 'text-green-600' : 'text-red-600'}`}>
-                      {userProfile?.role === 'admin' ? '✅ 是' : `❌ 否 (当前: ${userProfile?.role || '无'})`}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">2️⃣ family_id === super:</span>{' '}
-                    <span className={`font-bold ${userProfile?.family_id === SUPER_ADMIN_FAMILY_ID ? 'text-green-600' : 'text-red-600'}`}>
-                      {userProfile?.family_id === SUPER_ADMIN_FAMILY_ID ? '✅ 是' : '❌ 否'}
-                    </span>
-                  </div>
-                  <div className="mt-2 pt-2 border-t">
-                    <div className="text-gray-500">超管家庭ID:</div>
-                    <code className="bg-gray-100 px-1 rounded text-xs">{SUPER_ADMIN_FAMILY_ID}</code>
-                  </div>
-                  {userProfile?.family_id && (
-                    <div>
-                      <div className="text-gray-500">当前家庭ID:</div>
-                      <code className="bg-gray-100 px-1 rounded text-xs">{userProfile.family_id}</code>
-                      {userProfile.family_id === SUPER_ADMIN_FAMILY_ID && (
-                        <span className="ml-2 text-green-600 font-bold">✅ 匹配</span>
-                      )}
-                    </div>
-                  )}
-                  <div className="mt-2 pt-2 border-t">
-                    <div className={`font-bold ${isSuperAdmin ? 'text-green-600' : 'text-red-600'}`}>
-                      最终结果: {isSuperAdmin ? '✅ 是超级管理员' : '❌ 不是超级管理员'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div className="max-w-7xl mx-auto">
               {children}
             </div>

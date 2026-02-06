@@ -9,7 +9,6 @@ import { cn } from '@/lib/utils'
 interface User {
   id: string
   name: string
-  email: string
   role: 'admin' | 'editor' | 'author' | 'child'  // 博客角色或家庭角色
   avatar_url: string | null
   avatar_color: string | null
@@ -25,14 +24,11 @@ interface User {
   is_super_admin_family?: boolean
 }
 
-type RoleFilter = 'all' | 'admin' | 'editor' | 'author'
-
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all')
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -77,29 +73,28 @@ export default function UsersPage() {
       const usersWithFamily = (data || []).map(user => {
         const isSuperAdminFamily = user.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
         
-        // 如果是超管家庭，role='admin' 表示家长（超级管理员）
-        // 如果不是超管家庭，role='admin' 可能是博客管理员
+        // 判断家庭角色：
+        // - role='child' 表示孩子
+        // - role='admin' 且在超管家庭 = 家长（超级管理员）
+        // - role='admin' 且不在超管家庭 = 可能是博客管理员或家长
         let family_role: 'admin' | 'child' | undefined
         let blog_role: 'admin' | 'editor' | 'author' | undefined
         
-        if (isSuperAdminFamily) {
-          // 超管家庭：admin=家长，child=孩子
-          if (user.role === 'admin') {
+        if (user.role === 'child') {
+          // 明确是孩子
+          family_role = 'child'
+        } else if (user.role === 'admin') {
+          if (isSuperAdminFamily) {
+            // 超管家庭的 admin = 家长（超级管理员）
             family_role = 'admin'
-            blog_role = 'admin' // 超管家庭的家长也是博客超级管理员
-          } else if (user.role === 'child') {
-            family_role = 'child'
+            blog_role = 'admin'
           } else {
-            // editor, author 等
-            blog_role = user.role as 'admin' | 'editor' | 'author'
+            // 其他家庭的 admin 可能是家长，也标记为家庭角色
+            family_role = 'admin'
           }
-        } else {
-          // 其他家庭
-          if (user.role === 'child') {
-            family_role = 'child'
-          } else if (['admin', 'editor', 'author'].includes(user.role)) {
-            blog_role = user.role as 'admin' | 'editor' | 'author'
-          }
+        } else if (['editor', 'author'].includes(user.role)) {
+          // 编辑、作者是博客角色
+          blog_role = user.role as 'editor' | 'author'
         }
         
         return {
@@ -126,23 +121,54 @@ export default function UsersPage() {
 
   // 搜索和过滤
   useEffect(() => {
-    let result = users
+    // 显示所有有 family_id 的用户，但排除超级管理员家庭的家长
+    let result = users.filter(u => {
+      // 必须有家庭
+      if (!u.family_id) return false
+      
+      // 排除超级管理员（超管家庭的 admin）
+      if (u.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171' && u.role === 'admin') {
+        return false
+      }
+      
+      return true
+    })
 
     // 搜索
     if (searchQuery) {
       result = result.filter(user =>
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase())
+        user.family?.name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
 
-    // 角色过滤
-    if (roleFilter !== 'all') {
-      result = result.filter(user => user.role === roleFilter)
-    }
-
     setFilteredUsers(result)
-  }, [users, searchQuery, roleFilter])
+  }, [users, searchQuery])
+
+  // 按家庭分组用户 - 只显示孩子（role='child'）
+  const groupedByFamily = filteredUsers.reduce((acc, user) => {
+      const familyId = user.family_id || 'no-family'
+      const familyName = user.family?.name || '未分配家庭'
+      
+      if (!acc[familyId]) {
+        acc[familyId] = {
+          familyId,
+          familyName,
+          isSuperAdmin: user.is_super_admin_family || false,
+          users: []
+        }
+      }
+      
+      acc[familyId].users.push(user)
+      return acc
+    }, {} as Record<string, { familyId: string; familyName: string; isSuperAdmin: boolean; users: User[] }>)
+
+  // 转换为数组并排序：超管家庭在前
+  const familyGroups = Object.values(groupedByFamily).sort((a, b) => {
+    if (a.isSuperAdmin) return -1
+    if (b.isSuperAdmin) return 1
+    return a.familyName.localeCompare(b.familyName, 'zh-CN')
+  })
 
   // 打开角色更改对话框
   const openRoleDialog = (user: User) => {
@@ -261,23 +287,25 @@ export default function UsersPage() {
   }
 
   const stats = {
-    total: users.length,
-    admin: users.filter(u => u.role === 'admin').length,
-    editor: users.filter(u => u.role === 'editor').length,
-    author: users.filter(u => u.role === 'author').length,
+    total: users.filter(u => {
+      if (!u.family_id) return false
+      if (u.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171' && u.role === 'admin') return false
+      return true
+    }).length,
+    families: Object.keys(groupedByFamily).length,
   }
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-          用户管理
+          家庭成员管理
         </h1>
-        <p className="text-gray-600">管理系统用户和权限</p>
+        <p className="text-gray-600">查看和管理所有家庭成员</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-white rounded-2xl p-6 border border-gray-100">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
@@ -285,19 +313,7 @@ export default function UsersPage() {
             </div>
             <div>
               <div className="text-2xl font-bold">{stats.total}</div>
-              <div className="text-sm text-gray-600">总用户数</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 border border-gray-100">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-              <Shield className="w-6 h-6 text-red-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{stats.admin}</div>
-              <div className="text-sm text-gray-600">管理员</div>
+              <div className="text-sm text-gray-600">家庭成员总数</div>
             </div>
           </div>
         </div>
@@ -305,206 +321,204 @@ export default function UsersPage() {
         <div className="bg-white rounded-2xl p-6 border border-gray-100">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <Edit2 className="w-6 h-6 text-blue-600" />
+              <UsersIcon className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <div className="text-2xl font-bold">{stats.editor}</div>
-              <div className="text-sm text-gray-600">编辑</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 border border-gray-100">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <UsersIcon className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{stats.author}</div>
-              <div className="text-sm text-gray-600">作者</div>
+              <div className="text-2xl font-bold">{stats.families}</div>
+              <div className="text-sm text-gray-600">家庭数量</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Search and Filter */}
-      <div className="bg-white rounded-2xl p-4 mb-6 flex items-center gap-4">
-        <div className="flex-1 relative">
+      {/* Search */}
+      <div className="bg-white rounded-2xl p-4 mb-6">
+        <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜索用户名或邮箱..."
+            placeholder="搜索用户名、家庭名称..."
             className="w-full pl-12 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-          className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-        >
-          <option value="all">全部角色</option>
-          <option value="admin">管理员</option>
-          <option value="editor">编辑</option>
-          <option value="author">作者</option>
-        </select>
       </div>
 
-      {/* Users Table */}
+      {/* Users Table - Grouped by Family */}
       {filteredUsers.length === 0 ? (
         <EmptyState
           icon={UsersIcon}
-          title="未找到用户"
-          description={searchQuery || roleFilter !== 'all' ? '尝试调整搜索条件' : '系统中还没有用户'}
+          title="未找到家庭成员"
+          description={searchQuery ? '尝试调整搜索条件' : '系统中还没有家庭成员'}
         />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">用户</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">邮箱</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">用户ID</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">家庭</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">家庭ID</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">角色</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">注册时间</th>
-                <th className="px-6 py-3 text-right text-sm font-medium text-gray-600">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filteredUsers.map((user) => {
+        <div className="space-y-6">
+          {familyGroups.map((group) => (
+            <div key={group.familyId} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              {/* Family Header */}
+              <div className={cn(
+                "px-6 py-4 border-b flex items-center justify-between",
+                group.isSuperAdmin 
+                  ? "bg-gradient-to-r from-purple-50 to-pink-50" 
+                  : "bg-gray-50"
+              )}>
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center font-bold text-white",
+                    group.isSuperAdmin
+                      ? "bg-gradient-to-br from-purple-600 to-pink-600"
+                      : "bg-gradient-to-br from-blue-500 to-cyan-500"
+                  )}>
+                    {group.familyName.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900">{group.familyName}</h3>
+                    <p className="text-sm text-gray-500">{group.users.length} 位成员</p>
+                  </div>
+                  {group.isSuperAdmin && (
+                    <span className="ml-2 px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200">
+                      ⭐ 超级管理员家庭
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs font-mono text-gray-400">
+                  {group.familyId !== 'no-family' && group.familyId}
+                </div>
+              </div>
+
+              {/* Users Table */}
+              <table className="w-full">
+                <thead className="bg-gray-50/50 border-b">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">用户</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">用户ID</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">家庭</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">家庭ID</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">角色</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">注册时间</th>
+                    <th className="px-6 py-3 text-right text-sm font-medium text-gray-600">操作</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {group.users.map((user) => {
                 return (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {user.avatar_url ? (
-                          <img
-                            src={user.avatar_url}
-                            alt={user.name}
-                            className="w-10 h-10 rounded-full ring-2 ring-gray-100"
-                          />
-                        ) : user.avatar_color ? (
-                          <div 
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ring-2 ring-gray-100"
-                            style={{ backgroundColor: user.avatar_color }}
-                          >
-                            {user.name.slice(-1)}
-                          </div>
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold">
-                            {user.name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-medium">{user.name}</div>
-                          {user.bio && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
-                              {user.bio}
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {user.avatar_url ? (
+                            <img
+                              src={user.avatar_url}
+                              alt={user.name}
+                              className="w-10 h-10 rounded-full ring-2 ring-gray-100"
+                            />
+                          ) : user.avatar_color ? (
+                            <div 
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ring-2 ring-gray-100"
+                              style={{ backgroundColor: user.avatar_color }}
+                            >
+                              {user.name.slice(-1)}
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold">
+                              {user.name.charAt(0).toUpperCase()}
                             </div>
                           )}
+                          <div>
+                            <div className="font-medium">{user.name}</div>
+                            {user.bio && (
+                              <div className="text-sm text-gray-500 truncate max-w-xs">
+                                {user.bio}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-xs font-mono text-gray-500 max-w-[200px] truncate" title={user.id}>
-                        {user.id}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
-                    <td className="px-6 py-4">
-                      {user.family ? (
-                        <div className="flex items-center gap-2">
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-xs font-mono text-gray-500 max-w-[150px] truncate" title={user.id}>
+                          {user.id}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {user.family ? (
                           <span className="text-sm text-gray-700">{user.family.name}</span>
-                          {user.is_super_admin_family && (
-                            <span className="px-2 py-0.5 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-medium">
-                              超管家庭
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {user.family_id ? (
-                        <div className="text-xs font-mono text-gray-500 max-w-[200px] truncate" title={user.family_id}>
-                          {user.family_id}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1.5">
-                        {/* 家庭名称 */}
-                        {user.family && (
-                          <div className="text-xs text-gray-500">
-                            {user.family.name}
-                          </div>
-                        )}
-                        
-                        {/* 家庭角色 */}
-                        {user.family_role && (
-                          <div>
-                            <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', getRoleBadge(user.family_role, 'family', user.is_super_admin_family && user.family_role === 'admin').style)}>
-                              {getRoleBadge(user.family_role, 'family', user.is_super_admin_family && user.family_role === 'admin').label}
-                            </span>
-                          </div>
-                        )}
-                        
-                        {/* 博客角色 */}
-                        {user.blog_role && (
-                          <div>
-                            <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', getRoleBadge(user.blog_role, 'blog', user.is_super_admin_family && user.blog_role === 'admin').style)}>
-                              {getRoleBadge(user.blog_role, 'blog', user.is_super_admin_family && user.blog_role === 'admin').label}
-                            </span>
-                          </div>
-                        )}
-                        
-                        {/* 如果既没有家庭角色也没有博客角色 */}
-                        {!user.family_role && !user.blog_role && (
+                        ) : (
                           <span className="text-sm text-gray-400">-</span>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {formatDate(user.created_at)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openRoleDialog(user)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="更改角色"
-                        >
-                          <Shield className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user)
-                            setIsDeleteDialogOpen(true)
-                          }}
-                          disabled={user.is_super_admin_family}
-                          className={cn(
-                            "p-2 rounded-lg transition-colors",
-                            user.is_super_admin_family
-                              ? "text-gray-300 cursor-not-allowed"
-                              : "text-red-600 hover:bg-red-50"
+                      </td>
+                      <td className="px-6 py-4">
+                        {user.family_id ? (
+                          <div className="text-xs font-mono text-gray-500 max-w-[150px] truncate" title={user.family_id}>
+                            {user.family_id}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1.5">
+                          {/* 家庭角色 */}
+                          {user.family_role && (
+                            <div>
+                              <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', getRoleBadge(user.family_role, 'family', user.is_super_admin_family && user.family_role === 'admin').style)}>
+                                {getRoleBadge(user.family_role, 'family', user.is_super_admin_family && user.family_role === 'admin').label}
+                              </span>
+                            </div>
                           )}
-                          title={user.is_super_admin_family ? "超级管理员家庭的用户不能删除" : "删除用户"}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                          
+                          {/* 博客角色 */}
+                          {user.blog_role && (
+                            <div>
+                              <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', getRoleBadge(user.blog_role, 'blog', user.is_super_admin_family && user.blog_role === 'admin').style)}>
+                                {getRoleBadge(user.blog_role, 'blog', user.is_super_admin_family && user.blog_role === 'admin').label}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* 如果既没有家庭角色也没有博客角色 */}
+                          {!user.family_role && !user.blog_role && (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {formatDate(user.created_at)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openRoleDialog(user)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="更改角色"
+                          >
+                            <Shield className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user)
+                              setIsDeleteDialogOpen(true)
+                            }}
+                            disabled={user.is_super_admin_family}
+                            className={cn(
+                              "p-2 rounded-lg transition-colors",
+                              user.is_super_admin_family
+                                ? "text-gray-300 cursor-not-allowed"
+                                : "text-red-600 hover:bg-red-50"
+                            )}
+                            title={user.is_super_admin_family ? "超级管理员家庭的用户不能删除" : "删除用户"}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
       )}
 
       {/* Role Change Modal */}

@@ -65,6 +65,7 @@ export default function NewPostPage() {
   // Auto-generate slug when title changes
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle)
+    // 自动生成拼音 slug
     if (!slug || slug === generateSlug(title)) {
       setSlug(generateSlug(newTitle))
     }
@@ -151,6 +152,15 @@ export default function NewPostPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('未登录')
 
+      // 验证 slug（可选，因为会自动生成）
+      let finalSlug: string
+      if (!slug || !slug.trim()) {
+        // 如果没有 slug，使用标题自动生成
+        finalSlug = generateSlug(title)
+      } else {
+        finalSlug = slug
+      }
+
       // 如果没有摘要，自动生成
       let finalExcerpt = excerpt
       if (!finalExcerpt.trim()) {
@@ -173,7 +183,6 @@ export default function NewPostPage() {
       }
 
       // Use provided slug or generate from title
-      let finalSlug = slug || generateSlug(title)
       let slugExists = true
       let counter = 1
 
@@ -193,6 +202,17 @@ export default function NewPostPage() {
         }
       }
 
+      // 获取当前用户的 profile，判断是否是超级管理员
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('role, family_id')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      // 判断是否是超级管理员
+      const isSuperAdmin = userProfile?.role === 'admin' && 
+                          userProfile?.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
+
       // 插入文章
       const { data: post, error: insertError } = await supabase
         .from('posts')
@@ -204,6 +224,9 @@ export default function NewPostPage() {
           status,
           author_id: user.id,
           published_at: status === 'published' ? new Date().toISOString() : null,
+          review_status: isSuperAdmin ? 'approved' : 'pending', // 超级管理员自动通过审核
+          reviewed_by: isSuperAdmin ? user.id : null,
+          reviewed_at: isSuperAdmin ? new Date().toISOString() : null,
         })
         .select()
         .single()
@@ -280,10 +303,13 @@ export default function NewPostPage() {
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="自动生成或手动输入"
+            placeholder="自动生成拼音或手动输入"
           />
           <p className="text-xs text-gray-500 mt-1">
-            文章 URL 将是: /blog/{slug || 'your-slug'}
+            文章 URL 将是: /blog/{slug || 'your-slug-here'}
+          </p>
+          <p className="text-xs text-purple-600 mt-1">
+            💡 中文标题会自动转换为拼音，也可以手动修改
           </p>
         </div>
 
