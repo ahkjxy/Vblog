@@ -1,0 +1,6 @@
+com.wly.familypointsbank.test.app-core-1.5.0-0 /Users/liaoyuan/.gradle/caches/9.0-milestone-1/transforms/03aa2ea92e60b16d9057c5354403c28e/transformed/core-1.5.0/res
+com.wly.familypointsbank.test.app-annotation-experimental-1.3.0-1 /Users/liaoyuan/.gradle/caches/9.0-milestone-1/transforms/1949d9dfbb8a4a76516835a1f814093e/transformed/annotation-experimental-1.3.0/res
+com.wly.familypointsbank.test.app-androidTest-2 /Users/liaoyuan/Desktop/works/family-points-bank/android/app/build/generated/res/resValues/androidTest/debug
+com.wly.familypointsbank.test.app-mergeDebugAndroidTestResources-3 /Users/liaoyuan/Desktop/works/family-points-bank/android/app/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/merged.dir
+com.wly.familypointsbank.test.app-mergeDebugAndroidTestResources-4 /Users/liaoyuan/Desktop/works/family-points-bank/android/app/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/stripped.dir
+com.wly.familypointsbank.test.app-debugAndroidTest-5 /Users/liaoyuan/Desktop/works/family-points-bank/android/app/build/intermediates/merged_res/debugAndroidTest/mergeDebugAndroidTestResources

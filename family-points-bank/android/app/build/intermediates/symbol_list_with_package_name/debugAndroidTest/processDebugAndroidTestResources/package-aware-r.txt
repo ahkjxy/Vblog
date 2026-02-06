@@ -1,0 +1,3 @@
+com.wly.familypointsbank.test
+style WhiteBackgroundDialogTheme
+style WhiteBackgroundTheme

@@ -1,0 +1,38 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.wly.familypointsbank.app-mergeDebugResources-24:/values-v16/values-v16.xml",
+            "map": [
+                {
+                    "source": "/Users/liaoyuan/.gradle/caches/9.0-milestone-1/transforms/f1b5ee8936ec4392875446840cd3251f/transformed/appcompat-1.6.1/res/values-v16/values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "5",
+                        "endColumns": "12",
+                        "endOffsets": "223"
+                    },
+                    "to": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "121",
+                        "endLines": "6",
+                        "endColumns": "12",
+                        "endOffsets": "289"
+                    }
+                },
+                {
+                    "source": "/Users/liaoyuan/.gradle/caches/9.0-milestone-1/transforms/9367ca7acb138a11e18e4ca6e80d3302/transformed/core-1.12.0/res/values-v16/values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "65",
+                        "endOffsets": "116"
+                    }
+                }
+            ]
+        }
+    ]
+}
