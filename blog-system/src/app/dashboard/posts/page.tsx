@@ -54,7 +54,7 @@ export default async function PostsPage() {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">
-                  {post.profiles?.username}
+                  {post.profiles?.name}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">
                   {post.published_at ? formatDate(post.published_at) : '-'}

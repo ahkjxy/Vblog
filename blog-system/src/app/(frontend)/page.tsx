@@ -18,7 +18,7 @@ export default async function HomePage() {
   // 查询 admin 用户的文章
   const { data: posts } = await supabase
     .from('posts')
-    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url)')
+    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
     .eq('status', 'published')
     .in('author_id', adminIds.length > 0 ? adminIds : ['00000000-0000-0000-0000-000000000000'])
     .order('published_at', { ascending: false })
@@ -26,7 +26,7 @@ export default async function HomePage() {
 
   const { data: featuredPost } = await supabase
     .from('posts')
-    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url)')
+    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
     .eq('status', 'published')
     .in('author_id', adminIds.length > 0 ? adminIds : ['00000000-0000-0000-0000-000000000000'])
     .order('view_count', { ascending: false })
@@ -142,16 +142,16 @@ export default async function HomePage() {
                     {featuredPost.profiles?.[0]?.avatar_url ? (
                       <img 
                         src={featuredPost.profiles[0].avatar_url} 
-                        alt={featuredPost.profiles[0].username}
+                        alt={featuredPost.profiles[0].name}
                         className="w-14 h-14 rounded-full ring-4 ring-purple-100 shadow-md"
                       />
                     ) : (
                       <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-md ring-4 ring-purple-100">
-                        {featuredPost.profiles?.[0]?.username?.charAt(0).toUpperCase()}
+                        {featuredPost.profiles?.[0]?.name?.charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div>
-                      <div className="font-bold text-gray-900 text-lg">{featuredPost.profiles?.[0]?.username}</div>
+                      <div className="font-bold text-gray-900 text-lg">{featuredPost.profiles?.[0]?.name}</div>
                       <div className="flex items-center gap-3 text-sm text-gray-500">
                         <span>{formatDate(featuredPost.published_at!)}</span>
                         <span>•</span>
@@ -222,15 +222,15 @@ export default async function HomePage() {
                             {post.profiles?.[0]?.avatar_url ? (
                               <img 
                                 src={post.profiles[0].avatar_url} 
-                                alt={post.profiles[0].username}
+                                alt={post.profiles[0].name}
                                 className="w-9 h-9 rounded-full ring-2 ring-gray-100"
                               />
                             ) : (
                               <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${gradient.from} ${gradient.to} flex items-center justify-center text-white text-sm font-bold shadow-sm`}>
-                                {post.profiles?.[0]?.username?.charAt(0).toUpperCase()}
+                                {post.profiles?.[0]?.name?.charAt(0).toUpperCase()}
                               </div>
                             )}
-                            <span className="font-semibold text-gray-900 text-sm">{post.profiles?.[0]?.username}</span>
+                            <span className="font-semibold text-gray-900 text-sm">{post.profiles?.[0]?.name}</span>
                           </div>
                           <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full">
                             <Eye className="w-3.5 h-3.5" />

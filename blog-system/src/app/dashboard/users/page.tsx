@@ -76,7 +76,7 @@ export default function UsersPage() {
     // 搜索
     if (searchQuery) {
       result = result.filter(user =>
-        user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
@@ -305,16 +305,16 @@ export default function UsersPage() {
                         {user.avatar_url ? (
                           <img
                             src={user.avatar_url}
-                            alt={user.username}
+                            alt={user.name}
                             className="w-10 h-10 rounded-full ring-2 ring-gray-100"
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold">
-                            {user.username.charAt(0).toUpperCase()}
+                            {user.name.charAt(0).toUpperCase()}
                           </div>
                         )}
                         <div>
-                          <div className="font-medium">{user.username}</div>
+                          <div className="font-medium">{user.name}</div>
                           {user.bio && (
                             <div className="text-sm text-gray-500 truncate max-w-xs">
                               {user.bio}
@@ -372,7 +372,7 @@ export default function UsersPage() {
           <ModalBody>
             <div className="space-y-4">
               <p className="text-gray-700">
-                为用户 <strong>{selectedUser.username}</strong> 选择新角色：
+                为用户 <strong>{selectedUser.name}</strong> 选择新角色：
               </p>
               <select
                 value={newRole}
@@ -408,7 +408,7 @@ export default function UsersPage() {
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDeleteUser}
         title="删除用户"
-        message={`确定要删除用户"${selectedUser?.username}"吗？此操作将删除该用户的所有数据，且无法撤销。`}
+        message={`确定要删除用户"${selectedUser?.name}"吗？此操作将删除该用户的所有数据，且无法撤销。`}
         confirmText="删除"
         cancelText="取消"
         variant="danger"

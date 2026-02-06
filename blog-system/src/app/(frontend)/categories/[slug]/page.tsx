@@ -56,7 +56,7 @@ export default async function CategoryPage({ params }: PageProps) {
         published_at,
         view_count,
         status,
-        profiles(username, avatar_url)
+        profiles(name, avatar_url)
       )
     `)
     .eq('category_id', category.id)
@@ -121,17 +121,17 @@ export default async function CategoryPage({ params }: PageProps) {
                           {post.profiles?.[0]?.avatar_url ? (
                             <img 
                               src={post.profiles[0].avatar_url} 
-                              alt={post.profiles[0].username}
+                              alt={post.profiles[0].name}
                               className="w-10 h-10 rounded-full ring-2 ring-gray-100"
                             />
                           ) : (
                             <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradient.from} ${gradient.to} flex items-center justify-center shadow-sm`}>
                               <span className="text-white font-semibold">
-                                {post.profiles?.[0]?.username?.charAt(0).toUpperCase()}
+                                {post.profiles?.[0]?.name?.charAt(0).toUpperCase()}
                               </span>
                             </div>
                           )}
-                          <span className="font-semibold text-gray-900">{post.profiles?.[0]?.username}</span>
+                          <span className="font-semibold text-gray-900">{post.profiles?.[0]?.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4" />

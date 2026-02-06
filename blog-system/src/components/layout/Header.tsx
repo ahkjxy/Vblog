@@ -8,7 +8,7 @@ import { Logo } from '@/components/Logo'
 import { LayoutDashboard, LogOut, ChevronDown, Sparkles, BookOpen, FolderOpen, Tag, Menu, X } from 'lucide-react'
 
 export function Header() {
-  const [user, setUser] = useState<{ username: string; avatar_url?: string; role?: string } | null>(null)
+  const [user, setUser] = useState<{ name: string; avatar_url?: string; role?: string } | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -22,9 +22,9 @@ export function Header() {
       if (authUser) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('username, avatar_url, role')
+          .select('name, avatar_url, role')
           .eq('id', authUser.id)
-          .single()
+          .maybeSingle()
         
         if (profile) {
           setUser(profile)
@@ -132,17 +132,17 @@ export function Header() {
                 {user.avatar_url ? (
                   <img
                     src={user.avatar_url}
-                    alt={user.username}
+                    alt={user.name}
                     className="w-8 h-8 rounded-full border-2 border-purple-200 group-hover:border-purple-400 transition-colors"
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md">
                     <span className="text-white text-sm font-bold">
-                      {user.username.charAt(0).toUpperCase()}
+                      {user.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
                 )}
-                <span className="text-sm font-semibold text-gray-800">{user.username}</span>
+                <span className="text-sm font-semibold text-gray-800">{user.name}</span>
                 <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
@@ -150,7 +150,7 @@ export function Header() {
                 <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-purple-100 py-2 animate-slide-up overflow-hidden">
                   {/* User Info Header */}
                   <div className="px-4 py-4 bg-gradient-to-br from-purple-50 to-pink-50 border-b border-purple-100">
-                    <p className="text-sm font-bold text-gray-900">{user.username}</p>
+                    <p className="text-sm font-bold text-gray-900">{user.name}</p>
                     {user.role && (
                       <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-white rounded-full text-xs font-medium">
                         <Sparkles className="w-3 h-3 text-purple-600" />
@@ -278,18 +278,18 @@ export function Header() {
                     {user.avatar_url ? (
                       <img
                         src={user.avatar_url}
-                        alt={user.username}
+                        alt={user.name}
                         className="w-10 h-10 rounded-full border-2 border-purple-200"
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md">
                         <span className="text-white text-sm font-bold">
-                          {user.username.charAt(0).toUpperCase()}
+                          {user.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
                     )}
                     <div>
-                      <p className="text-sm font-bold text-gray-900">{user.username}</p>
+                      <p className="text-sm font-bold text-gray-900">{user.name}</p>
                       {user.role && (
                         <p className="text-xs text-purple-600">
                           {user.role === 'admin' ? '管理员' : user.role === 'editor' ? '编辑' : '作者'}

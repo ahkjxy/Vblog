@@ -41,7 +41,7 @@ export default async function BlogPostPage({ params }: PageProps) {
     .from('posts')
     .select(`
       *,
-      profiles(username, avatar_url, bio),
+      profiles(name, avatar_url, bio),
       post_categories(categories(name, slug)),
       post_tags(tags(name, slug))
     `)
@@ -94,16 +94,16 @@ export default async function BlogPostPage({ params }: PageProps) {
                 {post.profiles?.avatar_url ? (
                   <img 
                     src={post.profiles.avatar_url} 
-                    alt={post.profiles.username}
+                    alt={post.profiles.name}
                     className="w-12 h-12 rounded-full border-2 border-white shadow-md"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center font-semibold shadow-md">
-                    {post.profiles?.username?.charAt(0).toUpperCase()}
+                    {post.profiles?.name?.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div>
-                  <div className="font-semibold text-gray-900">{post.profiles?.username}</div>
+                  <div className="font-semibold text-gray-900">{post.profiles?.name}</div>
                   {post.profiles?.bio && (
                     <div className="text-xs text-gray-600 line-clamp-1">{post.profiles.bio}</div>
                   )}
@@ -155,17 +155,17 @@ export default async function BlogPostPage({ params }: PageProps) {
                 {post.profiles.avatar_url ? (
                   <img 
                     src={post.profiles.avatar_url} 
-                    alt={post.profiles.username}
+                    alt={post.profiles.name}
                     className="w-20 h-20 rounded-full border-4 border-white shadow-lg flex-shrink-0"
                   />
                 ) : (
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center font-bold text-2xl flex-shrink-0 shadow-lg border-4 border-white">
-                    {post.profiles.username?.charAt(0).toUpperCase()}
+                    {post.profiles.name?.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">关于作者</h3>
-                  <p className="text-xl font-semibold text-gray-900 mb-3">{post.profiles.username}</p>
+                  <p className="text-xl font-semibold text-gray-900 mb-3">{post.profiles.name}</p>
                   <p className="text-gray-700 leading-[1.7] text-base">{post.profiles.bio}</p>
                 </div>
               </div>

@@ -18,11 +18,32 @@ export default async function DashboardLayout({
     redirect('/auth/login')
   }
 
+  // 获取当前用户的 profile
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, role, avatar_url')
+    .select('name, role, avatar_url, family_id')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
+
+  // 如果没有 profile，重定向到登录页
+  if (!profile) {
+    redirect('/auth/login')
+  }
+
+  // 获取家长的名字（用于显示"进入 XX 的家庭"）
+  let familyAdminName = profile?.name || '我'
+  if (profile?.family_id) {
+    const { data: adminProfiles } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('family_id', profile.family_id)
+      .eq('role', 'admin')
+      .limit(1)
+    
+    if (adminProfiles && adminProfiles.length > 0 && adminProfiles[0].name) {
+      familyAdminName = adminProfiles[0].name
+    }
+  }
 
   const navItems = [
     { href: '/dashboard', icon: 'LayoutDashboard', label: '概览' },
@@ -68,18 +89,18 @@ export default async function DashboardLayout({
                 {profile?.avatar_url ? (
                   <img 
                     src={profile.avatar_url} 
-                    alt={profile.username}
+                    alt={profile.name}
                     className="w-12 h-12 rounded-full border-2 border-white shadow-md"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md border-2 border-white">
                     <span className="text-white font-bold">
-                      {profile?.username?.charAt(0).toUpperCase()}
+                      {profile?.name?.charAt(0).toUpperCase()}
                     </span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm truncate text-gray-900">{profile?.username}</div>
+                  <div className="font-bold text-sm truncate text-gray-900">{profile?.name}</div>
                   <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-white rounded-full text-xs font-medium text-purple-700 border border-purple-200">
                     {profile?.role === 'admin' ? '管理员' : profile?.role === 'editor' ? '编辑' : '作者'}
                   </div>
@@ -93,7 +114,7 @@ export default async function DashboardLayout({
             {/* Bottom Actions */}
             <div className="absolute bottom-6 left-5 right-5 space-y-2">
               <a 
-                href="https://www.familybank.chat/dashboard"
+                href="https://www.familybank.chat/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white transition-all text-sm font-semibold hover:shadow-lg hover:scale-105"
@@ -101,7 +122,7 @@ export default async function DashboardLayout({
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
-                <span>进入家庭</span>
+                <span>进入 {familyAdminName} 的家庭</span>
               </a>
               <Link 
                 href="/" 

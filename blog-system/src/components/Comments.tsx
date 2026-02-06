@@ -34,7 +34,7 @@ interface Comment {
   author_name: string
   author_email: string
   profiles?: {
-    username: string
+    name: string
     avatar_url?: string
   }
 }
@@ -53,7 +53,7 @@ export function Comments({ postId }: CommentsProps) {
   const [authorName, setAuthorName] = useState('')
   const [authorEmail, setAuthorEmail] = useState('')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [currentUser, setCurrentUser] = useState<{ id: string; username: string; avatar_url?: string } | null>(null)
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar_url?: string } | null>(null)
   const [toast, setToast] = useState<{ type: ToastType; message: string } | null>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -93,7 +93,7 @@ export function Comments({ postId }: CommentsProps) {
         // 获取用户资料
         const { data: profile } = await supabase
           .from('profiles')
-          .select('username, avatar_url')
+          .select('name, avatar_url')
           .eq('id', user.id)
           .single()
         
@@ -116,7 +116,7 @@ export function Comments({ postId }: CommentsProps) {
         .from('comments')
         .select(`
           *,
-          profiles(username, avatar_url)
+          profiles(name, avatar_url)
         `)
         .eq('post_id', postId)
         .eq('status', 'approved')
@@ -170,7 +170,7 @@ export function Comments({ postId }: CommentsProps) {
       const commentData = {
         post_id: postId,
         content: content.trim(),
-        author_name: isLoggedIn ? currentUser?.username : authorName.trim(),
+        author_name: isLoggedIn ? currentUser?.name : authorName.trim(),
         author_email: isLoggedIn ? user?.email : authorEmail.trim(),
         user_id: user?.id || null,
         status: 'pending' as const
@@ -343,7 +343,7 @@ export function Comments({ postId }: CommentsProps) {
             <div className="flex items-center justify-between flex-wrap gap-3">
               <p className="text-sm text-gray-500">
                 {isLoggedIn ? (
-                  <span>以 <strong>{currentUser?.username}</strong> 的身份评论</span>
+                  <span>以 <strong>{currentUser?.name}</strong> 的身份评论</span>
                 ) : (
                   <span>评论需要审核后才会显示</span>
                 )}
@@ -390,14 +390,14 @@ export function Comments({ postId }: CommentsProps) {
                 {comment.profiles?.avatar_url ? (
                   <img
                     src={comment.profiles.avatar_url}
-                    alt={comment.profiles.username}
+                    alt={comment.profiles.name}
                     className="w-10 h-10 rounded-full flex-shrink-0 border-2 border-gray-200"
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center flex-shrink-0 border-2 border-gray-200">
-                    {comment.profiles?.username ? (
+                    {comment.profiles?.name ? (
                       <span className="text-white font-semibold text-sm">
-                        {comment.profiles.username.charAt(0).toUpperCase()}
+                        {comment.profiles.name.charAt(0).toUpperCase()}
                       </span>
                     ) : (
                       <User className="w-5 h-5 text-white" />
@@ -409,7 +409,7 @@ export function Comments({ postId }: CommentsProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-semibold text-gray-900">
-                      {comment.profiles?.username || comment.author_name}
+                      {comment.profiles?.name || comment.author_name}
                     </span>
                     <span className="text-sm text-gray-500">
                       {formatDate(comment.created_at)}

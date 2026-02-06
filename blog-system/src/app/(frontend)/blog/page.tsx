@@ -9,7 +9,7 @@ export default async function BlogListPage() {
   
   const { data: posts } = await supabase
     .from('posts')
-    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(username, avatar_url)')
+    .select('id, title, slug, excerpt, published_at, view_count, author_id, profiles!posts_author_id_fkey(name, avatar_url)')
     .eq('status', 'published')
     .order('published_at', { ascending: false })
 
@@ -73,7 +73,7 @@ export default async function BlogListPage() {
                           {post.profiles?.[0]?.avatar_url ? (
                             <img 
                               src={post.profiles[0].avatar_url} 
-                              alt={post.profiles[0].username}
+                              alt={post.profiles[0].name}
                               className="w-10 h-10 rounded-full ring-2 ring-gray-100"
                             />
                           ) : (
@@ -81,7 +81,7 @@ export default async function BlogListPage() {
                               <User className="w-5 h-5 text-white" />
                             </div>
                           )}
-                          <span className="font-semibold text-gray-900">{post.profiles?.[0]?.username}</span>
+                          <span className="font-semibold text-gray-900">{post.profiles?.[0]?.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
