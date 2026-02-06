@@ -215,136 +215,118 @@ export default async function BlogPostPage({ params }: PageProps) {
     .eq('id', post.id)
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <article className="max-w-6xl mx-auto">
-        {/* Hero Section */}
-        <header className="bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 px-6 sm:px-8 py-16 sm:py-24 mb-0">
-          <div className="max-w-4xl mx-auto">
-            {/* Categories */}
-            {post.post_categories && post.post_categories.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-6">
-                {post.post_categories.map((pc: { categories: { slug: string; name: string } }) => (
-                  <a
-                    key={pc.categories.slug}
-                    href={`/categories/${pc.categories.slug}`}
-                    className="px-4 py-1.5 bg-white rounded-full text-sm font-medium text-purple-600 hover:bg-purple-100 transition-all shadow-sm hover:shadow"
-                  >
-                    {pc.categories.name}
-                  </a>
-                ))}
-              </div>
-            )}
+    <div className="min-h-screen bg-white">
+      <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <header className="py-12 sm:py-16 border-b border-gray-100">
+          {/* Categories */}
+          {post.post_categories && post.post_categories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              {post.post_categories.map((pc: { categories: { slug: string; name: string } }) => (
+                <a
+                  key={pc.categories.slug}
+                  href={`/categories/${pc.categories.slug}`}
+                  className="px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-xs font-medium hover:bg-purple-100 transition-colors"
+                >
+                  {pc.categories.name}
+                </a>
+              ))}
+            </div>
+          )}
 
-            {/* Title */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-[1.15] text-gray-900 tracking-tight">{post.title}</h1>
-            
-            {/* Excerpt */}
-            {post.excerpt && (
-              <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-10 leading-[1.6] font-light">{post.excerpt}</p>
-            )}
+          {/* Title */}
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 text-gray-900 leading-tight">{post.title}</h1>
+          
+          {/* Excerpt */}
+          {post.excerpt && (
+            <p className="text-lg text-gray-600 mb-8 leading-relaxed">{post.excerpt}</p>
+          )}
 
-            {/* Meta Info */}
-            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
-              <div className="flex items-center gap-3">
-                {post.profiles?.avatar_url ? (
-                  <img 
-                    src={post.profiles.avatar_url} 
-                    alt={post.profiles.name}
-                    className="w-12 h-12 rounded-full border-2 border-white shadow-md"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center font-semibold shadow-md">
-                    {post.profiles?.name?.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  <div className="font-semibold text-gray-900">{formatAuthorName(post.profiles)}</div>
-                  {post.profiles?.bio && (
-                    <div className="text-xs text-gray-600 line-clamp-1">{post.profiles.bio}</div>
-                  )}
+          {/* Meta Info */}
+          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-3">
+              {post.profiles?.avatar_url ? (
+                <img 
+                  src={post.profiles.avatar_url} 
+                  alt={post.profiles.name}
+                  className="w-10 h-10 rounded-full border-2 border-gray-100"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center font-semibold text-sm">
+                  {post.profiles?.name?.charAt(0).toUpperCase()}
                 </div>
-              </div>
-              <div className="flex items-center gap-3 text-gray-600">
-                <time>{formatDate(post.published_at!)}</time>
-                <span>•</span>
-                <span>{post.view_count + 1} 阅读</span>
+              )}
+              <div>
+                <div className="font-medium text-gray-900">{formatAuthorName(post.profiles)}</div>
+                <div className="text-xs text-gray-500">{formatDate(post.published_at!)}</div>
               </div>
             </div>
+            <span className="text-gray-300">•</span>
+            <span>{post.view_count + 1} 阅读</span>
           </div>
         </header>
 
         {/* Content */}
-        <div className="bg-white px-6 sm:px-8 py-12 sm:py-16 md:py-20">
-          <div className="max-w-4xl mx-auto">
-            <div className="article-content">
-              {renderPostContent(post.content)}
-            </div>
+        <div className="py-12 sm:py-16">
+          <div className="article-content">
+            {renderPostContent(post.content)}
           </div>
         </div>
 
         {/* Tags */}
         {post.post_tags && post.post_tags.length > 0 && (
-          <div className="bg-gray-50 px-6 sm:px-8 py-10 sm:py-12 border-t border-gray-200">
-            <div className="max-w-4xl mx-auto">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-5">相关标签</h3>
-              <div className="flex flex-wrap gap-3">
-                {post.post_tags.map((pt: { tags: { slug: string; name: string } }) => (
-                  <a
-                    key={pt.tags.slug}
-                    href={`/tags/${pt.tags.slug}`}
-                    className="px-5 py-2.5 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:border-purple-300 hover:text-purple-700 hover:shadow-md transition-all"
-                  >
-                    #{pt.tags.name}
-                  </a>
-                ))}
-              </div>
+          <div className="py-8 border-t border-gray-100">
+            <div className="flex flex-wrap gap-2">
+              {post.post_tags.map((pt: { tags: { slug: string; name: string } }) => (
+                <a
+                  key={pt.tags.slug}
+                  href={`/tags/${pt.tags.slug}`}
+                  className="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-lg text-sm hover:bg-gray-100 transition-colors"
+                >
+                  #{pt.tags.name}
+                </a>
+              ))}
             </div>
           </div>
         )}
 
         {/* Author Bio */}
         {post.profiles?.bio && (
-          <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 px-6 sm:px-8 py-12 sm:py-16 border-t border-purple-100">
-            <div className="max-w-4xl mx-auto">
-              <div className="flex flex-col sm:flex-row gap-6 items-start">
-                {post.profiles.avatar_url ? (
-                  <img 
-                    src={post.profiles.avatar_url} 
-                    alt={post.profiles.name}
-                    className="w-20 h-20 rounded-full border-4 border-white shadow-lg flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center font-bold text-2xl flex-shrink-0 shadow-lg border-4 border-white">
-                    {post.profiles.name?.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">关于作者</h3>
-                  <p className="text-xl font-semibold text-gray-900 mb-3">{formatAuthorName(post.profiles)}</p>
-                  <p className="text-gray-700 leading-[1.7] text-base">{post.profiles.bio}</p>
+          <div className="py-8 border-t border-gray-100">
+            <div className="flex gap-4 items-start bg-gray-50 rounded-xl p-6">
+              {post.profiles.avatar_url ? (
+                <img 
+                  src={post.profiles.avatar_url} 
+                  alt={post.profiles.name}
+                  className="w-16 h-16 rounded-full border-2 border-white shadow-sm flex-shrink-0"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center font-bold text-xl flex-shrink-0 shadow-sm border-2 border-white">
+                  {post.profiles.name?.charAt(0).toUpperCase()}
                 </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">关于作者</div>
+                <p className="font-semibold text-gray-900 mb-2">{formatAuthorName(post.profiles)}</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{post.profiles.bio}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Comments Section */}
-        <div className="px-6 sm:px-8 py-12 sm:py-16 bg-gray-50">
-          <div className="max-w-4xl mx-auto">
-            <Comments postId={post.id} />
-          </div>
+        <div className="py-12 border-t border-gray-100">
+          <Comments postId={post.id} />
         </div>
 
         {/* Back to Blog */}
-        <div className="px-6 sm:px-8 py-12 sm:py-16 bg-white border-t border-gray-200">
-          <div className="max-w-4xl mx-auto text-center">
-            <Link 
-              href="/blog"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full hover:shadow-2xl hover:scale-105 transition-all font-medium text-base sm:text-lg shadow-lg"
-            >
-              ← 返回文章列表
-            </Link>
-          </div>
+        <div className="py-12 border-t border-gray-100 text-center">
+          <Link 
+            href="/blog"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+          >
+            ← 返回文章列表
+          </Link>
         </div>
       </article>
     </div>

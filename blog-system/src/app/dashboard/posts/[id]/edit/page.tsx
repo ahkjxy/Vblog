@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { TipTapEditor } from '@/components/editor/TipTapEditor'
+import { MarkdownEditor } from '@/components/editor/MarkdownEditor'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -25,7 +25,7 @@ export default function EditPostPage({ params }: PageProps) {
   const [id, setId] = useState<string>('')
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
-  const [content, setContent] = useState<Record<string, unknown> | null>(null)
+  const [markdownContent, setMarkdownContent] = useState('')
   const [excerpt, setExcerpt] = useState('')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [loading, setLoading] = useState(true)
@@ -77,7 +77,15 @@ export default function EditPostPage({ params }: PageProps) {
 
       setTitle(post.title)
       setSlug(post.slug)
-      setContent(post.content)
+      // 确保 content 是字符串格式
+      if (typeof post.content === 'string') {
+        setMarkdownContent(post.content)
+      } else if (post.content && typeof post.content === 'object') {
+        // 如果是旧的 JSON 格式，尝试提取文本（向后兼容）
+        setMarkdownContent(JSON.stringify(post.content, null, 2))
+      } else {
+        setMarkdownContent('')
+      }
       setExcerpt(post.excerpt || '')
       setStatus(post.status)
       
@@ -107,23 +115,7 @@ export default function EditPostPage({ params }: PageProps) {
     }
   }
 
-  const handleImageUpload = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${Math.random()}.${fileExt}`
-    const filePath = `${fileName}`
 
-    const { error: uploadError } = await supabase.storage
-      .from('media')
-      .upload(filePath, file)
-
-    if (uploadError) throw uploadError
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('media')
-      .getPublicUrl(filePath)
-
-    return publicUrl
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -179,7 +171,7 @@ export default function EditPostPage({ params }: PageProps) {
       const updateData: Record<string, unknown> = {
         title,
         slug: finalSlug,
-        content,
+        content: markdownContent,
         excerpt,
         status,
       }
@@ -414,12 +406,11 @@ export default function EditPostPage({ params }: PageProps) {
 
         <div>
           <label className="block text-sm font-medium mb-2">
-            内容
+            内容 <span className="text-gray-400 text-xs">(支持 Markdown 格式)</span>
           </label>
-          <TipTapEditor
-            content={content}
-            onChange={setContent}
-            onImageUpload={handleImageUpload}
+          <MarkdownEditor
+            content={markdownContent}
+            onChange={setMarkdownContent}
           />
         </div>
 

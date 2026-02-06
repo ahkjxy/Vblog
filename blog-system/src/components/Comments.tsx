@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { LoadingSpinner } from '@/components/ui'
-import { MessageCircle, Send, User, CheckCircle, XCircle, Smile } from 'lucide-react'
+import { MessageCircle, Send, User, CheckCircle, XCircle, Smile, Reply, CornerDownRight } from 'lucide-react'
 
 const EMOJIS = [
   '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂',
@@ -33,10 +33,14 @@ interface Comment {
   created_at: string
   author_name: string
   author_email: string
+  parent_id: string | null
+  user_id: string | null
   profiles?: {
     name?: string
     avatar_url?: string
   }
+  replies?: Comment[]
+  parent?: Comment // 父评论信息，用于显示"回复谁"
 }
 
 interface CommentsProps {
@@ -49,7 +53,6 @@ type ToastType = 'success' | 'error'
 function formatAuthorName(profile: any): string {
   if (!profile) return '匿名用户'
   
-  // 直接在 profile.name 后面加上"的家庭"
   if (profile.name) {
     return `${profile.name}的家庭`
   }
@@ -68,6 +71,7 @@ export function Comments({ postId }: CommentsProps) {
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar_url?: string } | null>(null)
   const [toast, setToast] = useState<{ type: ToastType; message: string } | null>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const emojiPickerRef = useRef<HTMLDivElement>(null)
   
@@ -102,7 +106,6 @@ export function Comments({ postId }: CommentsProps) {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setIsLoggedIn(true)
-        // 获取用户资料
         const { data: profile } = await supabase
           .from('profiles')
           .select('name, avatar_url')
@@ -136,10 +139,36 @@ export function Comments({ postId }: CommentsProps) {
         `)
         .eq('post_id', postId)
         .eq('status', 'approved')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: true })
 
       if (error) throw error
-      setComments(data || [])
+      
+      // 组织评论为树形结构
+      const commentsMap = new Map<string, Comment>()
+      const topLevelComments: Comment[] = []
+      
+      // 先创建所有评论的映射
+      data?.forEach((comment: any) => {
+        commentsMap.set(comment.id, { ...comment, replies: [] })
+      })
+      
+      // 然后组织父子关系
+      data?.forEach((comment: any) => {
+        const commentWithReplies = commentsMap.get(comment.id)!
+        if (comment.parent_id) {
+          const parent = commentsMap.get(comment.parent_id)
+          if (parent) {
+            // 保存父评论信息用于显示"回复谁"
+            commentWithReplies.parent = parent
+            parent.replies = parent.replies || []
+            parent.replies.push(commentWithReplies)
+          }
+        } else {
+          topLevelComments.push(commentWithReplies)
+        }
+      })
+      
+      setComments(topLevelComments)
     } catch (err) {
       console.error('加载评论失败:', err)
     } finally {
@@ -158,11 +187,20 @@ export function Comments({ postId }: CommentsProps) {
     setContent(newContent)
     setShowEmojiPicker(false)
     
-    // 将光标移到插入的表情后面
     setTimeout(() => {
       textarea.focus()
       textarea.setSelectionRange(start + emoji.length, start + emoji.length)
     }, 0)
+  }
+
+  const handleReply = (commentId: string, authorName: string) => {
+    setReplyingTo({ id: commentId, name: authorName })
+    textareaRef.current?.focus()
+    textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  const cancelReply = () => {
+    setReplyingTo(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -183,7 +221,6 @@ export function Comments({ postId }: CommentsProps) {
     try {
       const { data: { user } } = await supabase.auth.getUser()
 
-      // 获取当前用户的 profile 信息
       let isSuperAdmin = false
       let userName = authorName.trim()
       let userEmail = authorEmail.trim()
@@ -198,7 +235,6 @@ export function Comments({ postId }: CommentsProps) {
         isSuperAdmin = userProfile?.role === 'admin' && 
                       userProfile?.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
         
-        // 使用 profile 中的 name，如果没有则使用 email 前缀
         userName = userProfile?.name || user.email?.split('@')[0] || '匿名用户'
         userEmail = user.email || ''
       }
@@ -209,7 +245,8 @@ export function Comments({ postId }: CommentsProps) {
         author_name: userName,
         author_email: userEmail,
         user_id: user?.id || null,
-        status: isSuperAdmin ? 'approved' : 'pending' as const // 超级管理员自动通过审核
+        parent_id: replyingTo?.id || null,
+        status: isSuperAdmin ? 'approved' : 'pending' as const
       }
 
       const { error } = await supabase
@@ -218,14 +255,14 @@ export function Comments({ postId }: CommentsProps) {
 
       if (error) throw error
 
-      showToast('success', isSuperAdmin ? '评论已发布' : '评论已提交，等待审核后显示')
+      showToast('success', isSuperAdmin ? (replyingTo ? '回复已发布' : '评论已发布') : '评论已提交，等待审核后显示')
       setContent('')
+      setReplyingTo(null)
       if (!isLoggedIn) {
         setAuthorName('')
         setAuthorEmail('')
       }
       
-      // 如果是超级管理员，立即刷新评论列表
       if (isSuperAdmin) {
         loadComments()
       }
@@ -263,6 +300,106 @@ export function Comments({ postId }: CommentsProps) {
     }
   }
 
+  const renderComment = (comment: Comment, depth = 0) => {
+    const maxDepth = 6
+    const indentLevel = Math.min(depth, maxDepth)
+    const isGuest = !comment.user_id // 判断是否是游客
+    
+    return (
+      <div key={comment.id}>
+        <div 
+          className="flex gap-3 py-3 hover:bg-gray-50 transition-colors"
+          style={{ paddingLeft: `${12 + indentLevel * 20}px` }}
+        >
+          {/* Avatar */}
+          {comment.profiles?.avatar_url ? (
+            <img
+              src={comment.profiles.avatar_url}
+              alt={comment.profiles.name || 'User'}
+              className="w-8 h-8 rounded-full flex-shrink-0 border-2 border-white shadow-sm"
+            />
+          ) : (
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm ${
+              isGuest 
+                ? 'bg-gradient-to-br from-gray-400 to-gray-500' 
+                : 'bg-gradient-to-br from-purple-500 to-pink-500'
+            }`}>
+              {comment.profiles?.name ? (
+                <span className="text-white font-semibold text-xs">
+                  {comment.profiles.name.charAt(0).toUpperCase()}
+                </span>
+              ) : (
+                <User className="w-4 h-4 text-white" />
+              )}
+            </div>
+          )}
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="font-semibold text-gray-900 text-sm">
+                {comment.profiles ? formatAuthorName(comment.profiles) : comment.author_name}
+              </span>
+              
+              {/* 游客标识 */}
+              {isGuest && (
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                  游客
+                </span>
+              )}
+              
+              {/* 显示"回复谁" */}
+              {comment.parent && (
+                <>
+                  <Reply className="w-3 h-3 text-gray-400" />
+                  <span className="text-xs text-gray-500">
+                    回复 <span className="font-medium text-purple-600">
+                      {comment.parent.profiles ? formatAuthorName(comment.parent.profiles) : comment.parent.author_name}
+                    </span>
+                  </span>
+                </>
+              )}
+              
+              <span className="text-xs text-gray-400">
+                {formatDate(comment.created_at)}
+              </span>
+            </div>
+            
+            {/* Content */}
+            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words text-sm mb-2">
+              {comment.content}
+            </p>
+            
+            {/* Reply Button */}
+            <button
+              onClick={() => handleReply(comment.id, comment.profiles?.name || comment.author_name)}
+              className="text-xs text-gray-500 hover:text-purple-600 font-medium inline-flex items-center gap-1 hover:bg-purple-50 px-2 py-1 rounded transition-colors"
+            >
+              <Reply className="w-3 h-3" />
+              回复
+            </button>
+          </div>
+        </div>
+        
+        {/* Replies */}
+        {comment.replies && comment.replies.length > 0 && (
+          <div>
+            {comment.replies.map(reply => renderComment(reply, depth + 1))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const countComments = (comments: Comment[]): number => {
+    return comments.reduce((acc, comment) => {
+      return acc + 1 + (comment.replies ? countComments(comment.replies) : 0)
+    }, 0)
+  }
+
+  const totalComments = countComments(comments)
+
   return (
     <>
       {/* Toast Notification */}
@@ -283,25 +420,44 @@ export function Comments({ postId }: CommentsProps) {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-sm">
+      <div className="bg-white rounded-xl border border-gray-200">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-            <MessageCircle className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">评论</h2>
-            <p className="text-sm text-gray-600">{comments.length} 条评论</p>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <MessageCircle className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">评论</h2>
+              <p className="text-xs text-gray-500">{totalComments} 条评论</p>
+            </div>
           </div>
         </div>
 
         {/* Comment Form */}
-        <form onSubmit={handleSubmit} className="mb-10">
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 border-b border-gray-100 bg-gray-50/30">
+          <div className="space-y-3">
+            {/* Reply Indicator */}
+            {replyingTo && (
+              <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2 text-xs text-purple-700">
+                  <Reply className="w-3.5 h-3.5" />
+                  <span>回复 <strong>{replyingTo.name}</strong></span>
+                </div>
+                <button
+                  type="button"
+                  onClick={cancelReply}
+                  className="text-purple-600 hover:text-purple-700 text-xs font-medium hover:bg-white px-2 py-1 rounded transition-colors"
+                >
+                  取消
+                </button>
+              </div>
+            )}
+
             {!isLoggedIn && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="authorName" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="authorName" className="block text-xs font-medium text-gray-700 mb-1.5">
                     姓名 *
                   </label>
                   <input
@@ -309,13 +465,13 @@ export function Comments({ postId }: CommentsProps) {
                     id="authorName"
                     value={authorName}
                     onChange={(e) => setAuthorName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="请输入您的姓名"
                     required
                   />
                 </div>
                 <div>
-                  <label htmlFor="authorEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="authorEmail" className="block text-xs font-medium text-gray-700 mb-1.5">
                     邮箱 *
                   </label>
                   <input
@@ -323,7 +479,7 @@ export function Comments({ postId }: CommentsProps) {
                     id="authorEmail"
                     value={authorEmail}
                     onChange={(e) => setAuthorEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="your@email.com"
                     required
                   />
@@ -332,8 +488,8 @@ export function Comments({ postId }: CommentsProps) {
             )}
 
             <div className="relative">
-              <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                评论内容 *
+              <label htmlFor="content" className="block text-xs font-medium text-gray-700 mb-1.5">
+                {replyingTo ? '回复内容 *' : '评论内容 *'}
               </label>
               <div className="relative">
                 <textarea
@@ -341,9 +497,9 @@ export function Comments({ postId }: CommentsProps) {
                   id="content"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  rows={4}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                  placeholder="分享你的想法..."
+                  rows={3}
+                  className="w-full px-3 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                  placeholder={replyingTo ? "输入你的回复..." : "分享你的想法..."}
                   required
                 />
                 
@@ -351,10 +507,10 @@ export function Comments({ postId }: CommentsProps) {
                 <button
                   type="button"
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="absolute right-3 top-3 p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                  className="absolute right-2 top-2 p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
                   title="添加表情"
                 >
-                  <Smile className="w-5 h-5" />
+                  <Smile className="w-4 h-4" />
                 </button>
 
                 {/* Emoji Picker */}
@@ -381,10 +537,10 @@ export function Comments({ postId }: CommentsProps) {
               </div>
             </div>
 
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <p className="text-sm text-gray-500">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <p className="text-xs text-gray-500">
                 {isLoggedIn ? (
-                  <span>以 <strong>{currentUser?.name}</strong> 的身份评论</span>
+                  <span>以 <strong>{currentUser?.name}</strong> 的身份{replyingTo ? '回复' : '评论'}</span>
                 ) : (
                   <span>评论需要审核后才会显示</span>
                 )}
@@ -392,7 +548,7 @@ export function Comments({ postId }: CommentsProps) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <>
@@ -401,8 +557,8 @@ export function Comments({ postId }: CommentsProps) {
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4" />
-                    <span>发表评论</span>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{replyingTo ? '发表回复' : '发表评论'}</span>
                   </>
                 )}
               </button>
@@ -411,59 +567,25 @@ export function Comments({ postId }: CommentsProps) {
         </form>
 
         {/* Comments List */}
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <LoadingSpinner size="lg" />
-          </div>
-        ) : comments.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageCircle className="w-8 h-8 text-gray-400" />
+        <div className="px-6 py-4">
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <LoadingSpinner size="lg" />
             </div>
-            <p className="text-gray-500 text-lg">还没有评论</p>
-            <p className="text-gray-400 text-sm mt-2">成为第一个评论的人吧！</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors">
-                {/* Avatar */}
-                {comment.profiles?.avatar_url ? (
-                  <img
-                    src={comment.profiles.avatar_url}
-                    alt={comment.profiles.name || 'User'}
-                    className="w-10 h-10 rounded-full flex-shrink-0 border-2 border-gray-200"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center flex-shrink-0 border-2 border-gray-200">
-                    {comment.profiles?.name ? (
-                      <span className="text-white font-semibold text-sm">
-                        {comment.profiles.name.charAt(0).toUpperCase()}
-                      </span>
-                    ) : (
-                      <User className="w-5 h-5 text-white" />
-                    )}
-                  </div>
-                )}
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="font-semibold text-gray-900">
-                      {comment.profiles ? formatAuthorName(comment.profiles) : comment.author_name}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {formatDate(comment.created_at)}
-                    </span>
-                  </div>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words text-base">
-                    {comment.content}
-                  </p>
-                </div>
+          ) : comments.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <MessageCircle className="w-6 h-6 text-gray-400" />
               </div>
-            ))}
-          </div>
-        )}
+              <p className="text-gray-500 text-sm">还没有评论</p>
+              <p className="text-gray-400 text-xs mt-1">成为第一个评论的人吧！</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {comments.map(comment => renderComment(comment))}
+            </div>
+          )}
+        </div>
       </div>
     </>
   )

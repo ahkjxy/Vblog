@@ -20,14 +20,12 @@ export default async function DashboardPage() {
   // Get statistics - 根据权限过滤
   // 构建统计查询
   let postsCountQuery = supabase.from('posts').select('*', { count: 'exact', head: true })
-  let publishedCountQuery = supabase.from('posts').select('*', { count: 'exact', head: true }).eq('status', 'published')
   let commentsCountQuery = supabase.from('comments').select('*', { count: 'exact', head: true })
   let viewsQuery = supabase.from('posts').select('view_count')
   
   // 如果不是超级管理员，只统计自己的数据
   if (!isSuperAdmin) {
     postsCountQuery = postsCountQuery.eq('author_id', user?.id)
-    publishedCountQuery = publishedCountQuery.eq('author_id', user?.id)
     viewsQuery = viewsQuery.eq('author_id', user?.id)
     
     // 评论：只统计自己文章的评论
@@ -40,12 +38,10 @@ export default async function DashboardPage() {
   
   const [
     { count: totalPosts },
-    { count: publishedPosts },
     { count: totalComments },
     { data: totalViews }
   ] = await Promise.all([
     postsCountQuery,
-    publishedCountQuery,
     commentsCountQuery,
     viewsQuery
   ])
@@ -128,20 +124,20 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
             欢迎回来，{profile?.name || user?.email?.split('@')[0] || '用户'}
           </h1>
-          <p className="text-gray-600 text-lg">这是您的内容管理概览</p>
+          <p className="text-gray-600 text-sm sm:text-lg">查看数据统计和最新动态</p>
         </div>
         <Link
           href="/dashboard/posts/new"
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-xl hover:scale-105 transition-all"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-xl hover:scale-105 transition-all text-sm sm:text-base"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
           <span>新建文章</span>
         </Link>
       </div>

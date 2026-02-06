@@ -52,12 +52,12 @@ export default async function DashboardLayout({
   const navItems = [
     { href: '/dashboard', icon: 'LayoutDashboard', label: '概览' },
     { href: '/dashboard/posts', icon: 'FileText', label: '文章' },
+    { href: '/dashboard/media', icon: 'Image', label: '媒体库' },
   ]
 
   // 只有超级管理员才能看到其他菜单
   if (isSuperAdmin) {
     navItems.push(
-      { href: '/dashboard/media', icon: 'Image', label: '媒体库' },
       { href: '/dashboard/categories', icon: 'FolderOpen', label: '分类' },
       { href: '/dashboard/tags', icon: 'Tag', label: '标签' },
       { href: '/dashboard/comments', icon: 'MessageSquare', label: '评论' },
@@ -81,8 +81,8 @@ export default async function DashboardLayout({
     <ToastProvider>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/20 to-pink-50/20">
         <div className="flex">
-          {/* Sidebar */}
-          <aside className="w-72 bg-white/80 backdrop-blur-xl border-r border-purple-100 min-h-screen fixed left-0 top-0 shadow-xl">
+          {/* Sidebar - Hidden on mobile, shown on desktop */}
+          <aside className="hidden lg:block w-72 bg-white/80 backdrop-blur-xl border-r border-purple-100 min-h-screen fixed left-0 top-0 shadow-xl">
             {/* Logo Section */}
             <div className="p-6 border-b border-purple-100">
               <Link href="/dashboard" className="flex items-center gap-3 group">
@@ -156,8 +156,47 @@ export default async function DashboardLayout({
             </div>
           </aside>
 
+          {/* Mobile Header */}
+          <div className="lg:hidden fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-b border-purple-100 z-50 shadow-sm">
+            <div className="flex items-center justify-between px-4 py-3">
+              <Link href="/dashboard" className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white p-1.5 shadow-md">
+                  <Logo className="w-full h-full" />
+                </div>
+                <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">元气银行</span>
+              </Link>
+              <div className="flex items-center gap-2">
+                {userAvatar ? (
+                  <img 
+                    src={userAvatar} 
+                    alt={userName}
+                    className="w-8 h-8 rounded-full border-2 border-purple-100"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
+                    {userName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* Mobile Navigation */}
+            <div className="px-4 pb-3 overflow-x-auto">
+              <div className="flex gap-2">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors whitespace-nowrap"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* Main content */}
-          <main className="flex-1 ml-72 p-8">
+          <main className="flex-1 lg:ml-72 p-4 sm:p-6 lg:p-8 pt-32 lg:pt-8">
             <div className="max-w-7xl mx-auto">
               {children}
             </div>

@@ -3,12 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { TipTapEditor } from '@/components/editor/TipTapEditor'
 import { MarkdownEditor } from '@/components/editor/MarkdownEditor'
 import { generateSlug } from '@/lib/utils'
 import { Sparkles } from 'lucide-react'
-
-type EditorType = 'markdown' | 'rich'
 
 interface Category {
   id: string
@@ -25,8 +22,6 @@ interface Tag {
 export default function NewPostPage() {
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
-  const [editorType, setEditorType] = useState<EditorType>('markdown')
-  const [content, setContent] = useState<Record<string, unknown> | null>(null)
   const [markdownContent, setMarkdownContent] = useState('')
   const [excerpt, setExcerpt] = useState('')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
@@ -73,17 +68,8 @@ export default function NewPostPage() {
 
   // 自动生成摘要
   const generateExcerpt = () => {
-    let text = ''
-    
-    if (editorType === 'markdown') {
-      text = markdownContent
-    } else if (content && typeof content === 'object' && 'content' in content) {
-      // 从 TipTap JSON 提取文本
-      text = extractTextFromTipTap(content)
-    }
-    
-    // 清理文本：移除 Markdown 标记、多余空格等
-    text = text
+    // 从 Markdown 内容提取文本
+    let text = markdownContent
       .replace(/#{1,6}\s/g, '') // 移除标题标记
       .replace(/\*\*|__/g, '') // 移除加粗标记
       .replace(/\*|_/g, '') // 移除斜体标记
@@ -102,46 +88,7 @@ export default function NewPostPage() {
     setExcerpt(text)
   }
 
-  // 从 TipTap JSON 提取纯文本
-  const extractTextFromTipTap = (node: unknown): string => {
-    if (!node || typeof node !== 'object') return ''
-    
-    const obj = node as Record<string, unknown>
-    let text = ''
-    
-    if ('text' in obj && typeof obj.text === 'string') {
-      text += obj.text
-    }
-    
-    if ('content' in obj && Array.isArray(obj.content)) {
-      for (const child of obj.content) {
-        text += extractTextFromTipTap(child) + ' '
-      }
-    }
-    
-    return text
-  }
 
-  const handleImageUpload = async (file: File): Promise<string> => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('未登录')
-
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${Date.now()}.${fileExt}`
-    const filePath = `${user.id}/${fileName}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('media')
-      .upload(filePath, file)
-
-    if (uploadError) throw uploadError
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('media')
-      .getPublicUrl(filePath)
-
-    return publicUrl
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -164,8 +111,7 @@ export default function NewPostPage() {
       // 如果没有摘要，自动生成
       let finalExcerpt = excerpt
       if (!finalExcerpt.trim()) {
-        let text = editorType === 'markdown' ? markdownContent : extractTextFromTipTap(content)
-        text = text
+        let text = markdownContent
           .replace(/#{1,6}\s/g, '')
           .replace(/\*\*|__/g, '')
           .replace(/\*|_/g, '')
@@ -219,7 +165,7 @@ export default function NewPostPage() {
         .insert({
           title,
           slug: finalSlug,
-          content: editorType === 'markdown' ? markdownContent : content,
+          content: markdownContent,
           excerpt: finalExcerpt,
           status,
           author_id: user.id,
@@ -415,48 +361,12 @@ export default function NewPostPage() {
 
         <div>
           <label className="block text-sm font-medium mb-2">
-            编辑器类型
+            内容 * <span className="text-gray-400 text-xs">(支持 Markdown 格式)</span>
           </label>
-          <div className="flex gap-4 mb-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                value="markdown"
-                checked={editorType === 'markdown'}
-                onChange={(e) => setEditorType(e.target.value as EditorType)}
-                className="w-4 h-4 text-purple-600"
-              />
-              <span>Markdown</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                value="rich"
-                checked={editorType === 'rich'}
-                onChange={(e) => setEditorType(e.target.value as EditorType)}
-                className="w-4 h-4 text-purple-600"
-              />
-              <span>富文本编辑器</span>
-            </label>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            内容 *
-          </label>
-          {editorType === 'markdown' ? (
-            <MarkdownEditor
-              content={markdownContent}
-              onChange={setMarkdownContent}
-            />
-          ) : (
-            <TipTapEditor
-              content={content}
-              onChange={setContent}
-              onImageUpload={handleImageUpload}
-            />
-          )}
+          <MarkdownEditor
+            content={markdownContent}
+            onChange={setMarkdownContent}
+          />
         </div>
 
         <div>
