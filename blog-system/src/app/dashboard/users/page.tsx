@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 
 interface User {
   id: string
-  username: string
+  name: string
   email: string
   role: 'admin' | 'editor' | 'author'
   avatar_url: string | null
@@ -44,7 +44,7 @@ export default function UsersPage() {
         .from('profiles')
         .select('role')
         .eq('id', currentUser.id)
-        .single()
+        .maybeSingle()
 
       if (currentProfile) {
         setCurrentUserRole(currentProfile.role)

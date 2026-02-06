@@ -9,9 +9,9 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username')
+    .select('name')
     .eq('id', user?.id)
-    .single()
+    .maybeSingle()
 
   // Get statistics
   const [
@@ -50,7 +50,7 @@ export default async function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-            欢迎回来，{profile?.name}
+            欢迎回来，{profile?.name || user?.email?.split('@')[0] || '用户'}
           </h1>
           <p className="text-gray-600 text-lg">这是您的内容管理概览</p>
         </div>

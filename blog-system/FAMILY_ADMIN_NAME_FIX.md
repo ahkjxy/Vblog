@@ -56,7 +56,9 @@ if (profile?.family_id) {
 
 ## 修改的文件
 
-- `blog-system/src/app/dashboard/layout.tsx`
+- `blog-system/src/app/dashboard/layout.tsx` - 主要修复，移除强制 profile 检查，添加优雅降级
+- `blog-system/src/app/dashboard/page.tsx` - 修复 `username` → `name` 字段，使用 `maybeSingle()`
+- `blog-system/src/app/dashboard/users/page.tsx` - 修复 User 接口定义，使用 `maybeSingle()`
 
 ## 测试场景
 

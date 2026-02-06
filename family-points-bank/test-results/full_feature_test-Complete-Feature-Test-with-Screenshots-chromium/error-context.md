@@ -1,0 +1,163 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e5]:
+    - generic [ref=e6] [cursor=pointer]:
+      - img [ref=e9]
+      - generic [ref=e15]:
+        - heading "元气银行" [level=1] [ref=e16]
+        - paragraph [ref=e17]: 让家庭更美好
+    - navigation [ref=e18]:
+      - button "账户概览" [ref=e19] [cursor=pointer]:
+        - img [ref=e22]
+        - generic [ref=e25]: 账户概览
+      - button "元气任务" [ref=e26] [cursor=pointer]:
+        - img [ref=e29]
+        - generic [ref=e30]: 元气任务
+      - button "梦想商店" [ref=e31] [cursor=pointer]:
+        - img [ref=e34]
+        - generic [ref=e40]: 梦想商店
+      - button "能量账单" [ref=e41] [cursor=pointer]:
+        - img [ref=e44]
+        - generic [ref=e48]: 能量账单
+      - button "成就中心" [active] [ref=e49] [cursor=pointer]:
+        - img [ref=e52]
+        - generic [ref=e58]: 成就中心
+      - button "系统配置" [ref=e60] [cursor=pointer]:
+        - img [ref=e63]
+        - generic [ref=e66]: 系统配置
+    - button "4 test_full_1769749954 家长 元气萌新 1 元气" [ref=e68] [cursor=pointer]:
+      - generic [ref=e70]:
+        - generic [ref=e71]:
+          - generic [ref=e72]: "4"
+          - generic [ref=e73]:
+            - paragraph [ref=e74]: test_full_1769749954
+            - paragraph [ref=e75]:
+              - text: 家长
+              - img [ref=e77]
+        - generic [ref=e80]:
+          - generic [ref=e81]:
+            - img [ref=e83]
+            - generic [ref=e85]: 元气萌新
+          - paragraph [ref=e87]: 1 元气
+  - main [ref=e88]:
+    - generic [ref=e90]:
+      - generic [ref=e91]:
+        - heading "个人成就荣誉" [level=2] [ref=e93]
+        - paragraph [ref=e94]: 见证成长足迹，解锁更多可能
+      - generic [ref=e95]:
+        - generic [ref=e97]:
+          - button "4" [ref=e98] [cursor=pointer]:
+            - generic [ref=e99]: "4"
+          - generic: 切换到 test_full_1769749954
+        - generic [ref=e100]:
+          - button [ref=e101] [cursor=pointer]:
+            - img [ref=e103]
+          - generic: 转赠元气
+        - generic [ref=e108]:
+          - button [ref=e109] [cursor=pointer]:
+            - img [ref=e111]
+          - generic: 添加许愿
+        - generic [ref=e117]:
+          - button [ref=e118] [cursor=pointer]:
+            - img [ref=e120]
+          - generic: 聊天同步
+        - generic [ref=e122]:
+          - button "⌘K" [ref=e123] [cursor=pointer]:
+            - img [ref=e125]
+            - generic [ref=e128]: ⌘K
+          - generic: 全局搜索
+        - generic [ref=e129]:
+          - button [ref=e130] [cursor=pointer]:
+            - img [ref=e132]
+          - generic: 手动刷新
+        - generic [ref=e137]:
+          - generic [ref=e138]:
+            - button [ref=e139] [cursor=pointer]:
+              - img [ref=e141]
+            - generic: 打印报表
+          - generic [ref=e145]:
+            - button [ref=e146] [cursor=pointer]:
+              - img [ref=e148]
+            - generic: 夜间模式
+          - generic [ref=e150]:
+            - button [ref=e151] [cursor=pointer]:
+              - img [ref=e153]
+            - generic: 退出登录
+        - generic [ref=e156]:
+          - generic [ref=e157]: ⚡
+          - generic [ref=e158]:
+            - generic [ref=e159]: 账户元气值
+            - generic [ref=e160]: "1"
+    - generic [ref=e161]:
+      - generic [ref=e162]:
+        - generic [ref=e165]:
+          - generic [ref=e166]:
+            - generic [ref=e167]: 成就中心
+            - heading "我的成就与抽奖" [level=3] [ref=e169]
+            - paragraph [ref=e170]: 查看你的徽章成就,参与幸运抽奖赢取元气值
+          - button "查看抽奖规则" [ref=e171] [cursor=pointer]:
+            - img [ref=e173]
+        - generic [ref=e176]:
+          - generic [ref=e177]:
+            - generic [ref=e178]:
+              - img [ref=e181]
+              - paragraph [ref=e187]: 总抽奖次数
+            - paragraph [ref=e188]: "0"
+          - generic [ref=e189]:
+            - generic [ref=e190]:
+              - img [ref=e193]
+              - paragraph [ref=e194]: 累计获得
+            - paragraph [ref=e195]: 0元气值
+          - generic [ref=e196]:
+            - generic [ref=e197]:
+              - img [ref=e200]
+              - paragraph [ref=e204]: 今日剩余
+            - paragraph [ref=e205]: 3次
+          - generic [ref=e206]:
+            - generic [ref=e207]:
+              - img [ref=e210]
+              - paragraph [ref=e213]: 当前积分
+            - paragraph [ref=e214]: "1"
+        - button "10积分兑换抽奖" [disabled] [ref=e216]:
+          - img [ref=e218]
+          - generic [ref=e222]: 10积分兑换抽奖
+      - generic [ref=e223]:
+        - generic [ref=e224]:
+          - generic [ref=e225]:
+            - heading "成就徽章" [level=3] [ref=e226]
+            - paragraph [ref=e227]: 已获得 0 个徽章
+          - button "领取徽章" [ref=e228] [cursor=pointer]:
+            - img [ref=e230]
+            - text: 领取徽章
+        - generic [ref=e236]:
+          - generic [ref=e237]:
+            - generic [ref=e238]:
+              - img [ref=e241]
+              - paragraph [ref=e247]: 已获得
+            - paragraph [ref=e248]: "0"
+          - generic [ref=e249]:
+            - generic [ref=e250]:
+              - img [ref=e253]
+              - paragraph [ref=e254]: 可获得
+            - paragraph [ref=e255]: "0"
+          - generic [ref=e256]:
+            - generic [ref=e257]:
+              - img [ref=e260]
+              - paragraph [ref=e264]: 连续天数
+            - paragraph [ref=e265]: "0"
+          - generic [ref=e266]:
+            - generic [ref=e267]:
+              - img [ref=e270]
+              - paragraph [ref=e273]: 完成任务
+            - paragraph [ref=e274]: "0"
+        - generic [ref=e275]:
+          - button "已获得 (0)" [ref=e276] [cursor=pointer]
+          - button "可获得 (0)" [ref=e277] [cursor=pointer]
+        - generic [ref=e279]:
+          - img [ref=e281]
+          - paragraph [ref=e287]: 暂无徽章，完成任务获得成就！
+  - button [ref=e288] [cursor=pointer]:
+    - img [ref=e291]
+```

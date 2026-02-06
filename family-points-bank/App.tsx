@@ -1,0 +1,1723 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { App as CapApp } from "@capacitor/app";
+import { Dialog } from "@capacitor/dialog";
+
+import { Routes, Route, Navigate, useNavigate, useLocation, useMatch } from "react-router-dom";
+import { FamilyState, Transaction, Profile, Category } from "./types";
+import { INITIAL_TASKS, INITIAL_REWARDS } from "./constants";
+import { supabase } from "./supabaseClient";
+import { printReport } from "./utils/export";
+import {
+  Sidebar,
+  HeaderBar,
+  DashboardSection,
+  EarnSection,
+  RedeemSection,
+  HistorySection,
+  SettingsSection,
+  ProfileSwitcherModal,
+  EditModal,
+  PendingActionModal,
+  DocsPage,
+  ChatWidget,
+  MobileNav,
+  AuthGate,
+  PasswordResetModal,
+  PasswordResetPage,
+  ToastProvider,
+  useToast,
+  ThemeProvider,
+  useTheme,
+  TransferModal,
+  WishlistModal,
+  AchievementCenter,
+  Splash,
+  GlobalSearchModal,
+} from "./components";
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
+    </ThemeProvider>
+  );
+}
+
+function AppContent() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const matchAny = useMatch("/:syncId/*");
+  const matchExact = useMatch("/:syncId");
+  const match = matchAny || matchExact;
+  const syncId = match?.params?.syncId;
+  const fallbackSyncId = syncId || "";
+
+  const [state, setState] = useState<FamilyState>({
+    currentProfileId: null,
+    profiles: [],
+    tasks: [],
+    rewards: [],
+    syncId: fallbackSyncId,
+  });
+
+  const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  const resolveFamilyId = () => syncId || state.syncId || "";
+  const activeFamilyId = resolveFamilyId();
+  const mainContentRef = useRef<HTMLElement>(null);
+  const { showToast, dismissToast } = useToast();
+
+  const sendSystemNotification = async (content: string) => {
+    const familyId = resolveFamilyId();
+    if (!familyId || !currentProfile) return;
+    try {
+      await supabase.from("messages").insert({
+        family_id: familyId,
+        sender_id: currentProfile.id,
+        sender_name: currentProfile.name,
+        content: `[系统] ${content}`,
+      });
+    } catch (error) {
+      console.error("Failed to send system notification:", error);
+    }
+  };
+
+  const [editingItem, setEditingItem] = useState<{ type: "task" | "reward"; item: any } | null>(
+    null
+  );
+  const [pendingAction, setPendingAction] = useState<{
+    title: string;
+    points: number;
+    type: "earn" | "penalty" | "redeem";
+  } | null>(null);
+  const [crudSaving, setCrudSaving] = useState(false);
+  const [transactionLoading, setTransactionLoading] = useState(false);
+  const [showProfileSwitcher, setShowProfileSwitcher] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showWishlistModal, setShowWishlistModal] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Android Back Button Handling
+  useEffect(() => {
+    let backListener: any;
+    
+    const setupListener = async () => {
+      backListener = await CapApp.addListener('backButton', async () => {
+        // If we are at the dashboard or root level, ask to exit
+        const path = location.pathname;
+        const segments = path.split('/').filter(Boolean);
+        const isEntryPage = segments.length <= 1 || segments[1] === 'dashboard';
+
+        if (isEntryPage) {
+          const { value } = await Dialog.confirm({
+            title: '退出应用',
+            message: '确定要关闭元气银行吗？',
+            okButtonTitle: '退出',
+            cancelButtonTitle: '取消'
+          });
+          if (value) {
+            CapApp.exitApp();
+          }
+        } else {
+          // Otherwise just go back in history
+          navigate(-1);
+        }
+      });
+    };
+
+    setupListener();
+
+    return () => {
+      if (backListener) backListener.remove();
+    };
+  }, [location.pathname, navigate]);
+
+  // Pull to Refresh Logic
+  const touchStart = useRef(0);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (mainContentRef.current?.scrollTop === 0) {
+      touchStart.current = e.touches[0].clientY;
+    } else {
+      touchStart.current = 0;
+    }
+  };
+
+  const handleTouchMove = async (e: React.TouchEvent) => {
+    if (touchStart.current === 0 || isRefreshing) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - touchStart.current;
+
+    if (diff > 150) { // 阈值触发刷新
+      touchStart.current = 0; // 重置
+      handleManualRefresh();
+    }
+  };
+
+  const handleManualRefresh = async () => {
+    const fid = activeFamilyId || resolveFamilyId();
+    if (!fid || isRefreshing) return;
+    
+    setIsRefreshing(true);
+    try {
+      await fetchData(fid);
+      showToast({ type: 'success', title: '数据已更新' });
+    } catch (err) {
+      showToast({ type: 'error', title: '刷新失败' });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const [taskFilter, setTaskFilter] = useState<Category | "all">("all");
+  const [rewardFilter, setRewardFilter] = useState<"实物奖品" | "特权奖励" | "all">("all");
+  const [showChat, setShowChat] = useState(false);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { theme, toggleTheme } = useTheme();
+  const [pendingError, setPendingError] = useState<string | null>(null);
+
+  const STORAGE_BUCKET = "fpb";
+
+  const dataUrlToBlob = async (dataUrl: string) => {
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  };
+
+  const uploadImageToBucket = async (dataUrl: string, folder: "avatars" | "tasks" | "rewards") => {
+    const blob = await dataUrlToBlob(dataUrl);
+    const mime = blob.type || "image/png";
+    const ext = mime.split("/")[1]?.split("+")[0] || "png";
+    const familyId = resolveFamilyId() || "demo";
+    const path = `${folder}/${familyId}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, blob, { upsert: true, contentType: mime, cacheControl: "3600" });
+    if (error) throw error;
+    const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const ensureCurrentProfileId = (profiles: Profile[], preferredId?: string) => {
+    if (!profiles.length) return "";
+    if (preferredId && profiles.some((p) => p.id === preferredId)) return preferredId;
+    const admin = profiles.find((p) => p.role === "admin");
+    return admin?.id ?? profiles[0].id;
+  };
+
+  const [fatalError, setFatalError] = useState<string | null>(null);
+  const hasFetched = useRef(false);
+
+  useEffect(() => {
+    if (fatalError) {
+      showToast({ type: "error", title: "同步失败", description: fatalError, duration: 4500 });
+    }
+  }, [fatalError, showToast]);
+
+  useEffect(() => {
+    if (pendingAction) setPendingError(null);
+  }, [pendingAction]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setShowSearchModal((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const notifyError = (message: string, e?: any) => {
+    console.warn(message, e);
+    showToast({
+      type: "error",
+      title: message,
+      description: (e as Error)?.message || "请稍后重试",
+      duration: 3800,
+    });
+  };
+
+  const seedFamilyIfEmpty = async (familyId: string) => {
+    try {
+      const { count: profileCount } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("family_id", familyId);
+      if ((profileCount ?? 0) > 0) return;
+
+      const adminName = (session?.user?.email?.split("@")[0] || "管理员").slice(0, 20);
+      const { data: insertedProfiles } = await supabase
+        .from("profiles")
+        .insert([
+          {
+            family_id: familyId,
+            name: adminName,
+            balance: 0,
+            role: "admin",
+            avatar_color: "bg-blue-600",
+          },
+        ])
+        .select();
+
+      const adminProfileId = insertedProfiles?.[0]?.id;
+
+      await supabase.from("tasks").insert(
+        INITIAL_TASKS.map((t) => ({
+          family_id: familyId,
+          category: t.category,
+          title: t.title,
+          description: t.description,
+          points: t.points,
+          frequency: t.frequency,
+        }))
+      );
+
+      await supabase.from("rewards").insert(
+        INITIAL_REWARDS.map((r) => ({
+          family_id: familyId,
+          title: r.title,
+          points: r.points,
+          type: r.type,
+          image_url: r.imageUrl,
+        }))
+      );
+
+      if (adminProfileId) {
+        await supabase
+          .from("families")
+          .update({ current_profile_id: adminProfileId })
+          .eq("id", familyId);
+      }
+    } catch (e) {
+      console.warn("Seed family failed", e);
+    }
+  };
+
+  const ensureFamilyForSession = async (sess: Session) => {
+    const userId = sess.user.id;
+    let targetFamilyId = syncId?.trim() || "";
+
+    if (targetFamilyId) {
+      await supabase
+        .from("family_members")
+        .upsert(
+          { family_id: targetFamilyId, user_id: userId, role: "owner" },
+          { onConflict: "family_id,user_id" }
+        );
+    } else {
+      const { data: memberships } = await supabase
+        .from("family_members")
+        .select("family_id, role, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+      if (memberships?.length) {
+        targetFamilyId = memberships[0].family_id as string;
+      }
+    }
+
+    if (!targetFamilyId) {
+      const { data: created, error: createErr } = await supabase
+        .from("families")
+        .insert({ name: `${sess.user.email?.split("@")[0] || "我的"}的家庭` })
+        .select()
+        .single();
+      if (createErr || !created?.id) throw createErr || new Error("创建家庭失败");
+      targetFamilyId = created.id as string;
+    }
+
+    await supabase
+      .from("family_members")
+      .upsert(
+        { family_id: targetFamilyId, user_id: userId, role: "owner" },
+        { onConflict: "family_id,user_id" }
+      );
+    await seedFamilyIfEmpty(targetFamilyId);
+    return targetFamilyId;
+  };
+
+  const grantDailyEnergyIfNeeded = async (
+    familyId: string,
+    profiles: Profile[],
+    transactions: any[]
+  ) => {
+    if (!familyId || !profiles.length) return;
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const cutoff = todayStart.getTime();
+    const dailyTitle = "每日元气+1";
+
+    const credited = new Set<string>(
+      (transactions || [])
+        .filter(
+          (t: any) =>
+            t?.title === dailyTitle && t?.timestamp && new Date(t.timestamp).getTime() >= cutoff
+        )
+        .map((t: any) => t.profile_id)
+    );
+
+    const targets = profiles.filter((p) => !credited.has(p.id));
+    if (!targets.length) return;
+
+    const now = Date.now();
+    const txList = targets.map((p, idx) => ({
+      family_id: familyId,
+      profile_id: p.id,
+      title: dailyTitle,
+      points: 1,
+      type: "system",
+      timestamp: new Date(now + idx).toISOString(),
+    }));
+
+    const loadingId = showToast({ type: "loading", title: "正在发放每日元气...", duration: 0 });
+    try {
+      const { data: inserted, error: txErr } = await supabase.from("transactions").insert(txList).select();
+      if (txErr) throw txErr;
+
+      await Promise.all(
+        targets.map((p) =>
+          supabase
+            .from("profiles")
+            .update({ balance: p.balance + 1 })
+            .eq("id", p.id)
+            .eq("family_id", familyId)
+        )
+      );
+
+      setState((s) => ({
+        ...s,
+        profiles: s.profiles.map((p) => {
+          const match = (inserted || []).find((t: any) => t.profile_id === p.id);
+          if (!match) {
+            const raw = txList.find(t => t.profile_id === p.id);
+            if (!raw) return p;
+            return {
+              ...p,
+              balance: p.balance + 1,
+              history: [{ id: `tx-${Date.now()}`, title: raw.title, points: 1, timestamp: Date.now(), type: "system" }, ...p.history].slice(0, 50)
+            } as Profile;
+          }
+          return {
+            ...p,
+            balance: p.balance + 1,
+            history: [
+              { id: match.id, title: match.title, points: 1, timestamp: new Date(match.timestamp).getTime(), type: "system" },
+              ...p.history,
+            ].slice(0, 50),
+          } as Profile;
+        }),
+      }));
+
+      showToast({
+        type: "success",
+        title: "每日元气 +1",
+        description: `已为 ${targets.length} 位成员发放`,
+      });
+    } catch (e) {
+      notifyError("发放每日元气失败", e);
+    } finally {
+      if (loadingId) dismissToast(loadingId);
+    }
+  };
+
+  const fetchData = async (targetSyncId: string) => {
+    const normalized = targetSyncId?.trim();
+    if (!normalized) {
+      setFatalError("缺少 Sync ID，请在 URL 中使用 /{syncId}/dashboard 访问");
+      setIsSyncing(false);
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase
+        .from("families")
+        .select(
+          `
+          id, name, current_profile_id,
+          profiles (*),
+          tasks (*),
+          rewards (*),
+          transactions (*, profile_id, family_id)
+        `
+        )
+        .eq("id", targetSyncId)
+        .single();
+
+      if (error || !data) {
+        setFatalError("家庭未开通或链接失效，请检查 Sync ID。");
+        return;
+      }
+
+      const tx = (data as any).transactions || [];
+      const profiles = ((data as any).profiles || []).map((p: any) => {
+        const history = tx
+          .filter((t: any) => t.profile_id === p.id)
+          .map((t: any) => ({
+            id: t.id,
+            title: t.title,
+            points: t.points,
+            timestamp: t.timestamp ? new Date(t.timestamp).getTime() : Date.now(),
+            type: t.type,
+          }))
+          .sort((a: any, b: any) => b.timestamp - a.timestamp);
+        return {
+          ...p,
+          avatarColor: p.avatar_color || p.avatarColor,
+          avatarUrl: p.avatar_url || p.avatarUrl || null,
+          history,
+        } as Profile;
+      });
+
+      const normalizedRemote: FamilyState = {
+        currentProfileId: ensureCurrentProfileId(
+          profiles,
+          (data as any).current_profile_id || state.currentProfileId
+        ),
+        profiles,
+        tasks: (data as any).tasks || [],
+        rewards: ((data as any).rewards || []).map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          points: r.points,
+          type: r.type,
+          imageUrl: r.image_url,
+          status: r.status,
+          requestedBy: r.requested_by,
+          requestedAt: r.requested_at ? new Date(r.requested_at).getTime() : undefined,
+        })),
+        syncId: targetSyncId,
+      };
+      setState(normalizedRemote);
+      setFatalError(null);
+      await grantDailyEnergyIfNeeded(targetSyncId, profiles, tx);
+    } catch (e) {
+      console.warn("Sync failed", e);
+      if (!fatalError) setFatalError((e as Error)?.message || "同步失败");
+    } finally {
+      setTimeout(() => setIsSyncing(false), 500);
+    }
+  };
+
+  const refreshFamily = async (fid?: string) => {
+    const target = fid || resolveFamilyId();
+    await fetchData(target);
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    let authStateResolved = false;
+
+    const readyTimeout = setTimeout(() => {
+      if (mounted && !authStateResolved) {
+        console.warn("INITIAL_SESSION event did not fire, forcing authReady");
+        setAuthReady(true);
+        authStateResolved = true;
+      }
+    }, 2000);
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (!mounted) return;
+
+      setSession(sess);
+
+      if (event === "INITIAL_SESSION") {
+        setAuthReady(true);
+        authStateResolved = true;
+        clearTimeout(readyTimeout);
+      }
+
+      if (event === "PASSWORD_RECOVERY") {
+        setShowPasswordReset(true);
+      }
+      
+      // 使用 sessionStorage 锁定状态，即使 Tab 睡眠重新加载也能保持记录
+      // 只有在本次会话（打开 Tab 后）第一次触发 SIGNED_IN 时采显示 Splash
+      if (event === "SIGNED_IN") {
+        const hasShown = sessionStorage.getItem('fpb_splash_shown');
+        if (!hasShown) {
+          setShowSplash(true);
+          sessionStorage.setItem('fpb_splash_shown', 'true');
+        }
+      }
+
+      if (!sess && authStateResolved) {
+        setFatalError(null);
+        setState((s) => ({ ...s, syncId: fallbackSyncId }));
+        hasFetched.current = false;
+      }
+    });
+
+    const init = async () => {
+      const url = window.location.href;
+      if (url.includes("code=")) {
+        try {
+          await supabase.auth.exchangeCodeForSession(url);
+          const cleaned = new URL(url);
+          cleaned.searchParams.delete("code");
+          cleaned.searchParams.delete("token");
+          cleaned.searchParams.delete("type");
+          if (cleaned.hash) cleaned.hash = "";
+          window.history.replaceState({}, document.title, cleaned.toString());
+
+          setTimeout(() => {
+            if (mounted && !authStateResolved) {
+              setAuthReady(true);
+              authStateResolved = true;
+            }
+          }, 500);
+        } catch (e) {
+          console.warn("exchangeCodeForSession failed", e);
+        }
+      }
+    };
+
+    init();
+
+    return () => {
+      mounted = false;
+      clearTimeout(readyTimeout);
+      sub?.subscription?.unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (!session) return;
+    if (hasFetched.current) return; // Prevent automatic re-fetch on session/focus
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const familyId = await ensureFamilyForSession(session);
+        if (cancelled) return;
+        setState((s) => ({ ...s, syncId: familyId }));
+        const segments = location.pathname.split("/").filter(Boolean);
+        const currentId = segments[0];
+        if (currentId !== familyId) {
+          navigate(`/${familyId}/dashboard`, { replace: true });
+        }
+        await fetchData(familyId);
+        hasFetched.current = true;
+      } catch (e) {
+        if (!cancelled) setFatalError((e as Error)?.message || "初始化家庭失败");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, authReady, syncId]);
+
+  const currentProfile = useMemo<Profile>(() => {
+    const found = state.profiles.find((p) => p.id === state.currentProfileId);
+    if (found) return found;
+    // 找不到时，严禁回退到列表第一个（因为第一个通常是管理员）
+    return {
+      id: "guest",
+      name: "未登录",
+      balance: 0,
+      history: [],
+      avatarColor: "bg-gray-200",
+      role: "child", // 默认非管理
+    } as Profile;
+  }, [state.profiles, state.currentProfileId]);
+
+  // 增加更严谨的权限判断逻辑
+  const isAdmin = useMemo(() => {
+    if (!currentProfile || currentProfile.id === "guest") return false;
+    return currentProfile.role === "admin";
+  }, [currentProfile]);
+
+  const pathToTab: Record<
+    string,
+    "dashboard" | "earn" | "redeem" | "history" | "settings" | "achievements"
+  > = {
+    dashboard: "dashboard",
+    earn: "earn",
+    redeem: "redeem",
+    history: "history",
+    settings: "settings",
+    achievements: "achievements",
+  };
+
+  const activeTab = useMemo<
+    "dashboard" | "earn" | "redeem" | "history" | "settings" | "achievements"
+  >(() => {
+    const segments = location.pathname.split("/").filter(Boolean);
+    const tab = segments[1]; // /:syncId/:tab
+    return (pathToTab[tab] as any) || "dashboard";
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isAdmin && activeTab === "settings") {
+      navigate(`/${resolveFamilyId()}/dashboard`, { replace: true });
+    }
+  }, [isAdmin, activeTab, navigate, syncId, state.syncId]);
+
+  const syncToCloud = async (newState: FamilyState) => {
+    // Supabase 模式下，写操作在各自函数内完成，这里仅更新本地状态
+    setState({ ...newState, lastSyncedAt: Date.now() } as FamilyState);
+  };
+
+  const handleTransaction = async () => {
+    if (!pendingAction || transactionLoading) return;
+    setPendingError(null);
+    const { title, points, type } = pendingAction;
+
+    if (type === "redeem" && currentProfile.balance < Math.abs(points)) {
+      const msg = "当前元气值不足";
+      setPendingError(msg);
+      showToast({ type: "error", title: msg, description: "请先完成任务赚取元气值" });
+      return;
+    }
+
+    setTransactionLoading(true);
+
+    const txId =
+      typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `tx-${Date.now()}`;
+    const transaction: Transaction = {
+      id: txId,
+      title,
+      points,
+      timestamp: Date.now(),
+      type,
+    };
+
+    const newState = {
+      ...state,
+      profiles: state.profiles.map((p) =>
+        p.id === state.currentProfileId
+          ? {
+              ...p,
+              balance: p.balance + points,
+              history: [transaction, ...p.history].slice(0, 50),
+            }
+          : p
+      ),
+    };
+
+    setState(newState);
+
+    const familyId = resolveFamilyId();
+    const loadingId = showToast({ type: "loading", title: "正在同步积分...", duration: 0 });
+    let synced = false;
+    try {
+      const { data: inserted, error: txErr } = await supabase
+        .from("transactions")
+        .insert({
+          family_id: familyId,
+          profile_id: state.currentProfileId,
+          title,
+          points,
+          type,
+          timestamp: new Date(transaction.timestamp).toISOString(),
+        })
+        .select()
+        .single();
+      if (txErr) throw txErr;
+      const { error: balErr } = await supabase
+        .from("profiles")
+        .update({ balance: currentProfile.balance + points })
+        .eq("id", state.currentProfileId);
+      if (balErr) throw balErr;
+      if (inserted) {
+        await refreshFamily(familyId);
+      }
+      synced = true;
+      showToast({
+        type: "success",
+        title: "已记录元气变动",
+        description: `${title}：${points > 0 ? "+" : ""}${points} 元气值`,
+      });
+    } catch (e) {
+      notifyError("积分变动失败", e);
+    } finally {
+      if (loadingId) dismissToast(loadingId);
+      setTransactionLoading(false);
+      setPendingAction(null);
+    }
+    await syncToCloud(newState);
+    if (!synced) {
+      showToast({ type: "info", title: "本地已保存", description: "同步遇到问题，请稍后刷新重试" });
+    }
+  };
+
+  const handleDeleteTransactions = async (ids: string[]): Promise<boolean> => {
+    if (!isAdmin || !ids.length) return false;
+    const familyId = resolveFamilyId();
+    const profileId = state.currentProfileId;
+    const profile = state.profiles.find((p) => p.id === profileId);
+    if (!familyId || !profile) return false;
+
+    const toRemove = profile.history.filter((h) => ids.includes(h.id));
+    if (!toRemove.length) return false;
+
+    const delta = toRemove.reduce((sum, tx) => sum + tx.points, 0);
+    const newBalance = profile.balance - delta;
+
+    const newState = {
+      ...state,
+      profiles: state.profiles.map((p) =>
+        p.id === profileId
+          ? {
+              ...p,
+              balance: newBalance,
+              history: p.history.filter((h) => !ids.includes(h.id)),
+            }
+          : p
+      ),
+    } as FamilyState;
+
+    setState(newState);
+    const loadingId = showToast({ type: "loading", title: "正在删除账单...", duration: 0 });
+
+    try {
+      const { error: delErr } = await supabase
+        .from("transactions")
+        .delete()
+        .eq("family_id", familyId)
+        .in("id", ids);
+      if (delErr) throw delErr;
+      const { error: balErr } = await supabase
+        .from("profiles")
+        .update({ balance: newBalance })
+        .eq("id", profileId)
+        .eq("family_id", familyId);
+      if (balErr) throw balErr;
+      await refreshFamily(familyId);
+      showToast({
+        type: "success",
+        title: "已删除账单",
+        description: `共删除 ${toRemove.length} 条记录，余额已更新`,
+      });
+      return true;
+    } catch (e) {
+      notifyError("删除账单失败", e);
+      await refreshFamily(familyId);
+      return false;
+    } finally {
+      if (loadingId) dismissToast(loadingId);
+      await syncToCloud(newState);
+    }
+  };
+
+  const handleAdjustBalance = async (
+    profileId: string,
+    payload: { title: string; points: number; type: "earn" | "penalty" }
+  ) => {
+    if (!isAdmin) return;
+    const familyId = resolveFamilyId();
+    const profile = state.profiles.find((p) => p.id === profileId);
+    if (!familyId || !profile) return;
+
+    const adjPoints =
+      payload.type === "penalty" ? -Math.abs(payload.points) : Math.abs(payload.points);
+    const txId =
+      typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `tx-${Date.now()}`;
+    const transaction: Transaction = {
+      id: txId,
+      title: payload.title,
+      points: adjPoints,
+      timestamp: Date.now(),
+      type: payload.type,
+    };
+
+    const newState = {
+      ...state,
+      profiles: state.profiles.map((p) =>
+        p.id === profileId
+          ? {
+              ...p,
+              balance: p.balance + adjPoints,
+              history: [transaction, ...p.history].slice(0, 50),
+            }
+          : p
+      ),
+    } as FamilyState;
+
+    setState(newState);
+    const loadingId = showToast({ type: "loading", title: "正在调整元气值...", duration: 0 });
+    try {
+      const { error: txErr } = await supabase.from("transactions").insert({
+        family_id: familyId,
+        profile_id: profileId,
+        title: transaction.title,
+        points: transaction.points,
+        type: transaction.type,
+        timestamp: new Date(transaction.timestamp).toISOString(),
+      });
+      if (txErr) throw txErr;
+      const { error: balErr } = await supabase
+        .from("profiles")
+        .update({ balance: profile.balance + adjPoints })
+        .eq("id", profileId)
+        .eq("family_id", familyId);
+      if (balErr) throw balErr;
+      await refreshFamily(familyId);
+      showToast({
+        type: "success",
+        title: "已调整元气值",
+        description: `${profile.name}: ${adjPoints > 0 ? "+" : ""}${adjPoints}`,
+      });
+    } catch (e) {
+      notifyError("调整元气值失败", e);
+      await refreshFamily(familyId);
+    } finally {
+      if (loadingId) dismissToast(loadingId);
+      await syncToCloud(newState);
+    }
+  };
+
+  const crudAction = async (type: "task" | "reward", action: "save" | "delete", item: any) => {
+    if (!isAdmin) return;
+    if (action === "save" && crudSaving) return;
+    if (action === "save") setCrudSaving(true);
+    const familyId = resolveFamilyId();
+    let newState = { ...state } as FamilyState;
+    let success = false;
+    const typeLabel = type === "task" ? "任务" : "奖品";
+
+    try {
+      if (type === "task") {
+        if (action === "save") {
+          if (
+            item.imageUrl &&
+            typeof item.imageUrl === "string" &&
+            item.imageUrl.startsWith("data:")
+          ) {
+            item.imageUrl = await uploadImageToBucket(item.imageUrl, "tasks");
+          }
+          const exists = state.tasks.find((t) => t.id === item.id);
+          const payload = { ...item, id: item.id || undefined, family_id: familyId };
+          if (exists) {
+            const { error } = await supabase.from("tasks").update(payload).eq("id", item.id);
+            if (error) throw error;
+            await sendSystemNotification(`${currentProfile.name} 更新了任务「${item.title}」`);
+          } else {
+            const { data, error } = await supabase.from("tasks").insert(payload).select().single();
+            if (error) throw error;
+            item = data;
+            await sendSystemNotification(
+              `${currentProfile.name} 新增了任务「${item.title}」（+${item.points}元气）`
+            );
+          }
+          await refreshFamily(familyId);
+          setEditingItem(null);
+          success = true;
+          showToast({
+            type: "success",
+            title: "任务已保存",
+            description: item.title || "已更新任务配置",
+          });
+          return;
+        } else {
+          await supabase.from("tasks").delete().eq("id", item.id);
+          newState.tasks = state.tasks.filter((t) => t.id !== item.id);
+          success = true;
+        }
+      } else if (type === "reward") {
+        if (action === "save") {
+          if (
+            item.imageUrl &&
+            typeof item.imageUrl === "string" &&
+            item.imageUrl.startsWith("data:")
+          ) {
+            item.imageUrl = await uploadImageToBucket(item.imageUrl, "rewards");
+          }
+          const exists = state.rewards.find((r) => r.id === item.id);
+          const payload = { ...item, id: item.id || undefined, family_id: familyId };
+          if (exists) {
+            const { error } = await supabase.from("rewards").update(payload).eq("id", item.id);
+            if (error) throw error;
+            await sendSystemNotification(`${currentProfile.name} 更新了奖品「${item.title}」`);
+          } else {
+            const { data, error } = await supabase
+              .from("rewards")
+              .insert(payload)
+              .select()
+              .single();
+            if (error) throw error;
+            item = data;
+            await sendSystemNotification(
+              `${currentProfile.name} 上新了奖品「${item.title}」（${item.points}元气）`
+            );
+          }
+          await refreshFamily(familyId);
+          setEditingItem(null);
+          success = true;
+          showToast({
+            type: "success",
+            title: "任务已保存",
+            description: item.title || "已更新任务配置",
+          });
+          return;
+        } else {
+          await supabase.from("rewards").delete().eq("id", item.id);
+          newState.rewards = state.rewards.filter((r) => r.id !== item.id);
+          success = true;
+        }
+      }
+    } catch (e) {
+      notifyError(`${typeLabel}${action === "save" ? "保存" : "删除"}失败`, e);
+    } finally {
+      if (action === "save") setCrudSaving(false);
+    }
+
+    if (!success) return;
+
+    if (action === "delete") {
+      setState(newState);
+      await syncToCloud(newState);
+      await refreshFamily(familyId);
+      showToast({ type: "success", title: `${typeLabel}已删除` });
+    }
+  };
+
+  const avatarPalette = [
+    "bg-blue-600",
+    "bg-pink-500",
+    "bg-purple-500",
+    "bg-amber-500",
+    "bg-emerald-500",
+    "bg-indigo-500",
+  ];
+
+  const handleProfileNameChange = async (id: string, name: string) => {
+    if (!isAdmin) return;
+    const newState = {
+      ...state,
+      profiles: state.profiles.map((p) => (p.id === id ? { ...p, name } : p)),
+    } as FamilyState;
+    setState(newState);
+    const familyId = resolveFamilyId();
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ name })
+        .eq("id", id)
+        .eq("family_id", familyId);
+      if (error) throw error;
+      await refreshFamily(familyId);
+      showToast({ type: "success", title: "姓名已更新" });
+    } catch (e) {
+      notifyError("更新成员姓名失败", e);
+    }
+    await syncToCloud(newState);
+  };
+
+  const handleUpdateProfileAvatar = async (id: string, avatarUrl: string | null) => {
+    if (!isAdmin) return;
+    let finalUrl = avatarUrl;
+    try {
+      if (avatarUrl && avatarUrl.startsWith("data:")) {
+        finalUrl = await uploadImageToBucket(avatarUrl, "avatars");
+      }
+    } catch (e) {
+      notifyError("上传头像失败", e);
+      return;
+    }
+
+    const newState = {
+      ...state,
+      profiles: state.profiles.map((p) => (p.id === id ? { ...p, avatarUrl: finalUrl } : p)),
+    } as FamilyState;
+    setState(newState);
+    const familyId = resolveFamilyId();
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: finalUrl })
+        .eq("id", id)
+        .eq("family_id", familyId);
+      if (error) throw error;
+      await refreshFamily(familyId);
+      showToast({ type: "success", title: "头像已更新" });
+    } catch (e) {
+      notifyError("更新头像失败", e);
+    }
+    await syncToCloud(newState);
+  };
+
+  const handleAddProfile = async (
+    name: string,
+    role: "admin" | "child",
+    initialBalance?: number,
+    avatarUrl?: string | null
+  ) => {
+    if (!isAdmin) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const familyId = resolveFamilyId();
+    const balance = Number.isFinite(initialBalance) ? Number(initialBalance) : 0;
+    let finalAvatar = avatarUrl || null;
+    try {
+      if (avatarUrl && avatarUrl.startsWith("data:")) {
+        finalAvatar = await uploadImageToBucket(avatarUrl, "avatars");
+      }
+    } catch (e) {
+      notifyError("上传头像失败", e);
+      return;
+    }
+
+    const newProfile: Profile = {
+      id: `p-${Date.now()}`,
+      name: trimmed,
+      balance,
+      history: [],
+      avatarColor: avatarPalette[state.profiles.length % avatarPalette.length],
+      avatarUrl: finalAvatar,
+      role,
+    };
+    const newState = { ...state, profiles: [...state.profiles, newProfile] } as FamilyState;
+    setState(newState);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .insert({
+          family_id: familyId,
+          name: newProfile.name,
+          balance: newProfile.balance,
+          role: newProfile.role,
+          avatar_color: newProfile.avatarColor,
+          avatar_url: finalAvatar,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      if (data) {
+        await refreshFamily(familyId);
+        await sendSystemNotification(`${currentProfile.name} 添加了新成员「${newProfile.name}」`);
+      }
+      showToast({ type: "success", title: "成员已新增", description: newProfile.name });
+    } catch (e) {
+      notifyError("新增成员失败", e);
+    }
+    await syncToCloud(newState);
+  };
+
+  const handleDeleteProfile = async (id: string) => {
+    if (!isAdmin) return;
+    const target = state.profiles.find((p) => p.id === id);
+    if (!target) return;
+    if (state.profiles.length <= 1) {
+      showToast({ type: "error", title: "至少保留一位成员", description: "无法删除最后一名成员" });
+      return;
+    }
+    const admins = state.profiles.filter((p) => p.role === "admin");
+    if (target.role === "admin" && admins.length <= 1) {
+      showToast({
+        type: "error",
+        title: "至少保留一位管理员",
+        description: "请先指定其他管理员后再删除",
+      });
+      return;
+    }
+    const remainingProfiles = state.profiles.filter((p) => p.id !== id);
+    const nextCurrent =
+      state.currentProfileId === id
+        ? remainingProfiles.find((p) => p.role === "admin")?.id || remainingProfiles[0].id
+        : state.currentProfileId;
+
+    const newState = {
+      ...state,
+      profiles: remainingProfiles,
+      currentProfileId: nextCurrent,
+    } as FamilyState;
+    setState(newState);
+    const familyId = resolveFamilyId();
+    try {
+      await supabase.from("profiles").delete().eq("id", id).eq("family_id", familyId);
+      await refreshFamily(familyId);
+      await sendSystemNotification(`${currentProfile.name} 移除了成员「${target.name}」`);
+      showToast({ type: "success", title: "成员已删除", description: target.name });
+    } catch (e) {
+      notifyError("删除成员失败", e);
+    }
+    await syncToCloud(newState);
+  };
+
+  const handleSwitchProfile = (id: string) => {
+    setShowProfileSwitcher(false);
+
+    setState((prev) => {
+      if (prev.currentProfileId === id) {
+        return prev;
+      }
+      return { ...prev, currentProfileId: id } as FamilyState;
+    });
+  };
+
+  const handleTransfer = async (toProfileId: string, points: number, message: string) => {
+    const familyId = resolveFamilyId();
+    if (!familyId) return;
+
+    const loadingId = showToast({ type: "loading", title: "正在转赠...", duration: 0 });
+
+    try {
+      // 创建转赠交易记录（双向）- 不指定 id，让数据库自动生成 UUID
+      const { error: txError } = await supabase.from("transactions").insert([
+        {
+          family_id: familyId,
+          profile_id: state.currentProfileId,
+          title: `转赠给 ${state.profiles.find((p) => p.id === toProfileId)?.name}`,
+          points: -points,
+          type: "transfer",
+          from_profile_id: state.currentProfileId,
+          to_profile_id: toProfileId,
+          timestamp: new Date().toISOString(),
+        },
+        {
+          family_id: familyId,
+          profile_id: toProfileId,
+          title: `来自 ${currentProfile.name} 的转赠`,
+          points: points,
+          type: "transfer",
+          from_profile_id: state.currentProfileId,
+          to_profile_id: toProfileId,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      if (txError) throw txError;
+
+      // 更新余额
+      await supabase
+        .from("profiles")
+        .update({ balance: currentProfile.balance - points })
+        .eq("id", state.currentProfileId)
+        .eq("family_id", familyId);
+
+      const toProfile = state.profiles.find((p) => p.id === toProfileId);
+      if (toProfile) {
+        await supabase
+          .from("profiles")
+          .update({ balance: toProfile.balance + points })
+          .eq("id", toProfileId)
+          .eq("family_id", familyId);
+      }
+
+      // 记录转赠日志
+      await supabase.from("transfer_logs").insert({
+        family_id: familyId,
+        from_profile_id: state.currentProfileId,
+        to_profile_id: toProfileId,
+        points: points,
+        message: message,
+      });
+
+      // 发送系统通知
+      await sendSystemNotification(
+        `${currentProfile.name} 向 ${toProfile?.name} 转赠了 ${points} 元气值${message ? `：${message}` : ""}`
+      );
+
+      await refreshFamily(familyId);
+      showToast({ type: "success", title: "转赠成功" });
+    } catch (error) {
+      notifyError("转赠失败", error);
+    } finally {
+      if (loadingId) dismissToast(loadingId);
+    }
+  };
+
+  const handleSubmitWishlist = async (
+    title: string,
+    points: number,
+    type: "实物奖品" | "特权奖励",
+    imageUrl?: string
+  ) => {
+    const familyId = resolveFamilyId();
+    if (!familyId) return;
+
+    const loadingId = showToast({ type: "loading", title: "正在提交愿望...", duration: 0 });
+
+    try {
+      const status = isAdmin ? "active" : "pending";
+      const { error } = await supabase.from("rewards").insert({
+        family_id: familyId,
+        title: title,
+        points: points,
+        type: type,
+        image_url: imageUrl,
+        status: status,
+        requested_by: state.currentProfileId,
+        requested_at: new Date().toISOString(),
+      });
+
+      if (error) throw error;
+
+      await sendSystemNotification(
+        `${currentProfile.name} ${isAdmin ? "添加了新奖品" : "提交了新愿望"}：${title}（${points}元气值）`
+      );
+      await refreshFamily(familyId);
+      showToast({
+        type: "success",
+        title: isAdmin ? "奖品已上架" : "愿望已提交",
+        description: isAdmin ? "已直接添加到商店列表" : "等待管理员审核",
+      });
+    } catch (error) {
+      notifyError("提交愿望失败", error);
+      throw error;
+    } finally {
+      if (loadingId) dismissToast(loadingId);
+    }
+  };
+
+  const handleApproveWishlist = async (rewardId: string) => {
+    const familyId = resolveFamilyId();
+    if (!familyId) return;
+
+    const loadingId = showToast({ type: "loading", title: "正在批准...", duration: 0 });
+
+    try {
+      const { error } = await supabase
+        .from("rewards")
+        .update({ status: "active" })
+        .eq("id", rewardId)
+        .eq("family_id", familyId);
+
+      if (error) throw error;
+
+      const reward = state.rewards.find(r => r.id === rewardId);
+      if (reward) {
+        await supabase.from("wishlist_reviews").insert({
+          reward_id: rewardId,
+          family_id: familyId,
+          reviewer_id: state.currentProfileId,
+          action: "approved",
+        });
+        await sendSystemNotification(`管理员批准了愿望：${reward.title}`);
+      }
+
+      await refreshFamily(familyId);
+      showToast({ type: "success", title: "已批准", description: "愿望已上架到商店" });
+    } catch (error) {
+      notifyError("批准失败", error);
+    } finally {
+      if (loadingId) dismissToast(loadingId);
+    }
+  };
+
+  const handleRejectWishlist = async (rewardId: string) => {
+    const familyId = resolveFamilyId();
+    if (!familyId) return;
+
+    const loadingId = showToast({ type: "loading", title: "正在拒绝...", duration: 0 });
+
+    try {
+      const { error } = await supabase
+        .from("rewards")
+        .update({ status: "rejected" })
+        .eq("id", rewardId)
+        .eq("family_id", familyId);
+
+      if (error) throw error;
+
+      const reward = state.rewards.find(r => r.id === rewardId);
+      if (reward) {
+        await supabase.from("wishlist_reviews").insert({
+          reward_id: rewardId,
+          family_id: familyId,
+          reviewer_id: state.currentProfileId,
+          action: "rejected",
+        });
+        await sendSystemNotification(`管理员拒绝了愿望：${reward.title}`);
+      }
+
+      await refreshFamily(familyId);
+      showToast({ type: "success", title: "已拒绝", description: "愿望已被拒绝" });
+    } catch (error) {
+      notifyError("拒绝失败", error);
+    } finally {
+      if (loadingId) dismissToast(loadingId);
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingItem) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEditingItem({
+        ...editingItem,
+        item: { ...editingItem.item, imageUrl: reader.result as string },
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const filteredTasks = useMemo(() => {
+    const sorted = [...state.tasks].sort((a, b) => a.points - b.points);
+    return taskFilter === "all" ? sorted : sorted.filter((t) => t.category === taskFilter);
+  }, [state.tasks, taskFilter]);
+
+  const filteredRewards = useMemo(() => {
+    const sorted = [...state.rewards].sort((a, b) => a.points - b.points);
+    return rewardFilter === "all" ? sorted : sorted.filter((r) => r.type === rewardFilter);
+  }, [state.rewards, rewardFilter]);
+
+  const goTab = (
+    tab: "dashboard" | "earn" | "redeem" | "history" | "settings" | "achievements"
+  ) => {
+    const target = resolveFamilyId();
+    if (!target) return;
+    navigate(`/${target}/${tab}`);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setSession(null);
+      setFatalError(null);
+      setIsSyncing(false);
+      setState({
+        currentProfileId: null,
+        profiles: [],
+        tasks: [],
+        rewards: [],
+        syncId: "",
+      });
+      navigate("/", { replace: true });
+    } catch (e) {
+      notifyError("退出登录失败", e);
+    }
+  };
+
+  const resolvedFamilyId = activeFamilyId;
+
+  useEffect(() => {
+    // Both window and container scroll to top, with a tiny delay to ensure render
+    const timer = setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (mainContentRef.current) {
+        mainContentRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 10);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  if (!authReady) {
+    return <Splash duration={0} message="正在初始化系统..." />;
+  }
+
+  if (!session) {
+    const path = location.pathname;
+    if (path.startsWith("/reset")) {
+      return <PasswordResetPage />;
+    }
+    return <AuthGate />;
+  }
+
+
+
+  if (!activeFamilyId && !fatalError) {
+    return <Splash duration={0} message="正在进入元气空间..." />;
+  }
+
+  if (fatalError && !activeFamilyId) {
+     // 如果没有 Family ID 且有致命错误，显示错误界面
+     return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+           <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 text-center">
+             <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+               <span className="text-2xl">⚠️</span>
+             </div>
+             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">无法加载家庭空间</h3>
+             <p className="text-gray-500 dark:text-gray-400 mb-6">{fatalError}</p>
+             <button 
+               onClick={() => window.location.reload()}
+               className="btn-base btn-primary w-full"
+             >
+               重新加载
+             </button>
+           </div>
+        </div>
+     );
+  }
+
+  return (
+    <div
+      className="min-h-screen flex flex-col lg:flex-row transition-colors"
+      style={{ background: "var(--app-bg)", color: "var(--text-primary)" }}
+    >
+      {/* 仅在初始化且本次会话从未展示过时显示全屏 Splash */}
+      {(showSplash || (!authReady && !activeFamilyId && !sessionStorage.getItem('fpb_splash_shown'))) && (
+        <Splash 
+          duration={2500} 
+          onComplete={() => setShowSplash(false)} 
+          message={!authReady ? "正在初始化系统..." : "系统就绪，欢迎回来"}
+        />
+      )}
+      
+      {activeFamilyId && (
+        <>
+      {fatalError && (
+        <div className="mx-3 sm:mx-0 mb-4 rounded-2xl bg-rose-50 dark:bg-rose-900/40 text-rose-700 dark:text-rose-100 border border-rose-100 dark:border-rose-800 px-4 py-3 flex items-start gap-3 mobile-card">
+          <span className="mt-0.5 text-base">⚠️</span>
+          <div className="text-sm leading-relaxed">
+            <p className="font-bold">同步失败</p>
+            <p className="text-rose-600 dark:text-rose-100/80 break-words">{fatalError}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="hidden lg:block lg:sticky lg:top-0 lg:h-screen">
+        <Sidebar
+          activeTab={activeTab}
+          onChangeTab={goTab}
+          isAdmin={isAdmin}
+          currentProfile={currentProfile}
+          onToggleProfileSwitcher={() => setShowProfileSwitcher(true)}
+        />
+      </div>
+
+      <main 
+        ref={mainContentRef}
+        className="flex-1 w-full lg:p-8 px-3 sm:px-4 pt-8 pb-28 lg:pt-5 lg:pb-10 overflow-y-auto no-scrollbar relative"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+      >
+        {isRefreshing && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] animate-bounce">
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-2 rounded-full shadow-lg border border-white/20">
+              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          </div>
+        )}
+        <HeaderBar
+          activeTab={activeTab}
+          currentProfile={currentProfile}
+          profiles={state.profiles}
+          isAdmin={isAdmin}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onPrint={() => printReport(state)}
+          onLogout={handleLogout}
+          onTransfer={() => setShowTransferModal(true)}
+          onWishlist={() => setShowWishlistModal(true)}
+          onSwitchProfile={(id) => setState(s => ({ ...s, currentProfileId: id }))}
+          chatUnreadCount={unreadChatCount}
+          onToggleChat={() => setShowChat(prev => !prev)}
+          onRefresh={() => refreshFamily()}
+          isSyncing={isSyncing}
+          onOpenSearch={() => setShowSearchModal(true)}
+        />
+
+        <Routes>
+          <Route
+            path="/"
+            element={
+              activeFamilyId ? (
+                <Navigate to={`/${activeFamilyId}/dashboard`} replace />
+              ) : (
+                <AuthGate />
+              )
+            }
+          />
+          <Route path="/reset" element={<PasswordResetPage />} />
+          <Route
+            path="/:syncId"
+            element={
+              resolvedFamilyId ? (
+                <Navigate to={`/${resolvedFamilyId}/dashboard`} replace />
+              ) : (
+                <AuthGate />
+              )
+            }
+          />
+          <Route
+            path="/:syncId/dashboard"
+            element={
+              <DashboardSection
+                currentProfile={currentProfile}
+                profiles={state.profiles}
+                rewards={state.rewards}
+                tasks={state.tasks}
+                onGoEarn={() => goTab("earn")}
+                onGoRedeem={() => goTab("redeem")}
+                onGoHistory={() => goTab("history")}
+                onRedeem={(payload: any) => setPendingAction(payload)}
+                onSelectTask={(payload: any) => setPendingAction(payload)}
+              />
+            }
+          />
+          <Route
+            path="/:syncId/earn"
+            element={
+              <EarnSection
+                tasks={state.tasks}
+                onSelectTask={(payload: any) => setPendingAction(payload)}
+                currentProfile={currentProfile}
+              />
+            }
+          />
+          <Route
+            path="/:syncId/redeem"
+            element={
+              <RedeemSection
+                rewards={state.rewards}
+                balance={currentProfile.balance}
+                onRedeem={(payload: any) => setPendingAction(payload)}
+                isAdmin={isAdmin}
+                onApproveWishlist={handleApproveWishlist}
+                onRejectWishlist={handleRejectWishlist}
+                profiles={state.profiles}
+                onAddWish={() => setShowWishlistModal(true)}
+                currentProfile={currentProfile}
+              />
+            }
+          />
+          <Route
+            path="/:syncId/history"
+            element={
+              <HistorySection
+                history={currentProfile.history}
+                isAdmin={isAdmin}
+                onDeleteTransactions={handleDeleteTransactions}
+              />
+            }
+          />
+          <Route
+            path="/:syncId/settings"
+            element={
+              isAdmin ? (
+                <SettingsSection
+                  profiles={state.profiles}
+                  tasks={filteredTasks}
+                  rewards={filteredRewards}
+                  taskFilter={taskFilter}
+                  rewardFilter={rewardFilter}
+                  onTaskFilterChange={setTaskFilter}
+                  onRewardFilterChange={setRewardFilter}
+                  onEdit={(payload) => setEditingItem(payload)}
+                  onDelete={(type, item) => crudAction(type, "delete", item)}
+                  onPrint={() => printReport(state)}
+                  onProfileNameChange={(id: string, name: string) => handleProfileNameChange(id, name)}
+                  onUpdateProfileAvatar={(id: string, avatarUrl: string | null) =>
+                    handleUpdateProfileAvatar(id, avatarUrl)
+                  }
+                  onAddProfile={(name, role, balance, avatarUrl) =>
+                    handleAddProfile(name, role, balance, avatarUrl)
+                  }
+                  onDeleteProfile={(id: string) => handleDeleteProfile(id)}
+                  onAdjustBalance={(profileId: string, payload: any) => handleAdjustBalance(profileId, payload)}
+                  currentSyncId={resolveFamilyId()}
+                  currentProfileId={state.currentProfileId ?? undefined}
+                  onSendSystemNotification={sendSystemNotification}
+                  onApproveWishlist={handleApproveWishlist}
+                  onRejectWishlist={handleRejectWishlist}
+                />
+              ) : (
+                <Navigate to={`/${resolveFamilyId()}/dashboard`} replace />
+              )
+            }
+          />
+          <Route
+            path="/:syncId/achievements"
+            element={
+              <AchievementCenter 
+                currentProfile={currentProfile} 
+                familyId={activeFamilyId || ""} 
+                onRefresh={() => refreshFamily()}
+              />
+            }
+          />
+          <Route path="/:syncId/doc" element={<DocsPage />} />
+          <Route path="*" element={<Navigate to={`/${resolveFamilyId()}/dashboard`} replace />} />
+        </Routes>
+      </main>
+
+      <MobileNav
+        activeTab={activeTab}
+        onChangeTab={goTab}
+        isAdmin={isAdmin}
+      />
+
+      {activeFamilyId && (
+        <ChatWidget
+          currentProfile={currentProfile}
+          familyId={activeFamilyId || ""}
+          profiles={state.profiles}
+          isOpen={showChat}
+          onClose={() => setShowChat(false)}
+          onUnreadChange={setUnreadChatCount}
+          onSwitchProfile={(id) => handleSwitchProfile(id)}
+        />
+      )}
+
+      <ProfileSwitcherModal
+        open={showProfileSwitcher}
+        profiles={state.profiles}
+        currentProfileId={state.currentProfileId ?? ""}
+        onSelect={(id) => handleSwitchProfile(id)}
+        onClose={() => setShowProfileSwitcher(false)}
+      />
+
+      {editingItem && isAdmin && (
+        <EditModal
+          editingItem={editingItem}
+          onClose={() => setEditingItem(null)}
+          onSave={(type, item) => crudAction(type, "save", item)}
+          onUpdate={setEditingItem}
+          fileInputRef={fileInputRef}
+          onImageChange={handleImageUpload}
+          saving={crudSaving}
+        />
+      )}
+
+      <PendingActionModal
+        pendingAction={pendingAction}
+        error={pendingError}
+        loading={transactionLoading}
+        onCancel={() => {
+          setPendingError(null);
+          setPendingAction(null);
+        }}
+        onConfirm={handleTransaction}
+      />
+
+      <PasswordResetModal open={showPasswordReset} onClose={() => setShowPasswordReset(false)} />
+
+      <TransferModal
+        open={showTransferModal}
+        onClose={() => setShowTransferModal(false)}
+        currentProfile={currentProfile}
+        profiles={state.profiles}
+        onTransfer={handleTransfer}
+      />
+
+      <WishlistModal
+        open={showWishlistModal}
+        onClose={() => setShowWishlistModal(false)}
+        onSubmit={handleSubmitWishlist}
+      />
+
+      <GlobalSearchModal
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        tasks={state.tasks}
+        rewards={state.rewards}
+        profiles={state.profiles}
+        onGoTab={(tab) => goTab(tab as any)}
+        onSelectTask={(payload: { title: string; points: number; type: "earn" }) => setPendingAction(payload)}
+        onRedeem={(payload: { title: string; points: number; type: "redeem" }) => setPendingAction(payload)}
+        onWishlist={() => setShowWishlistModal(true)}
+        onTransfer={() => setShowTransferModal(true)}
+        onSwitchProfile={(id) => setState(s => ({ ...s, currentProfileId: id }))}
+      />
+      </>
+      )}
+    </div>
+  );
+}
