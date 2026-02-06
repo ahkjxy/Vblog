@@ -100,7 +100,7 @@ export function Comments({ postId }: CommentsProps) {
         if (profile) {
           setCurrentUser({ 
             id: user.id, 
-            name: profile.name || profile.username || user.email?.split('@')[0] || '匿名用户',
+            name: profile.name || user.email?.split('@')[0] || '匿名用户',
             avatar_url: profile.avatar_url 
           })
         }
