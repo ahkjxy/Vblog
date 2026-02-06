@@ -6,13 +6,14 @@
 
 ## ✅ 已完成的代码修改
 
-### 1. 博客系统 (blog-system)
+### 1. 博客系统 (blog-system) - Next.js
 - ✅ `src/lib/supabase/client.ts` - 浏览器端 cookie 配置
 - ✅ `src/lib/supabase/server.ts` - 服务端 cookie 配置  
 - ✅ `src/middleware.ts` - 中间件 cookie 配置
 
-### 2. 家庭积分系统 (family-points-bank)
+### 2. 家庭积分系统 (family-points-bank) - Vite + React
 - ✅ `supabaseClient.ts` - 自定义 cookie storage
+- ✅ `vercel.json` - 修正为 Vite 项目配置（不是 Next.js）
 
 ## 🚀 部署步骤
 
@@ -53,22 +54,38 @@ VITE_SUPABASE_ANON_KEY=你的密钥
 
 ### 步骤 3: 部署到 Vercel
 
-1. **部署博客系统**
-   ```bash
-   cd blog-system
-   vercel --prod
-   ```
+#### 3.1 部署博客系统 (Next.js)
 
-2. **部署家庭积分系统**
-   ```bash
-   cd family-points-bank
-   vercel --prod
-   ```
+```bash
+cd blog-system
+vercel --prod
+```
 
-3. **配置域名**
-   - 在 Vercel 项目设置中添加自定义域名
-   - blog-system → `blog.familybank.chat`
-   - family-points-bank → `www.familybank.chat`
+在 Vercel Dashboard 配置：
+- Framework: **Next.js** (自动检测)
+- Root Directory: `blog-system`
+- Build Command: `npm run build`
+- Output Directory: `.next`
+
+#### 3.2 部署家庭积分系统 (Vite)
+
+```bash
+cd family-points-bank
+vercel --prod
+```
+
+在 Vercel Dashboard 配置：
+- Framework: **Other** (不要选 Next.js!)
+- Root Directory: `family-points-bank`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+
+**重要：** 如果遇到 "No Next.js version detected" 错误，确保 `vercel.json` 没有 `"framework": "nextjs"` 配置。
+
+#### 3.3 配置域名
+
+- blog-system → `blog.familybank.chat`
+- family-points-bank → `www.familybank.chat`
 
 ### 步骤 4: DNS 配置
 
@@ -101,21 +118,45 @@ blog.familybank.chat → CNAME → cname.vercel-dns.com
    - 必须使用 HTTPS（本地开发除外）
    - 检查 SSL 证书是否有效
 
+4. **Vercel 构建日志**
+   - 检查两个项目是否都成功构建
+   - 确认输出目录正确
+
 ## 📝 注意事项
 
 - ⚠️ 本地开发 (localhost) 不会使用跨域 cookie
 - ⚠️ 必须在生产环境 (HTTPS) 测试
 - ⚠️ 清除浏览器 cookie 后需要重新登录
+- ⚠️ 家庭积分系统是 Vite 项目，不是 Next.js
 - ✅ Cookie 有效期为 1 年
 - ✅ 使用 SameSite=Lax 防止 CSRF
 
 ## 🆘 常见问题
 
-**Q: 为什么本地开发不工作？**
-A: 本地开发使用 localhost，不是 `.familybank.chat` 域名。需要在生产环境测试。
+### Q: 家庭积分系统显示 "No Next.js version detected"
 
-**Q: Session 还是不共享？**
-A: 检查 Supabase Dashboard 的 Redirect URLs 配置，确保包含两个域名。
+**A:** 这是正常的，因为它是 Vite 项目。解决方法：
+1. 确保 `vercel.json` 中没有 `"framework": "nextjs"`
+2. 设置 `"outputDirectory": "dist"`
+3. 在 Vercel Dashboard 选择 Framework: **Other**
 
-**Q: 如何验证配置正确？**
-A: 在浏览器开发者工具中检查 cookie 的 domain 属性。
+详见：`family-points-bank/VERCEL_DEPLOYMENT.md`
+
+### Q: 为什么本地开发不工作？
+
+**A:** 本地开发使用 localhost，不是 `.familybank.chat` 域名。需要在生产环境测试。
+
+### Q: Session 还是不共享？
+
+**A:** 检查 Supabase Dashboard 的 Redirect URLs 配置，确保包含两个域名。
+
+### Q: 如何验证配置正确？
+
+**A:** 在浏览器开发者工具中检查 cookie 的 domain 属性。
+
+## 📚 详细文档
+
+- [博客系统部署](blog-system/VERCEL_DEPLOYMENT.md)
+- [家庭积分系统部署](family-points-bank/VERCEL_DEPLOYMENT.md)
+- [跨域 Session 技术细节](blog-system/CROSS_DOMAIN_SESSION.md)
+

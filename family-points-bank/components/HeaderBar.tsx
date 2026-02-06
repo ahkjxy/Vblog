@@ -130,6 +130,20 @@ export function HeaderBar({ activeTab, currentProfile, isAdmin, theme, onToggleT
             </div>
           )}
 
+          {/* Blog Link */}
+          <div className="tooltip-container">
+            <a
+              href="https://blog.familybank.chat"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#FF4D94]/10 to-[#7C4DFF]/10 dark:from-[#FF4D94]/20 dark:to-[#7C4DFF]/20 border border-[#FF4D94]/20 dark:border-[#FF4D94]/30 text-[#FF4D94] hover:border-[#FF4D94] hover:shadow-lg hover:shadow-[#FF4D94]/20 transition-all flex items-center justify-center group relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] opacity-0 group-hover:opacity-10 transition-opacity" />
+              <Icon name="book-open" size={18} />
+            </a>
+            <div className="tooltip-cute text-[#FF4D94]">访问博客</div>
+          </div>
+
           {onRefresh && (
             <div className="tooltip-container">
               <button

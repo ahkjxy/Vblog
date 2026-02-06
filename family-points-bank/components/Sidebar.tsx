@@ -70,7 +70,25 @@ export function Sidebar({
       </nav>
 
       {/* Sidebar Profile Badge */}
-      <div className="mt-auto pt-6 border-t border-gray-100 dark:border-white/5">
+      <div className="mt-auto pt-6 border-t border-gray-100 dark:border-white/5 space-y-3">
+        {/* Blog Link */}
+        <a
+          href="https://blog.familybank.chat"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-[#FF4D94]/5 to-[#7C4DFF]/5 dark:from-[#FF4D94]/10 dark:to-[#7C4DFF]/10 border border-[#FF4D94]/20 dark:border-[#FF4D94]/30 hover:border-[#FF4D94] hover:shadow-lg hover:shadow-[#FF4D94]/10 transition-all group relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] opacity-0 group-hover:opacity-5 transition-opacity" />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform relative z-10">
+            <Icon name="book-open" size={16} />
+          </div>
+          <div className="flex-1 min-w-0 relative z-10">
+            <p className="text-sm font-black text-gray-900 dark:text-white">访问博客</p>
+            <p className="text-[9px] font-bold text-[#FF4D94] uppercase tracking-widest">Family Bank Blog</p>
+          </div>
+          <Icon name="arrow-right" size={14} className="text-[#FF4D94] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all relative z-10" />
+        </a>
+
         <button 
           onClick={onToggleProfileSwitcher}
           className="w-full text-left p-4 rounded-3xl bg-gray-50/80 dark:bg-white/5 border border-transparent hover:border-[#FF4D94]/20 hover:bg-white dark:hover:bg-white/10 transition-all group/sidebar-me overflow-hidden relative shadow-sm"
