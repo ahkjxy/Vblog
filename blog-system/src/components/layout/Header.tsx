@@ -8,7 +8,7 @@ import { Logo } from '@/components/Logo'
 import { LayoutDashboard, LogOut, ChevronDown, Sparkles, BookOpen, FolderOpen, Tag, Menu, X } from 'lucide-react'
 
 export function Header() {
-  const [user, setUser] = useState<{ name: string; avatar_url?: string; role?: string } | null>(null)
+  const [user, setUser] = useState<{ name: string; avatar_url?: string; role?: string; avatar_color?: string } | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -20,15 +20,46 @@ export function Header() {
     const checkUser = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (authUser) {
-        const { data: profile } = await supabase
+        // 1. 获取 family_members 记录
+        const { data: familyMember } = await supabase
+          .from('family_members')
+          .select('family_id')
+          .eq('user_id', authUser.id)
+          .maybeSingle()
+
+        // 2. 如果在家庭中，获取家长的 profile
+        let adminProfile = null
+        if (familyMember?.family_id) {
+          const { data: adminData } = await supabase
+            .from('profiles')
+            .select('name, avatar_url, avatar_color, role')
+            .eq('family_id', familyMember.family_id)
+            .eq('role', 'admin')
+            .limit(1)
+            .maybeSingle()
+          
+          adminProfile = adminData
+        }
+
+        // 3. 获取用户自己的 profile（如果有）
+        const { data: userProfile } = await supabase
           .from('profiles')
-          .select('name, avatar_url, role')
+          .select('name, avatar_url, avatar_color, role')
           .eq('id', authUser.id)
           .maybeSingle()
-        
-        if (profile) {
-          setUser(profile)
-        }
+
+        // 4. 设置用户信息（优先显示家长名字）
+        const displayName = adminProfile?.name || userProfile?.name || authUser.email?.split('@')[0] || '用户'
+        const displayAvatar = adminProfile?.avatar_url || userProfile?.avatar_url
+        const displayRole = userProfile?.role || 'author'
+        const avatarColor = adminProfile?.avatar_color || userProfile?.avatar_color
+
+        setUser({
+          name: displayName,
+          avatar_url: displayAvatar,
+          role: displayRole,
+          avatar_color: avatarColor
+        })
       }
     }
     checkUser()
@@ -135,6 +166,15 @@ export function Header() {
                     alt={user.name}
                     className="w-8 h-8 rounded-full border-2 border-purple-200 group-hover:border-purple-400 transition-colors"
                   />
+                ) : user.avatar_color ? (
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center shadow-md border-2 border-purple-200 group-hover:border-purple-400 transition-colors"
+                    style={{ backgroundColor: user.avatar_color }}
+                  >
+                    <span className="text-white text-sm font-bold">
+                      {user.name.slice(-1)}
+                    </span>
+                  </div>
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md">
                     <span className="text-white text-sm font-bold">
@@ -175,7 +215,7 @@ export function Header() {
                     </Link>
                     
                     <a
-                      href="https://www.familybank.chat/dashboard"
+                      href="https://www.familybank.chat/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors"
@@ -281,6 +321,15 @@ export function Header() {
                         alt={user.name}
                         className="w-10 h-10 rounded-full border-2 border-purple-200"
                       />
+                    ) : user.avatar_color ? (
+                      <div 
+                        className="w-10 h-10 rounded-full flex items-center justify-center shadow-md border-2 border-purple-200"
+                        style={{ backgroundColor: user.avatar_color }}
+                      >
+                        <span className="text-white text-sm font-bold">
+                          {user.name.slice(-1)}
+                        </span>
+                      </div>
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md">
                         <span className="text-white text-sm font-bold">

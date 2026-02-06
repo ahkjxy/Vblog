@@ -17,6 +17,7 @@ interface Comment {
   author_name: string
   author_email: string
   profiles: {
+    name?: string
     username: string
     avatar_url: string | null
     role: string
@@ -49,7 +50,7 @@ export default function CommentsPage() {
         .from('comments')
         .select(`
           *,
-          profiles(username, avatar_url, role),
+          profiles(name, username, avatar_url, role),
           posts(title, slug)
         `)
         .order('created_at', { ascending: false })
@@ -407,13 +408,13 @@ export default function CommentsPage() {
                       {comment.profiles?.avatar_url ? (
                         <img
                           src={comment.profiles.avatar_url}
-                          alt={comment.profiles.name}
+                          alt={comment.profiles.name || comment.profiles.username}
                           className="w-12 h-12 rounded-full ring-2 ring-gray-200"
                         />
                       ) : (
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold text-lg">
                           {comment.user_id 
-                            ? comment.profiles?.name?.charAt(0).toUpperCase()
+                            ? (comment.profiles?.name || comment.profiles?.username || '').charAt(0).toUpperCase()
                             : comment.author_name?.charAt(0).toUpperCase() || '?'
                           }
                         </div>
@@ -426,7 +427,7 @@ export default function CommentsPage() {
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-gray-900">
-                            {comment.user_id ? comment.profiles?.name : comment.author_name}
+                            {comment.user_id ? (comment.profiles?.name || comment.profiles?.username) : comment.author_name}
                           </span>
                           {comment.profiles?.role && (
                             <span className={cn(

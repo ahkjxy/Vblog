@@ -34,7 +34,8 @@ interface Comment {
   author_name: string
   author_email: string
   profiles?: {
-    name: string
+    name?: string
+    username?: string
     avatar_url?: string
   }
 }
@@ -93,12 +94,16 @@ export function Comments({ postId }: CommentsProps) {
         // 获取用户资料
         const { data: profile } = await supabase
           .from('profiles')
-          .select('name, avatar_url')
+          .select('name, username, avatar_url')
           .eq('id', user.id)
           .single()
         
         if (profile) {
-          setCurrentUser({ id: user.id, ...profile })
+          setCurrentUser({ 
+            id: user.id, 
+            name: profile.name || profile.username || user.email?.split('@')[0] || '匿名用户',
+            avatar_url: profile.avatar_url 
+          })
         }
       }
     }
@@ -116,7 +121,7 @@ export function Comments({ postId }: CommentsProps) {
         .from('comments')
         .select(`
           *,
-          profiles(name, avatar_url)
+          profiles(name, avatar_url, username)
         `)
         .eq('post_id', postId)
         .eq('status', 'approved')
@@ -390,14 +395,14 @@ export function Comments({ postId }: CommentsProps) {
                 {comment.profiles?.avatar_url ? (
                   <img
                     src={comment.profiles.avatar_url}
-                    alt={comment.profiles.name}
+                    alt={comment.profiles.name || comment.profiles.username || 'User'}
                     className="w-10 h-10 rounded-full flex-shrink-0 border-2 border-gray-200"
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center flex-shrink-0 border-2 border-gray-200">
-                    {comment.profiles?.name ? (
+                    {(comment.profiles?.name || comment.profiles?.username) ? (
                       <span className="text-white font-semibold text-sm">
-                        {comment.profiles.name.charAt(0).toUpperCase()}
+                        {(comment.profiles.name || comment.profiles.username || '').charAt(0).toUpperCase()}
                       </span>
                     ) : (
                       <User className="w-5 h-5 text-white" />
@@ -409,7 +414,7 @@ export function Comments({ postId }: CommentsProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-semibold text-gray-900">
-                      {comment.profiles?.name || comment.author_name}
+                      {comment.profiles?.name || comment.profiles?.username || comment.author_name}
                     </span>
                     <span className="text-sm text-gray-500">
                       {formatDate(comment.created_at)}

@@ -17,14 +17,15 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
+          const isProduction = process.env.NODE_ENV === 'production'
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value)
-            response.cookies.set(name, value, {
+            response.cookies.set(name, value, isProduction ? {
               ...options,
               domain: '.familybank.chat',
               sameSite: 'lax',
               secure: true,
-            })
+            } : options)
           })
         },
       },

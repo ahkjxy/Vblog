@@ -18,32 +18,43 @@ export default async function DashboardLayout({
     redirect('/auth/login')
   }
 
-  // 获取当前用户的 profile
-  const { data: profile, error: profileError } = await supabase
+  // 获取用户的 family_member 记录
+  const { data: familyMember } = await supabase
+    .from('family_members')
+    .select('family_id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  // 如果在家庭中，获取家长的 profile
+  let adminProfile = null
+  if (familyMember?.family_id) {
+    const { data: adminData } = await supabase
+      .from('profiles')
+      .select('name, avatar_url, avatar_color, role')
+      .eq('family_id', familyMember.family_id)
+      .eq('role', 'admin')
+      .limit(1)
+      .maybeSingle()
+    
+    adminProfile = adminData
+  }
+
+  // 获取用户自己的 profile
+  const { data: userProfile } = await supabase
     .from('profiles')
-    .select('name, role, avatar_url, family_id')
+    .select('name, avatar_url, avatar_color, role, balance')
     .eq('id', user.id)
     .maybeSingle()
 
-  // 如果没有 profile，使用默认值（不重定向，因为用户可能只在 family-points-bank 有数据）
-  const userName = profile?.name || user.email?.split('@')[0] || '用户'
-  const userRole = profile?.role || 'author'
-  const userAvatar = profile?.avatar_url
+  // 优先使用家长的数据
+  const userName = adminProfile?.name || userProfile?.name || user.email?.split('@')[0] || '用户'
+  const userRole = userProfile?.role || 'author'
+  const userAvatar = adminProfile?.avatar_url || userProfile?.avatar_url
+  const userBalance = userProfile?.balance || 0
+  const userAvatarColor = adminProfile?.avatar_color || userProfile?.avatar_color
 
   // 获取家长的名字（用于显示"进入 XX 的家庭"）
-  let familyAdminName = userName
-  if (profile?.family_id) {
-    const { data: adminProfiles } = await supabase
-      .from('profiles')
-      .select('name')
-      .eq('family_id', profile.family_id)
-      .eq('role', 'admin')
-      .limit(1)
-    
-    if (adminProfiles && adminProfiles.length > 0 && adminProfiles[0].name) {
-      familyAdminName = adminProfiles[0].name
-    }
-  }
+  const familyAdminName = adminProfile?.name || userName
 
   const navItems = [
     { href: '/dashboard', icon: 'LayoutDashboard', label: '概览' },
@@ -93,6 +104,15 @@ export default async function DashboardLayout({
                     alt={userName}
                     className="w-12 h-12 rounded-full border-2 border-white shadow-md"
                   />
+                ) : userAvatarColor ? (
+                  <div 
+                    className="w-12 h-12 rounded-full flex items-center justify-center shadow-md border-2 border-white"
+                    style={{ backgroundColor: userAvatarColor }}
+                  >
+                    <span className="text-white font-bold text-lg">
+                      {userName.slice(-1)}
+                    </span>
+                  </div>
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md border-2 border-white">
                     <span className="text-white font-bold">
@@ -102,8 +122,15 @@ export default async function DashboardLayout({
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-sm truncate text-gray-900">{userName}</div>
-                  <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-white rounded-full text-xs font-medium text-purple-700 border border-purple-200">
-                    {userRole === 'admin' ? '管理员' : userRole === 'editor' ? '编辑' : '作者'}
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-white rounded-full text-xs font-medium text-purple-700 border border-purple-200">
+                      {userRole === 'admin' ? '管理员' : userRole === 'editor' ? '编辑' : '作者'}
+                    </div>
+                    {userBalance > 0 && (
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-xs font-bold text-white">
+                        ⚡ {userBalance}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

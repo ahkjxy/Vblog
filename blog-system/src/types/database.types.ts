@@ -12,33 +12,85 @@ export interface Database {
       profiles: {
         Row: {
           id: string
-          username: string
-          email: string
+          name: string
           bio: string | null
           avatar_url: string | null
-          role: 'admin' | 'editor' | 'author'
+          avatar_color: string | null
+          role: 'admin' | 'child' | 'editor' | 'author'
+          family_id: string | null
+          balance: number
+          level: number
+          experience: number
           created_at: string
           updated_at: string
         }
         Insert: {
-          id: string
-          username: string
-          email: string
+          id?: string
+          name: string
           bio?: string | null
           avatar_url?: string | null
-          role?: 'admin' | 'editor' | 'author'
+          avatar_color?: string | null
+          role?: 'admin' | 'child' | 'editor' | 'author'
+          family_id?: string | null
+          balance?: number
+          level?: number
+          experience?: number
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          username?: string
-          email?: string
+          name?: string
           bio?: string | null
           avatar_url?: string | null
-          role?: 'admin' | 'editor' | 'author'
+          avatar_color?: string | null
+          role?: 'admin' | 'child' | 'editor' | 'author'
+          family_id?: string | null
+          balance?: number
+          level?: number
+          experience?: number
           created_at?: string
           updated_at?: string
+        }
+      }
+      families: {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      family_members: {
+        Row: {
+          id: string
+          family_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          family_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          family_id?: string
+          user_id?: string
+          created_at?: string
         }
       }
       posts: {

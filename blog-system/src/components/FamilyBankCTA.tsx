@@ -20,9 +20,7 @@ export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
   }, [supabase])
 
   // 根据登录状态决定跳转链接
-  const familyBankUrl = isLoggedIn 
-    ? 'https://www.familybank.chat/dashboard' 
-    : 'https://www.familybank.chat'
+  const familyBankUrl = 'https://www.familybank.chat/'
 
   if (variant === 'banner') {
     return (

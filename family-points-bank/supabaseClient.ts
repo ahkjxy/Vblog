@@ -3,16 +3,20 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mfgfbwhznqpdjumtsrus.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_2pDY4atjEw5MVSWeakl4HA_exf_osvS';
 
+// 检测是否在生产环境
+const isProduction = typeof window !== 'undefined' && window.location.hostname.includes('familybank.chat');
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storageKey: 'sb-auth-token',
-    storage: {
+    storage: isProduction ? {
       getItem: (key: string) => {
         if (typeof window === 'undefined') return null;
-        return document.cookie
+        const value = document.cookie
           .split('; ')
           .find(row => row.startsWith(`${key}=`))
           ?.split('=')[1] || null;
+        return value;
       },
       setItem: (key: string, value: string) => {
         if (typeof window === 'undefined') return;
@@ -20,8 +24,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       },
       removeItem: (key: string) => {
         if (typeof window === 'undefined') return;
-        document.cookie = `${key}=; path=/; domain=.familybank.chat; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+        document.cookie = `${key}=; path=/; domain=.familybank.chat; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure`;
       },
-    },
+    } : undefined, // 本地开发使用默认 localStorage
   },
 });
