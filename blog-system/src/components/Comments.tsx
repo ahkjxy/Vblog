@@ -36,10 +36,6 @@ interface Comment {
   profiles?: {
     name?: string
     avatar_url?: string
-    family_id?: string
-    families?: {
-      name?: string
-    }
   }
 }
 
@@ -53,13 +49,12 @@ type ToastType = 'success' | 'error'
 function formatAuthorName(profile: any): string {
   if (!profile) return '匿名用户'
   
-  // 如果有 families 信息，显示为"XX的家庭"
-  if (profile.families?.name) {
-    return `${profile.families.name}的家庭`
+  // 直接在 profile.name 后面加上"的家庭"
+  if (profile.name) {
+    return `${profile.name}的家庭`
   }
   
-  // 否则显示 profile 的 name
-  return profile.name || '匿名用户'
+  return '匿名用户'
 }
 
 export function Comments({ postId }: CommentsProps) {
@@ -137,12 +132,7 @@ export function Comments({ postId }: CommentsProps) {
         .from('comments')
         .select(`
           *,
-          profiles(
-            name, 
-            avatar_url,
-            family_id,
-            families(name)
-          )
+          profiles(name, avatar_url)
         `)
         .eq('post_id', postId)
         .eq('status', 'approved')

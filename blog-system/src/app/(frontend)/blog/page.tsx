@@ -22,9 +22,7 @@ export default async function BlogListPage() {
         author_id, 
         profiles!posts_author_id_fkey(
           name, 
-          avatar_url,
-          family_id,
-          families(name)
+          avatar_url
         )
       `)
       .eq('status', 'published')
@@ -45,9 +43,7 @@ export default async function BlogListPage() {
           author_id, 
           profiles!posts_author_id_fkey(
             name, 
-            avatar_url,
-            family_id,
-            families(name)
+            avatar_url
           )
         `)
         .eq('status', 'published')
@@ -70,9 +66,7 @@ export default async function BlogListPage() {
         author_id, 
         profiles!posts_author_id_fkey(
           name, 
-          avatar_url,
-          family_id,
-          families(name)
+          avatar_url
         )
       `)
       .eq('status', 'published')

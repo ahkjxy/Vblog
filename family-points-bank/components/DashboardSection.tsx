@@ -286,16 +286,16 @@ export function DashboardSection({
           <div className="p-1 px-1 sm:p-2 sm:px-2 flex border-b border-gray-50 dark:border-white/5 bg-gray-50/30 dark:bg-black/10">
              <button 
                onClick={() => setHeroTab('stats')}
-               className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 rounded-[24px] ${heroTab === 'stats' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-[#FF4D94]'}`}
+               className={`flex-1 py-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-[24px] ${heroTab === 'stats' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-[#FF4D94]'}`}
              >
-               <Icon name="shield" size={12} />
+               <Icon name="shield" size={14} />
                核心元气管理
              </button>
              <button 
                onClick={() => setHeroTab('progress')}
-               className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 rounded-[24px] ${heroTab === 'progress' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-[#FF4D94]'}`}
+               className={`flex-1 py-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-[24px] ${heroTab === 'progress' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-[#FF4D94]'}`}
              >
-               <Icon name="award" size={12} />
+               <Icon name="award" size={14} />
                元气成长阶梯
              </button>
           </div>
@@ -340,11 +340,11 @@ export function DashboardSection({
                           <div className="flex items-center justify-between gap-3 mb-1.5">
                              <div className="flex items-center gap-2">
                                 <h4 className="text-base font-black text-gray-900 dark:text-white truncate">{currentProfile.name}</h4>
-                                <span className="px-1.5 py-0.5 rounded-md bg-[#7C4DFF]/10 text-[#7C4DFF] text-[8px] font-black uppercase tracking-widest border border-[#7C4DFF]/15">
+                                <span className="px-1.5 py-0.5 rounded-md bg-[#7C4DFF]/10 text-[#7C4DFF] text-[9px] font-black uppercase tracking-wider border border-[#7C4DFF]/15">
                                   {ROLE_LABELS[currentProfile.role]}
                                 </span>
                              </div>
-                             <span className={`text-[9px] font-black uppercase tracking-[0.1em] ${myLevel.color} opacity-80`}>
+                             <span className={`text-[10px] font-black uppercase tracking-wider ${myLevel.color} opacity-80`}>
                                 {myLevel.name} LV.{myLevel.level}
                              </span>
                           </div>
@@ -352,7 +352,7 @@ export function DashboardSection({
                              <div className="h-1 w-full bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
                                 <div className="h-full bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] transition-all duration-1000 shadow-[0_0_8px_rgba(255,77,148,0.3)]" style={{ width: `${myLevel.progress}%` }} />
                              </div>
-                             <div className="flex justify-between items-center text-[8px] font-bold text-gray-400/80 uppercase tabular-nums">
+                             <div className="flex justify-between items-center text-[9px] font-bold text-gray-400/80 uppercase tabular-nums">
                                 <span>当前境界进度</span>
                                 <span>{myLevel.nextPoints ? `${totals.earned} / ${myLevel.nextPoints}` : '极致巅峰'}</span>
                              </div>
@@ -369,8 +369,8 @@ export function DashboardSection({
                       ].map((stat, i) => (
                         <div key={i} className="flex flex-col p-3 sm:p-4 rounded-[24px] bg-white dark:bg-black/20 border border-gray-100 dark:border-white/5 hover:border-[#FF4D94]/20 transition-all group/stat shadow-sm min-h-[84px]">
                            <div className="flex items-center justify-between mb-1.5">
-                             <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest group-hover/stat:text-[#FF4D94] transition-colors">{stat.label}</p>
-                             <Icon name={stat.icon as any} size={10} className="opacity-40" />
+                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider group-hover/stat:text-[#FF4D94] transition-colors">{stat.label}</p>
+                             <Icon name={stat.icon as any} size={12} className="opacity-40" />
                            </div>
                            <p className={`text-lg sm:text-xl font-black points-font truncate mt-auto ${
                              stat.tone === 'rose' ? 'text-rose-500' : 
@@ -479,47 +479,53 @@ export function DashboardSection({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 bg-white dark:bg-[#111827] p-8 rounded-[40px] border border-gray-100 dark:border-white/5 shadow-sm mobile-card">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-            <div>
-               <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">元气波动走势</h3>
-               <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">波动的曲线记录着每一天的努力</p>
-            </div>
-            <PillTabs tabs={[{ id: "week", label: "本周", icon: "📊" }, { id: "month", label: "近一月", icon: "📅" }]} activeId={chartView} onChange={(id) => setChartView(id as "week" | "month")} className="!bg-gray-50 dark:!bg-white/5 lg:!scale-100 scale-90" />
-          </div>
-          <div className="p-4 bg-gray-50/50 dark:bg-black/20 rounded-[32px] border border-gray-100 dark:border-transparent">
-            {renderLineChart(chartView === "week" ? weekly : monthly, chartView === "week" ? maxWeek : maxMonth)}
-          </div>
+        {/* 博客文章区域 - 替换原来的元气波动走势 */}
+        <div className="lg:col-span-8">
+          <BlogPosts />
         </div>
 
-        <div className="lg:col-span-4 bg-white dark:bg-[#111827] rounded-[40px] border border-gray-100 dark:border-white/5 shadow-sm flex flex-col h-full min-h-[460px] mobile-card">
+        <div className="lg:col-span-4 bg-white dark:bg-[#111827] rounded-[40px] border border-gray-100 dark:border-white/5 shadow-sm flex flex-col h-full mobile-card">
           <div className="p-6 lg:p-8 flex flex-col h-full">
-            <div className="flex items-center justify-between mb-8 h-[54px]">
-               <div>
-                  <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">实时动态流</h3>
-                  <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-1">云端实时同步中</p>
+            <div className="flex items-center justify-between mb-8">
+               <div className="flex-1">
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">实时动态流</h3>
+                  <p className="text-xs font-bold text-emerald-500 uppercase tracking-wider mt-1">云端实时同步中</p>
                </div>
-               <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">LIVE</span>
+               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-wider">LIVE</span>
                </div>
             </div>
-            <div className="flex-1 space-y-5 overflow-y-auto no-scrollbar pr-1" style={{ maxHeight: '320px' }}>
+            <div className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-1" style={{ minHeight: '440px', maxHeight: '440px' }}>
               {allTransactions.sort((a,b) => b.timestamp - a.timestamp).slice(0, 15).map((msg, idx) => (
-                <div key={idx} className="flex gap-4 group/activity items-start">
-                  <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md transform group-hover/activity:rotate-6 transition-all duration-300 ${msg.avatarColor || 'bg-gray-400'}`}>
+                <div key={idx} className="flex gap-3 group/activity items-start hover:bg-gray-50/50 dark:hover:bg-white/5 transition-all">
+                  <div className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-base shadow-md ${msg.avatarColor || 'bg-gray-400'}`}>
                     {(msg.profileName || '消').slice(-1)}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-1 text-[8px] font-black uppercase tracking-widest">
-                      <span className={`px-1.5 py-0.5 rounded-md ${msg.type === 'earn' ? 'bg-emerald-500/10 text-emerald-500' : msg.type === 'redeem' ? 'bg-rose-500/10 text-rose-500' : msg.type === 'penalty' ? 'bg-amber-500/10 text-amber-500' : 'bg-[#7C4DFF]/10 text-[#7C4DFF]'}`}>
+                  <div className="flex-1 min-w-0 py-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon 
+                        name={msg.type === 'earn' ? 'plus' : msg.type === 'redeem' ? 'reward' : msg.type === 'penalty' ? 'alert-circle' : 'arrow-right'} 
+                        size={14} 
+                        className={`shrink-0 ${msg.type === 'earn' ? 'text-emerald-500' : msg.type === 'redeem' ? 'text-rose-500' : msg.type === 'penalty' ? 'text-amber-500' : 'text-[#7C4DFF]'}`}
+                      />
+                      <span className={`text-[11px] font-black uppercase tracking-wider ${msg.type === 'earn' ? 'text-emerald-500' : msg.type === 'redeem' ? 'text-rose-500' : msg.type === 'penalty' ? 'text-amber-500' : 'text-[#7C4DFF]'}`}>
                         {msg.type === 'earn' ? '任务奖励' : msg.type === 'redeem' ? '梦想兑换' : msg.type === 'penalty' ? '违规扣减' : '能量转移'}
                       </span>
                     </div>
-                    <p className="text-[13px] font-black text-gray-800 dark:text-gray-200 truncate leading-tight">{msg.title}</p>
-                    <div className="flex items-center justify-between gap-1 mt-1">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter truncate opacity-80">{msg.profileName || '成员'} · {formatDateTime(msg.timestamp)}</p>
-                      <span className={`text-[11px] font-black tabular-nums points-font ${msg.points > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{msg.points > 0 ? '+' : ''}{msg.points} 能量</span>
+                    <p className="text-[15px] font-black text-gray-800 dark:text-gray-200 mb-2 line-clamp-1 leading-tight">{msg.title}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="inline-flex items-center gap-1.5">
+                          <Icon name="user" size={14} className="opacity-60 shrink-0 flex-shrink-0" />
+                          <span className="font-medium truncate max-w-[80px]">{msg.profileName || '成员'}</span>
+                        </div>
+                        <span className="opacity-40">·</span>
+                        <span className="font-medium shrink-0">{formatDateTime(msg.timestamp)}</span>
+                      </div>
+                      <span className={`text-base font-black tabular-nums points-font shrink-0 ${msg.points > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {msg.points > 0 ? '+' : ''}{msg.points}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -617,9 +623,6 @@ export function DashboardSection({
           </div>
         </div>
       </div>
-
-      {/* 博客文章区域 */}
-      <BlogPosts />
     </div>
   );
 }

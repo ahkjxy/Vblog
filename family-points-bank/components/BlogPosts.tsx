@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Icon } from './Icon';
 
@@ -11,7 +11,7 @@ interface BlogPost {
   view_count: number;
   profiles: {
     name: string;
-  };
+  } | null;
 }
 
 export function BlogPosts() {
@@ -47,12 +47,12 @@ export function BlogPosts() {
               .limit(3);
             
             if (fallbackError) throw fallbackError;
-            setPosts(fallbackData || []);
+            setPosts(fallbackData as any || []);
           } else {
             throw error;
           }
         } else {
-          setPosts(data || []);
+          setPosts(data as any || []);
         }
       } catch (queryError: any) {
         // 如果查询失败，尝试不带 review_status 的查询
@@ -65,7 +65,7 @@ export function BlogPosts() {
             .limit(3);
           
           if (fallbackError) throw fallbackError;
-          setPosts(fallbackData || []);
+          setPosts(fallbackData as any || []);
         } else {
           throw queryError;
         }
@@ -94,18 +94,19 @@ export function BlogPosts() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-            <Icon name="book-open" className="w-5 h-5 text-white" />
+      <div className="bg-white dark:bg-[#111827] rounded-[40px] p-8 border border-gray-100 dark:border-white/5 shadow-sm mobile-card flex flex-col h-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">最新博客</h3>
+            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">分享家庭管理的智慧与经验</p>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">最新博客</h2>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-5 flex-1">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            <div key={i} className="animate-pulse p-6 rounded-[28px] bg-gray-50/50 dark:bg-white/5">
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
             </div>
           ))}
         </div>
@@ -115,12 +116,12 @@ export function BlogPosts() {
 
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-            <Icon name="book-open" className="w-5 h-5 text-white" />
+      <div className="bg-white dark:bg-[#111827] rounded-[40px] p-8 border border-gray-100 dark:border-white/5 shadow-sm mobile-card flex flex-col h-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">最新博客</h3>
+            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">分享家庭管理的智慧与经验</p>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">最新博客</h2>
         </div>
         <p className="text-sm text-red-600 dark:text-red-400">加载失败</p>
       </div>
@@ -132,53 +133,50 @@ export function BlogPosts() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-            <Icon name="book-open" className="w-5 h-5 text-white" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">最新博客</h2>
+    <div className="bg-white dark:bg-[#111827] rounded-[40px] p-8 border border-gray-100 dark:border-white/5 shadow-sm mobile-card flex flex-col h-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">最新博客</h3>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">分享家庭管理的智慧与经验</p>
         </div>
         <a
           href="https://blog.familybank.chat"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors flex items-center gap-1"
+          className="text-xs font-black text-[#7C4DFF] uppercase tracking-wider hover:underline shrink-0"
         >
           查看全部
-          <Icon name="arrow-right" className="w-4 h-4" />
         </a>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-5 flex-1 overflow-y-auto no-scrollbar">
         {posts.map((post) => (
           <a
             key={post.id}
             href={`https://blog.familybank.chat/blog/${post.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="block p-4 rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 transition-all group border border-transparent hover:border-purple-200 dark:hover:border-purple-700"
+            className="block p-6 rounded-[28px] bg-gray-50/50 dark:bg-white/5 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 transition-all group border border-transparent hover:border-purple-200 dark:hover:border-purple-700 hover:shadow-md"
           >
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2">
+            <h3 className="font-black text-gray-900 dark:text-white mb-3 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors text-base leading-snug">
               {post.title}
             </h3>
             {post.excerpt && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed line-clamp-2">
                 {post.excerpt}
               </p>
             )}
-            <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
-              <span className="flex items-center gap-1">
-                <Icon name="user" className="w-3 h-3" />
-                {post.profiles?.name || '未知作者'}
+            <div className="flex items-center gap-4 text-xs font-bold text-gray-500 dark:text-gray-400">
+              <span className="inline-flex items-center gap-2">
+                <Icon name="user" size={14} className="flex-shrink-0" />
+                {post.profiles?.name ? `${post.profiles.name}的家庭` : '未知作者'}
               </span>
-              <span className="flex items-center gap-1">
-                <Icon name="clock" className="w-3 h-3" />
+              <span className="inline-flex items-center gap-2">
+                <Icon name="clock" size={14} className="flex-shrink-0" />
                 {formatDate(post.published_at)}
               </span>
-              <span className="flex items-center gap-1">
-                <Icon name="eye" className="w-3 h-3" />
+              <span className="inline-flex items-center gap-2">
+                <Icon name="eye" size={14} className="flex-shrink-0" />
                 {post.view_count}
               </span>
             </div>
@@ -186,12 +184,12 @@ export function BlogPosts() {
         ))}
       </div>
 
-      <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+      <div className="mt-6 pt-6 border-t border-gray-100 dark:border-white/5">
         <a
           href="https://blog.familybank.chat"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-medium text-sm"
+          className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-gray-900 dark:bg-white/10 text-white text-xs font-black uppercase tracking-wider hover:bg-gray-800 transition-all hover:shadow-lg"
         >
           <Icon name="book-open" className="w-4 h-4" />
           访问博客

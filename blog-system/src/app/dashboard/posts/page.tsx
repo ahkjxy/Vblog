@@ -32,11 +32,7 @@ export default async function PostsPage() {
     .from('posts')
     .select(`
       *, 
-      profiles!posts_author_id_fkey(
-        name,
-        family_id,
-        families(name)
-      )
+      profiles!posts_author_id_fkey(name)
     `)
     .order('created_at', { ascending: false })
 

@@ -126,13 +126,7 @@ export default async function BlogPostPage({ params }: PageProps) {
       .from('posts')
       .select(`
         *,
-        profiles!posts_author_id_fkey(
-          name, 
-          avatar_url, 
-          bio,
-          family_id,
-          families(name)
-        ),
+        profiles!posts_author_id_fkey(name, avatar_url, bio),
         post_categories(categories(name, slug)),
         post_tags(tags(name, slug))
       `)
@@ -156,13 +150,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         .from('posts')
         .select(`
           *,
-          profiles!posts_author_id_fkey(
-            name, 
-            avatar_url, 
-            bio,
-            family_id,
-            families(name)
-          ),
+          profiles!posts_author_id_fkey(name, avatar_url, bio),
           post_categories(categories(name, slug)),
           post_tags(tags(name, slug))
         `)
@@ -185,13 +173,7 @@ export default async function BlogPostPage({ params }: PageProps) {
       .from('posts')
       .select(`
         *,
-        profiles!posts_author_id_fkey(
-          name, 
-          avatar_url, 
-          bio,
-          family_id,
-          families(name)
-        ),
+        profiles!posts_author_id_fkey(name, avatar_url, bio),
         post_categories(categories(name, slug)),
         post_tags(tags(name, slug))
       `)
