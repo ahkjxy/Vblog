@@ -18,48 +18,53 @@ export function Header() {
   // 检查用户登录状态
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (authUser) {
-        // 1. 获取 family_members 记录
-        const { data: familyMember } = await supabase
-          .from('family_members')
-          .select('family_id')
-          .eq('user_id', authUser.id)
-          .maybeSingle()
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        if (authUser) {
+          // 1. 获取 family_members 记录
+          const { data: familyMember } = await supabase
+            .from('family_members')
+            .select('family_id')
+            .eq('user_id', authUser.id)
+            .maybeSingle()
 
-        // 2. 如果在家庭中，获取家长的 profile
-        let adminProfile = null
-        if (familyMember?.family_id) {
-          const { data: adminData } = await supabase
+          // 2. 如果在家庭中，获取家长的 profile
+          let adminProfile = null
+          if (familyMember?.family_id) {
+            const { data: adminData } = await supabase
+              .from('profiles')
+              .select('name, avatar_url, avatar_color, role')
+              .eq('family_id', familyMember.family_id)
+              .eq('role', 'admin')
+              .limit(1)
+              .maybeSingle()
+            
+            adminProfile = adminData
+          }
+
+          // 3. 获取用户自己的 profile（如果有）
+          const { data: userProfile } = await supabase
             .from('profiles')
             .select('name, avatar_url, avatar_color, role')
-            .eq('family_id', familyMember.family_id)
-            .eq('role', 'admin')
-            .limit(1)
+            .eq('id', authUser.id)
             .maybeSingle()
-          
-          adminProfile = adminData
+
+          // 4. 设置用户信息（优先显示家长名字）
+          const displayName = adminProfile?.name || userProfile?.name || authUser.email?.split('@')[0] || '用户'
+          const displayAvatar = adminProfile?.avatar_url || userProfile?.avatar_url
+          const displayRole = userProfile?.role || 'author'
+          const avatarColor = adminProfile?.avatar_color || userProfile?.avatar_color
+
+          setUser({
+            name: displayName,
+            avatar_url: displayAvatar,
+            role: displayRole,
+            avatar_color: avatarColor
+          })
         }
-
-        // 3. 获取用户自己的 profile（如果有）
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('name, avatar_url, avatar_color, role')
-          .eq('id', authUser.id)
-          .maybeSingle()
-
-        // 4. 设置用户信息（优先显示家长名字）
-        const displayName = adminProfile?.name || userProfile?.name || authUser.email?.split('@')[0] || '用户'
-        const displayAvatar = adminProfile?.avatar_url || userProfile?.avatar_url
-        const displayRole = userProfile?.role || 'author'
-        const avatarColor = adminProfile?.avatar_color || userProfile?.avatar_color
-
-        setUser({
-          name: displayName,
-          avatar_url: displayAvatar,
-          role: displayRole,
-          avatar_color: avatarColor
-        })
+      } catch (error) {
+        // Silently fail during SSG/build time when Supabase env vars aren't available
+        console.log('Header: Supabase not available during build')
       }
     }
     checkUser()
