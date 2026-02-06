@@ -72,7 +72,6 @@ export default function UsersPage() {
       }
 
       // 获取所有用户（只显示 admin 角色的，不显示 child）
-      // 同时获取对应的 auth.users 信息以获取邮箱
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -87,14 +86,19 @@ export default function UsersPage() {
 
       if (error) throw error
       
-      // 获取所有用户的邮箱
-      const profileIds = (data || []).map((p: any) => p.id)
-      const { data: authUsers } = await supabase.auth.admin.listUsers()
-      
-      // 创建邮箱映射
-      const emailMap = new Map(
-        authUsers?.users.map(u => [u.id, u.email]) || []
-      )
+      // 从 API 获取邮箱映射
+      let emailMap: Record<string, string> = {}
+      try {
+        const emailResponse = await fetch('/api/users/emails')
+        if (emailResponse.ok) {
+          const result = await emailResponse.json()
+          emailMap = result.emailMap || {}
+        } else {
+          console.error('Failed to fetch emails:', await emailResponse.text())
+        }
+      } catch (emailError) {
+        console.error('Error fetching emails:', emailError)
+      }
       
       // 合并数据
       const usersWithEmail = (data || []).map((user: any) => {
@@ -102,7 +106,7 @@ export default function UsersPage() {
         
         return {
           ...user,
-          email: emailMap.get(user.id) || '',
+          email: emailMap[user.id] || '',
           family: user.families,
           is_super_admin: isSuperAdminUser
         }
@@ -136,6 +140,31 @@ export default function UsersPage() {
 
     setFilteredUsers(result)
   }, [users, searchQuery])
+
+  // 按家庭分组用户
+  const groupedByFamily = filteredUsers.reduce((acc, user) => {
+    const familyId = user.family_id || 'no-family'
+    const familyName = user.family?.name || '未分配家庭'
+    
+    if (!acc[familyId]) {
+      acc[familyId] = {
+        familyId,
+        familyName,
+        isSuperAdmin: user.is_super_admin || false,
+        users: []
+      }
+    }
+    
+    acc[familyId].users.push(user)
+    return acc
+  }, {} as Record<string, { familyId: string; familyName: string; isSuperAdmin: boolean; users: User[] }>)
+
+  // 转换为数组并排序：超管家庭在前
+  const familyGroups = Object.values(groupedByFamily).sort((a, b) => {
+    if (a.isSuperAdmin) return -1
+    if (b.isSuperAdmin) return 1
+    return a.familyName.localeCompare(b.familyName, 'zh-CN')
+  })
 
   // 打开角色更改对话框
   const openRoleDialog = (user: User) => {
@@ -368,7 +397,7 @@ export default function UsersPage() {
         )}
       </div>
 
-      {/* Users Table */}
+      {/* Users Table - Grouped by Family */}
       {filteredUsers.length === 0 ? (
         <EmptyState
           icon={UsersIcon}
@@ -376,133 +405,174 @@ export default function UsersPage() {
           description={searchQuery ? '尝试调整搜索条件' : '系统中还没有用户'}
         />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-600 w-12">
-                    <input
-                      type="checkbox"
-                      checked={
-                        filteredUsers.length > 0 &&
-                        filteredUsers.every(u => selectedUserIds.has(u.id))
-                      }
-                      onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">用户</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">邮箱</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">家庭</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">角色</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">注册时间</th>
-                  <th className="px-6 py-3 text-right text-sm font-medium text-gray-600">操作</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedUserIds.has(user.id)}
-                        onChange={() => toggleUserSelection(user.id)}
-                        className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {user.avatar_url ? (
-                          <img
-                            src={user.avatar_url}
-                            alt={user.name}
-                            className="w-10 h-10 rounded-full ring-2 ring-gray-100"
-                          />
-                        ) : user.avatar_color ? (
-                          <div 
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ring-2 ring-gray-100"
-                            style={{ backgroundColor: user.avatar_color }}
-                          >
-                            {user.name.slice(-1)}
-                          </div>
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold">
-                            {user.name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-medium text-gray-900">{user.name}</div>
-                          {user.bio && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
-                              {user.bio}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Mail className="w-4 h-4 text-gray-400" />
-                        {user.email || '-'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {user.family ? (
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{user.family.name}</div>
-                          <div className="text-xs text-gray-500 font-mono">{user.family_id?.slice(0, 8)}...</div>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {user.is_super_admin ? (
-                        <span className="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200">
-                          ⭐ 超级管理员
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                          家长
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {formatDate(user.created_at)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openRoleDialog(user)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="更改角色"
-                        >
-                          <Shield className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user)
-                            setIsDeleteDialogOpen(true)
+        <div className="space-y-6">
+          {familyGroups.map((group) => (
+            <div key={group.familyId} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              {/* Family Header */}
+              <div className={cn(
+                "px-6 py-4 border-b flex items-center justify-between",
+                group.isSuperAdmin 
+                  ? "bg-gradient-to-r from-purple-50 to-pink-50" 
+                  : "bg-gray-50"
+              )}>
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center font-bold text-white",
+                    group.isSuperAdmin
+                      ? "bg-gradient-to-br from-purple-600 to-pink-600"
+                      : "bg-gradient-to-br from-blue-500 to-cyan-500"
+                  )}>
+                    {group.familyName.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900">{group.familyName}</h3>
+                    <p className="text-sm text-gray-500">{group.users.length} 位成员</p>
+                  </div>
+                  {group.isSuperAdmin && (
+                    <span className="ml-2 px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200">
+                      ⭐ 超级管理员家庭
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Users Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50/50 border-b">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-600 w-12">
+                        <input
+                          type="checkbox"
+                          checked={
+                            group.users.length > 0 &&
+                            group.users.every(u => selectedUserIds.has(u.id))
+                          }
+                          onChange={() => {
+                            const allSelected = group.users.every(u => selectedUserIds.has(u.id))
+                            setSelectedUserIds(prev => {
+                              const newSet = new Set(prev)
+                              group.users.forEach(u => {
+                                if (allSelected) {
+                                  newSet.delete(u.id)
+                                } else {
+                                  newSet.add(u.id)
+                                }
+                              })
+                              return newSet
+                            })
                           }}
-                          disabled={user.id === currentUserId}
-                          className={cn(
-                            "p-2 rounded-lg transition-colors",
-                            user.id === currentUserId
-                              ? "text-gray-300 cursor-not-allowed"
-                              : "text-red-600 hover:bg-red-50"
+                          className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        />
+                      </th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">用户</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">邮箱</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">角色</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">注册时间</th>
+                      <th className="px-6 py-3 text-right text-sm font-medium text-gray-600">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {group.users.map((user) => (
+                      <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedUserIds.has(user.id)}
+                            onChange={() => toggleUserSelection(user.id)}
+                            className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            {user.avatar_url ? (
+                              <img
+                                src={user.avatar_url}
+                                alt={user.name}
+                                className="w-10 h-10 rounded-full ring-2 ring-gray-100"
+                              />
+                            ) : user.avatar_color ? (
+                              <div 
+                                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ring-2 ring-gray-100"
+                                style={{ backgroundColor: user.avatar_color }}
+                              >
+                                {user.name.slice(-1)}
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold">
+                                {user.name.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <div className="font-medium text-gray-900">{user.name}</div>
+                              {user.bio && (
+                                <div className="text-sm text-gray-500 truncate max-w-xs">
+                                  {user.bio}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Mail className="w-4 h-4 text-gray-400" />
+                            {user.email ? (
+                              <span className="text-gray-600">{user.email}</span>
+                            ) : (
+                              <span className="text-gray-400 text-xs font-mono">
+                                ID: {user.id.slice(0, 8)}...
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {user.is_super_admin ? (
+                            <span className="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200">
+                              ⭐ 超级管理员
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                              家长
+                            </span>
                           )}
-                          title={user.id === currentUserId ? "不能删除自己" : "删除用户"}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {formatDate(user.created_at)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openRoleDialog(user)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="更改角色"
+                            >
+                              <Shield className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedUser(user)
+                                setIsDeleteDialogOpen(true)
+                              }}
+                              disabled={user.id === currentUserId}
+                              className={cn(
+                                "p-2 rounded-lg transition-colors",
+                                user.id === currentUserId
+                                  ? "text-gray-300 cursor-not-allowed"
+                                  : "text-red-600 hover:bg-red-50"
+                              )}
+                              title={user.id === currentUserId ? "不能删除自己" : "删除用户"}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

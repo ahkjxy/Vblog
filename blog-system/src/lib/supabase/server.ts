@@ -6,7 +6,7 @@ export async function createClient() {
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!, // 使用 service role key
     {
       cookies: {
         getAll() {
@@ -14,18 +14,11 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              // 只在生产环境设置跨域 cookie
-              const isProduction = process.env.NODE_ENV === 'production'
-              cookieStore.set(name, value, isProduction ? {
-                ...options,
-                domain: '.familybank.chat',
-                sameSite: 'lax',
-                secure: true,
-              } : options)
-            })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
           } catch {
-            // Server component
+            // 在服务端组件中调用时可能会失败
           }
         },
       },
