@@ -13,11 +13,19 @@ interface Message {
 const FAQ_ITEMS = [
   {
     question: '如何开始使用元气银行？',
-    answer: '访问 familybank.chat 即可免费体验，无需注册。您可以创建家庭、添加成员、设置任务和奖励。'
+    answer: '访问 fpb-omega.vercel.app 或 familybank.chat 即可免费体验，无需注册。您可以创建家庭、添加成员、设置任务和奖励。'
+  },
+  {
+    question: '元气银行和博客系统是什么关系？',
+    answer: '元气银行是家庭积分管理系统，博客系统用于分享使用经验和家庭管理智慧。两个系统共享同一个账号，登录后可以在两个系统间无缝切换。'
   },
   {
     question: '支持哪些平台？',
-    answer: '元气银行支持网页版和安卓应用。iOS 版本正在开发中，敬请期待！'
+    answer: '元气银行支持网页版和安卓应用。博客系统支持所有现代浏览器。iOS 版本正在开发中，敬请期待！'
+  },
+  {
+    question: '如何在博客和元气银行之间切换？',
+    answer: '登录后，点击右上角用户菜单，选择"进入元气银行后台"或"进入 Blog 后台"即可快速切换。两个系统使用相同的账号。'
   },
   {
     question: '如何联系技术支持？',
@@ -235,12 +243,21 @@ export function CustomerSupport() {
                     <span>📧 ahkjxy@qq.com</span>
                   </a>
                   <a
-                    href="https://www.familybank.chat/"
+                    href="https://fpb-omega.vercel.app"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-purple-600 hover:text-pink-600 transition-colors"
                   >
                     <span>🌐 访问元气银行</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <a
+                    href="https://blog.familybank.chat"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-purple-600 hover:text-pink-600 transition-colors"
+                  >
+                    <span>📝 访问博客系统</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
@@ -258,7 +275,7 @@ export function CustomerSupport() {
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="输入你的问题..."
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
               />

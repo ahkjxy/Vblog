@@ -111,6 +111,18 @@ export function Header() {
           
           <div className="w-px h-6 bg-gray-200 mx-2"></div>
           
+          <a 
+            href="https://fpb-omega.vercel.app" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>元气银行</span>
+          </a>
+          
+          <div className="w-px h-6 bg-gray-200 mx-2"></div>
+          
           {user ? (
             <div className="relative" ref={dropdownRef}>
               <button
@@ -159,8 +171,20 @@ export function Header() {
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
                         <LayoutDashboard className="w-4 h-4 text-purple-600" />
                       </div>
-                      <span>进入后台</span>
+                      <span>进入 Blog 后台</span>
                     </Link>
+                    
+                    <a
+                      href="https://fpb-omega.vercel.app/dashboard"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <span>进入元气银行后台</span>
+                    </a>
                     
                     <button
                       onClick={handleLogout}
@@ -233,6 +257,18 @@ export function Header() {
               <Tag className="w-5 h-5" />
               <span>标签</span>
             </Link>
+            
+            <div className="h-px bg-gray-200 my-2"></div>
+            
+            <a 
+              href="https://fpb-omega.vercel.app" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>元气银行</span>
+            </a>
             
             {user ? (
               <>

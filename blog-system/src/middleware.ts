@@ -28,21 +28,10 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protect dashboard routes
+  // Protect dashboard routes - 只检查是否登录
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     if (!user) {
-      return NextResponse.redirect(new URL('/auth/login', request.url))
-    }
-
-    // Check role for dashboard access
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || !['admin', 'editor', 'author'].includes(profile.role)) {
-      return NextResponse.redirect(new URL('/', request.url))
+      return NextResponse.redirect(new URL('/auth', request.url))
     }
   }
 

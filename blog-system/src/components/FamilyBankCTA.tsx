@@ -1,10 +1,29 @@
+'use client'
+
 import { ExternalLink, Sparkles, Gift, Heart, MessageCircle, Smartphone } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 interface FamilyBankCTAProps {
   variant?: 'default' | 'compact' | 'banner'
 }
 
 export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const supabase = createClient()
+
+  useEffect(() => {
+    // 检查用户登录状态
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsLoggedIn(!!user)
+    })
+  }, [supabase])
+
+  // 根据登录状态决定跳转链接
+  const familyBankUrl = isLoggedIn 
+    ? 'https://fpb-omega.vercel.app/dashboard' 
+    : 'https://fpb-omega.vercel.app'
+
   if (variant === 'banner') {
     return (
       <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white py-3 px-4">
@@ -12,12 +31,12 @@ export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
           <Sparkles className="w-5 h-5 animate-pulse" />
           <span className="font-medium">体验元气银行家庭积分管理系统</span>
           <a
-            href="https://www.familybank.chat/"
+            href={familyBankUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 px-4 py-1.5 bg-white text-purple-600 rounded-full font-semibold hover:bg-purple-50 transition-all hover:scale-105"
           >
-            立即体验
+            {isLoggedIn ? '进入后台' : '立即体验'}
             <ExternalLink className="w-4 h-4" />
           </a>
         </div>
@@ -71,12 +90,12 @@ export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
             {/* Right side - CTA Button */}
             <div className="flex-shrink-0">
               <a
-                href="https://www.familybank.chat/"
+                href={familyBankUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 px-8 py-4 bg-white text-purple-600 rounded-full font-bold text-lg hover:bg-purple-50 transition-all hover:scale-110 hover:shadow-2xl group"
               >
-                <span>立即免费体验</span>
+                <span>{isLoggedIn ? '进入元气银行后台' : '立即免费体验'}</span>
                 <ExternalLink className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </a>
               <div className="text-center mt-3 text-xs text-white/80">
@@ -111,12 +130,12 @@ export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10">
           <a
-            href="https://www.familybank.chat/"
+            href={familyBankUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-3 px-10 py-5 bg-white text-purple-600 rounded-full font-bold text-lg hover:bg-purple-50 transition-all hover:scale-110 hover:shadow-2xl group"
           >
-            <span>立即免费体验</span>
+            <span>{isLoggedIn ? '进入元气银行后台' : '立即免费体验'}</span>
             <ExternalLink className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
           </a>
           
