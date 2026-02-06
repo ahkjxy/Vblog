@@ -120,20 +120,20 @@ export default async function CategoryPage({ params }: PageProps) {
                     <div className="flex items-center justify-between pt-6 border-t border-gray-100">
                       <div className="flex items-center gap-6 text-sm text-gray-600">
                         <div className="flex items-center gap-3">
-                          {post.profiles?.[0]?.avatar_url ? (
+                          {post.profiles?.avatar_url ? (
                             <img 
-                              src={post.profiles[0].avatar_url} 
-                              alt={post.profiles[0].name}
+                              src={post.profiles.avatar_url} 
+                              alt={post.profiles.name}
                               className="w-10 h-10 rounded-full ring-2 ring-gray-100"
                             />
                           ) : (
                             <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradient.from} ${gradient.to} flex items-center justify-center shadow-sm`}>
                               <span className="text-white font-semibold">
-                                {post.profiles?.[0]?.name?.charAt(0).toUpperCase()}
+                                {post.profiles?.name?.charAt(0).toUpperCase()}
                               </span>
                             </div>
                           )}
-                          <span className="font-semibold text-gray-900">{formatAuthorName(post.profiles?.[0])}</span>
+                          <span className="font-semibold text-gray-900">{formatAuthorName(post.profiles)}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
