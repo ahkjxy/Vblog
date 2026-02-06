@@ -111,7 +111,7 @@ export default function NewPostPage() {
       // 如果没有摘要，自动生成
       let finalExcerpt = excerpt
       if (!finalExcerpt.trim()) {
-        let text = markdownContent
+        const text = markdownContent
           .replace(/#{1,6}\s/g, '')
           .replace(/\*\*|__/g, '')
           .replace(/\*|_/g, '')

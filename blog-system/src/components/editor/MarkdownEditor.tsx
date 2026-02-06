@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { MarkdownContent } from '../MarkdownContent'
-import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Quote, Image, Heading2, Heading3 } from 'lucide-react'
+import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Quote, Image as ImageIcon, Heading2, Heading3 } from 'lucide-react'
 import { MediaLibraryModal } from './MediaLibraryModal'
 
 interface MarkdownEditorProps {
@@ -155,7 +155,7 @@ export function MarkdownEditor({ content, onChange }: MarkdownEditorProps) {
               className="p-2 rounded transition-colors bg-purple-100 hover:bg-purple-200"
               title="插入图片"
             >
-              <Image className="w-4 h-4 text-purple-600" />
+              <ImageIcon className="w-4 h-4 text-purple-600" />
             </button>
             
             <div className="w-px h-6 bg-gray-300 mx-1"></div>
