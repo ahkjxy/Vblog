@@ -31,9 +31,12 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set())
   const [newRole, setNewRole] = useState<'admin' | 'editor' | 'author'>('author')
   const [currentUserRole, setCurrentUserRole] = useState<string>('')
+  const [currentUserId, setCurrentUserId] = useState<string>('')
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [accessDenied, setAccessDenied] = useState(false)
 
@@ -46,30 +49,35 @@ export default function UsersPage() {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       if (!currentUser) return
 
-      // 获取当前用户角色和家庭ID
+      // 获取当前用户的 profile
       const { data: currentProfile } = await supabase
         .from('profiles')
-        .select('role, family_id')
+        .select('role, family_id, name')
         .eq('id', currentUser.id)
         .maybeSingle()
 
-      if (currentProfile) {
-        setCurrentUserRole(currentProfile.role)
-        
-        // 检查是否是超级管理员
-        const isAdmin = currentProfile.role === 'admin' && 
-          currentProfile.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
-        setIsSuperAdmin(isAdmin)
-        
-        // 如果不是超级管理员，拒绝访问
-        if (!isAdmin) {
-          setAccessDenied(true)
-          setLoading(false)
-          return
-        }
+      if (!currentProfile) {
+        setAccessDenied(true)
+        setLoading(false)
+        return
       }
 
-      // 获取所有用户及其家庭信息
+      setCurrentUserRole(currentProfile.role)
+      setCurrentUserId(currentUser.id)
+      
+      // 检查是否是超级管理员
+      const isAdmin = currentProfile.role === 'admin' && 
+        currentProfile.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
+      setIsSuperAdmin(isAdmin)
+      
+      // 如果不是超级管理员，拒绝访问
+      if (!isAdmin) {
+        setAccessDenied(true)
+        setLoading(false)
+        return
+      }
+
+      // 获取所有用户及其家庭信息（Blog系统：每个用户都是独立的）
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -83,31 +91,24 @@ export default function UsersPage() {
 
       if (error) throw error
       
-      // 标记超级管理员家庭的用户，并区分家庭角色和博客角色
+      // 标记超级管理员家庭的用户
       const usersWithFamily = (data || []).map((user: any) => {
         const isSuperAdminFamily = user.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
         
-        // 判断家庭角色：
-        // - role='child' 表示孩子
-        // - role='admin' 且在超管家庭 = 家长（超级管理员）
-        // - role='admin' 且不在超管家庭 = 可能是博客管理员或家长
+        // Blog 系统中，每个用户都是独立的博客作者
+        // role 可能是：'admin'（超级管理员）, 'parent'（普通用户）, 'editor', 'author'
         let family_role: 'admin' | 'child' | undefined
         let blog_role: 'admin' | 'editor' | 'author' | undefined
         
-        if (user.role === 'child') {
-          // 明确是孩子
-          family_role = 'child'
-        } else if (user.role === 'admin') {
-          if (isSuperAdminFamily) {
-            // 超管家庭的 admin = 家长（超级管理员）
-            family_role = 'admin'
-            blog_role = 'admin'
-          } else {
-            // 其他家庭的 admin 可能是家长，也标记为家庭角色
-            family_role = 'admin'
-          }
+        if (user.role === 'admin' && isSuperAdminFamily) {
+          // 超级管理员
+          family_role = 'admin'
+          blog_role = 'admin'
+        } else if (['parent', 'admin'].includes(user.role)) {
+          // 普通博客用户
+          family_role = 'admin'
         } else if (['editor', 'author'].includes(user.role)) {
-          // 编辑、作者是博客角色
+          // 编辑、作者
           blog_role = user.role as 'editor' | 'author'
         }
         
@@ -135,18 +136,8 @@ export default function UsersPage() {
 
   // 搜索和过滤
   useEffect(() => {
-    // 显示所有有 family_id 的用户，但排除超级管理员家庭的家长
-    let result = users.filter(u => {
-      // 必须有家庭
-      if (!u.family_id) return false
-      
-      // 排除超级管理员（超管家庭的 admin）
-      if (u.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171' && u.role === 'admin') {
-        return false
-      }
-      
-      return true
-    })
+    // Blog 系统：显示所有注册用户（每个用户都是独立的博客作者）
+    let result = users
 
     // 搜索
     if (searchQuery) {
@@ -217,9 +208,9 @@ export default function UsersPage() {
   const handleDeleteUser = async () => {
     if (!selectedUser) return
 
-    // 检查是否是超级管理员家庭的用户
-    if (selectedUser.is_super_admin_family) {
-      showError('无法删除超级管理员家庭的用户')
+    // 不能删除自己
+    if (selectedUser.id === currentUserId) {
+      showError('不能删除自己')
       setIsDeleteDialogOpen(false)
       return
     }
@@ -239,6 +230,58 @@ export default function UsersPage() {
       loadUsers()
     } catch (err) {
       showError('删除用户失败')
+      console.error(err)
+    }
+  }
+
+  // 切换用户选择
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUserIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(userId)) {
+        newSet.delete(userId)
+      } else {
+        newSet.add(userId)
+      }
+      return newSet
+    })
+  }
+
+  // 全选/取消全选
+  const toggleSelectAll = () => {
+    if (selectedUserIds.size === filteredUsers.length) {
+      setSelectedUserIds(new Set())
+    } else {
+      setSelectedUserIds(new Set(filteredUsers.map(u => u.id)))
+    }
+  }
+
+  // 批量删除用户
+  const handleBatchDelete = async () => {
+    if (selectedUserIds.size === 0) return
+
+    // 检查是否包含当前用户
+    if (selectedUserIds.has(currentUserId)) {
+      showError('不能删除自己')
+      return
+    }
+
+    try {
+      const idsToDelete = Array.from(selectedUserIds)
+      
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .in('id', idsToDelete)
+
+      if (error) throw error
+
+      success(`已删除 ${idsToDelete.length} 个用户`)
+      setIsBatchDeleteDialogOpen(false)
+      setSelectedUserIds(new Set())
+      loadUsers()
+    } catch (err) {
+      showError('批量删除失败')
       console.error(err)
     }
   }
@@ -287,25 +330,21 @@ export default function UsersPage() {
     )
   }
 
-  // 只有管理员可以访问
-  if (currentUserRole !== 'admin') {
+  // 只有超级管理员可以访问
+  if (!isSuperAdmin) {
     return (
       <div className="flex items-center justify-center h-64">
         <EmptyState
           icon={Shield}
           title="权限不足"
-          description="只有管理员可以访问用户管理页面"
+          description="只有超级管理员可以访问用户管理页面"
         />
       </div>
     )
   }
 
   const stats = {
-    total: users.filter(u => {
-      if (!u.family_id) return false
-      if (u.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171' && u.role === 'admin') return false
-      return true
-    }).length,
+    total: users.length,
     families: Object.keys(groupedByFamily).length,
   }
 
@@ -313,9 +352,9 @@ export default function UsersPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-          家庭成员管理
+          用户管理
         </h1>
-        <p className="text-gray-600">查看和管理所有家庭成员</p>
+        <p className="text-gray-600">查看和管理所有博客用户</p>
       </div>
 
       {/* Stats */}
@@ -327,7 +366,7 @@ export default function UsersPage() {
             </div>
             <div>
               <div className="text-2xl font-bold">{stats.total}</div>
-              <div className="text-sm text-gray-600">家庭成员总数</div>
+              <div className="text-sm text-gray-600">注册用户总数</div>
             </div>
           </div>
         </div>
@@ -345,9 +384,9 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search and Batch Actions */}
       <div className="bg-white rounded-2xl p-4 mb-6">
-        <div className="relative">
+        <div className="relative mb-4">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
@@ -357,14 +396,55 @@ export default function UsersPage() {
             className="w-full pl-12 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
+        
+        {/* Batch Actions */}
+        {filteredUsers.length > 0 && (
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={selectedUserIds.size === filteredUsers.length && filteredUsers.length > 0}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+              />
+              <span className="text-sm text-gray-600">
+                {selectedUserIds.size > 0 ? `已选 ${selectedUserIds.size} 个用户` : '全选'}
+              </span>
+            </div>
+            
+            {selectedUserIds.size > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedUserIds(new Set())}
+                  className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  取消选择
+                </button>
+                <button
+                  onClick={() => setIsBatchDeleteDialogOpen(true)}
+                  disabled={selectedUserIds.has(currentUserId)}
+                  className={cn(
+                    "px-4 py-2 text-sm rounded-lg transition-colors",
+                    selectedUserIds.has(currentUserId)
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-red-50 text-red-600 hover:bg-red-100"
+                  )}
+                >
+                  <Trash2 className="w-4 h-4 inline-block mr-1" />
+                  批量删除 ({selectedUserIds.size})
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Users Table - Grouped by Family */}
       {filteredUsers.length === 0 ? (
         <EmptyState
           icon={UsersIcon}
-          title="未找到家庭成员"
-          description={searchQuery ? '尝试调整搜索条件' : '系统中还没有家庭成员'}
+          title="未找到用户"
+          description={searchQuery ? '尝试调整搜索条件' : '系统中还没有用户'}
         />
       ) : (
         <div className="space-y-6">
@@ -405,6 +485,30 @@ export default function UsersPage() {
               <table className="w-full">
                 <thead className="bg-gray-50/50 border-b">
                   <tr>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600 w-12">
+                      <input
+                        type="checkbox"
+                        checked={
+                          group.users.length > 0 &&
+                          group.users.every(u => selectedUserIds.has(u.id))
+                        }
+                        onChange={() => {
+                          const allSelected = group.users.every(u => selectedUserIds.has(u.id))
+                          setSelectedUserIds(prev => {
+                            const newSet = new Set(prev)
+                            group.users.forEach(u => {
+                              if (allSelected) {
+                                newSet.delete(u.id)
+                              } else {
+                                newSet.add(u.id)
+                              }
+                            })
+                            return newSet
+                          })
+                        }}
+                        className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      />
+                    </th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">用户</th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">用户ID</th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">家庭</th>
@@ -418,6 +522,14 @@ export default function UsersPage() {
                   {group.users.map((user) => {
                 return (
                     <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.has(user.id)}
+                          onChange={() => toggleUserSelection(user.id)}
+                          className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {user.avatar_url ? (
@@ -512,14 +624,14 @@ export default function UsersPage() {
                               setSelectedUser(user)
                               setIsDeleteDialogOpen(true)
                             }}
-                            disabled={user.is_super_admin_family}
+                            disabled={user.id === currentUserId}
                             className={cn(
                               "p-2 rounded-lg transition-colors",
-                              user.is_super_admin_family
+                              user.id === currentUserId
                                 ? "text-gray-300 cursor-not-allowed"
                                 : "text-red-600 hover:bg-red-50"
                             )}
-                            title={user.is_super_admin_family ? "超级管理员家庭的用户不能删除" : "删除用户"}
+                            title={user.id === currentUserId ? "不能删除自己" : "删除用户"}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -588,11 +700,23 @@ export default function UsersPage() {
         onConfirm={handleDeleteUser}
         title="删除用户"
         message={
-          selectedUser?.is_super_admin_family
-            ? `无法删除用户"${selectedUser?.name}"，因为该用户属于超级管理员家庭。`
+          selectedUser?.id === currentUserId
+            ? `不能删除自己`
             : `确定要删除用户"${selectedUser?.name}"吗？此操作将删除该用户的所有数据，且无法撤销。`
         }
         confirmText="删除"
+        cancelText="取消"
+        variant="danger"
+      />
+
+      {/* Batch Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={isBatchDeleteDialogOpen}
+        onClose={() => setIsBatchDeleteDialogOpen(false)}
+        onConfirm={handleBatchDelete}
+        title="批量删除用户"
+        message={`确定要删除选中的 ${selectedUserIds.size} 个用户吗？此操作将删除这些用户的所有数据，且无法撤销。`}
+        confirmText="批量删除"
         cancelText="取消"
         variant="danger"
       />
