@@ -1,0 +1,5 @@
+# APK download - don't redirect
+/download/* 200
+
+# SPA fallback
+/* /index.html 200
