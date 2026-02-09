@@ -113,7 +113,7 @@ export function OrganizationJsonLd() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: '元气银行',
-    url: 'https://www.familybank.chat',
+    url: 'https://blog.familybank.chat',
     logo: 'https://blog.familybank.chat/app-icon.svg',
     description: '家庭积分管理系统，通过游戏化的方式激励家庭成员养成良好习惯',
     sameAs: [

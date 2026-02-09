@@ -275,7 +275,7 @@ export function SystemSettings({
         </h4>
         
         <a
-          href="https://www.familybank.chat/download/family-bank.apk"
+          href="https://blog.familybank.chat/download/family-bank.apk"
           download
           className="w-full flex items-center justify-between p-4 rounded-[20px] bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-500/10 dark:to-blue-500/10 border border-emerald-200 dark:border-emerald-500/20 hover:from-emerald-100 hover:to-blue-100 dark:hover:from-emerald-500/20 dark:hover:to-blue-500/20 transition-all group"
         >

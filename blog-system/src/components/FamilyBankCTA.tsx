@@ -20,7 +20,7 @@ export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
   }, [supabase])
 
   // 根据登录状态决定跳转链接
-  const familyBankUrl = 'https://www.familybank.chat/'
+  const familyBankUrl = 'https://blog.familybank.chat/'
 
   if (variant === 'banner') {
     return (
@@ -98,7 +98,7 @@ export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
                   <ExternalLink className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </a>
                 <a
-                  href="https://www.familybank.chat/download/family-bank.apk"
+                  href="https://blog.familybank.chat/download/family-bank.apk"
                   download
                   className="inline-flex items-center gap-2 px-6 py-4 bg-white/20 backdrop-blur-sm text-white border-2 border-white/50 rounded-full font-bold hover:bg-white/30 transition-all hover:scale-110 group"
                 >
@@ -148,7 +148,7 @@ export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
           </a>
           
           <a
-            href="https://www.familybank.chat/download/family-bank.apk"
+            href="https://blog.familybank.chat/download/family-bank.apk"
             download
             className="inline-flex items-center gap-3 px-10 py-5 bg-white/20 backdrop-blur-sm text-white border-2 border-white/50 rounded-full font-bold text-lg hover:bg-white/30 transition-all hover:scale-110 hover:shadow-2xl group"
           >

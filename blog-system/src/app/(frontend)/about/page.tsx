@@ -127,7 +127,7 @@ export default function AboutPage() {
                 开始使用元气银行，让家庭激励变得更加简单高效
               </p>
               <Link
-                href="https://www.familybank.chat"
+                href="https://blog.familybank.chat"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-purple-600 rounded-xl font-bold text-lg hover:bg-purple-50 transition-all hover:scale-105 shadow-lg"
