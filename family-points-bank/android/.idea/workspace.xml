@@ -16,19 +16,7 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fb1883ba-765e-4bef-bc32-6d093fdaf8d2" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../../blog-system/src/app/(frontend)/about/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../blog-system/src/app/(frontend)/about/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../blog-system/src/app/(frontend)/blog/[slug]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../blog-system/src/app/(frontend)/blog/[slug]/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../blog-system/src/app/(frontend)/blog/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../blog-system/src/app/(frontend)/blog/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../blog-system/src/app/(frontend)/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../blog-system/src/app/(frontend)/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../blog-system/src/app/(frontend)/privacy/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../blog-system/src/app/(frontend)/privacy/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../blog-system/src/app/auth/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../blog-system/src/app/auth/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../blog-system/src/app/dashboard/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../blog-system/src/app/dashboard/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../blog-system/src/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../blog-system/src/app/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../blog-system/src/components/CustomerSupport.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../blog-system/src/components/CustomerSupport.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../blog-system/src/components/FamilyBankCTA.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../blog-system/src/components/FamilyBankCTA.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../blog-system/src/components/layout/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../blog-system/src/components/layout/Header.tsx" afterDir="false" />
-    </list>
+    <list default="true" id="fb1883ba-765e-4bef-bc32-6d093fdaf8d2" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
