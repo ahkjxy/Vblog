@@ -6,6 +6,31 @@ import { formatDateTime } from "../utils/datetime";
 import { PillTabs } from "./PillTabs";
 import { calculateLevelInfo, LEVELS, getProfileTotalEarned, ROLE_LABELS } from "../utils/leveling";
 
+// 成员头像组件
+function MemberAvatar({ avatarUrl, name, avatarColor }: { avatarUrl?: string | null; name: string; avatarColor: string }) {
+  const [imageError, setImageError] = useState(false);
+  const showAvatar = avatarUrl && !imageError;
+
+  if (showAvatar) {
+    return (
+      <img 
+        src={avatarUrl!} 
+        alt={name}
+        className="w-11 h-11 rounded-2xl object-cover shadow-md group-hover:scale-110 transition-transform"
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+
+  return (
+    <div 
+      className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-lg ${avatarColor || 'bg-gray-400'} shadow-md group-hover:scale-110 transition-transform`}
+    >
+      {name.slice(-1)}
+    </div>
+  );
+}
+
 interface DashboardSectionProps {
   currentProfile: Profile;
   profiles: Profile[];
@@ -23,6 +48,7 @@ type ProfileInsight = {
   id: string;
   name: string;
   avatarColor: string;
+  avatarUrl?: string | null;
   balance: number;
   totalEarned: number;
   activity7d: number;
@@ -98,15 +124,18 @@ export function DashboardSection({
   const profileInsights = useMemo<ProfileInsight[]>(() => {
     const now = Date.now();
     const oneDay = 24 * 60 * 60 * 1000;
+    
     return profiles.map((p: Profile) => {
       const last7 = p.history.filter((tx: Transaction) => now - tx.timestamp <= oneDay * 7);
       const earn = last7.filter((tx: Transaction) => tx.type === "earn").length;
       const penalty = last7.filter((tx: Transaction) => tx.type === "penalty").length;
       const totalEarned = p.history.filter((tx: Transaction) => tx.points > 0).reduce((s: number, tx: Transaction) => s + tx.points, 0);
+      
       return {
         id: p.id,
         name: p.name,
         avatarColor: p.avatarColor,
+        avatarUrl: p.avatarUrl,
         balance: p.balance,
         totalEarned,
         activity7d: last7.length,
@@ -276,24 +305,62 @@ export function DashboardSection({
   const [heroTab, setHeroTab] = useState<"stats" | "progress">("stats");
   const myLevel = calculateLevelInfo(totals.earned);
 
+  // 计算最常用的任务和奖励
+  const mostUsedItems = useMemo(() => {
+    // 统计任务使用频率
+    const taskUsageCount = new Map<string, number>();
+    allTransactions.forEach(tx => {
+      if (tx.type === 'earn') {
+        const count = taskUsageCount.get(tx.title) || 0;
+        taskUsageCount.set(tx.title, count + 1);
+      }
+    });
+
+    // 统计奖励使用频率
+    const rewardUsageCount = new Map<string, number>();
+    allTransactions.forEach(tx => {
+      if (tx.type === 'redeem') {
+        const count = rewardUsageCount.get(tx.title) || 0;
+        rewardUsageCount.set(tx.title, count + 1);
+      }
+    });
+
+    // 按使用频率排序任务
+    const sortedTasks = [...tasks].sort((a, b) => {
+      const countA = taskUsageCount.get(a.title) || 0;
+      const countB = taskUsageCount.get(b.title) || 0;
+      return countB - countA; // 降序
+    });
+
+    // 按使用频率排序奖励
+    const sortedRewards = [...rewards].sort((a, b) => {
+      const countA = rewardUsageCount.get(a.title) || 0;
+      const countB = rewardUsageCount.get(b.title) || 0;
+      return countB - countA; // 降序
+    });
+
+    return { tasks: sortedTasks, rewards: sortedRewards };
+  }, [tasks, rewards, allTransactions]);
+
   return (
     <div className="space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-1000">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* 左侧英雄区：管理与成长 Tab 切换 */}
         <div className="lg:col-span-8 bg-white dark:bg-[#111827] rounded-[40px] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden relative mobile-card flex flex-col">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-[#7C4DFF]/5 via-[#FF4D94]/5 to-transparent blur-[100px] pointer-events-none" />
+          {/* 顶部装饰渐变条 */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF4D94] via-[#7C4DFF] to-[#10B981]" />
           
-          <div className="p-1 px-1 sm:p-2 sm:px-2 flex border-b border-gray-50 dark:border-white/5 bg-gray-50/30 dark:bg-black/10">
+          <div className="p-1 px-1 sm:p-2 sm:px-2 flex border-b border-gray-100 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 relative z-10">
              <button 
                onClick={() => setHeroTab('stats')}
-               className={`flex-1 py-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-[24px] ${heroTab === 'stats' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-[#FF4D94]'}`}
+               className={`flex-1 py-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-[24px] ${heroTab === 'stats' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}
              >
                <Icon name="shield" size={14} />
                核心元气管理
              </button>
              <button 
                onClick={() => setHeroTab('progress')}
-               className={`flex-1 py-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-[24px] ${heroTab === 'progress' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-[#FF4D94]'}`}
+               className={`flex-1 py-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-[24px] ${heroTab === 'progress' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}
              >
                <Icon name="award" size={14} />
                元气成长阶梯
@@ -305,34 +372,45 @@ export function DashboardSection({
               <div className="p-6 lg:p-10 animate-in fade-in duration-500 flex flex-col h-full">
                 <div className="grid grid-cols-1 lg:grid-cols-1 gap-10">
                   <div className="flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-8 group/header">
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FF4D94]/10 text-[#FF4D94] text-[10px] font-black uppercase tracking-[0.2em] w-fit">
-                          <Icon name="shield" size={12} className="animate-pulse" />
-                          ENERGY CORE
-                        </div>
-                        <h2 className="text-5xl lg:text-7xl font-black text-gray-900 dark:text-white leading-none tracking-tighter flex items-end">
-                          <span className="points-font">{currentProfile.balance}</span>
-                          <span className="text-xl ml-3 text-gray-400 dark:text-gray-500 font-bold italic tracking-normal mb-1">元气能量</span>
-                        </h2>
-                      </div>
-
-                      <div className="flex items-center gap-6 sm:pb-2">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">今日增长</span>
-                          <span className="text-lg font-black text-emerald-500 points-font">+{todayGain}</span>
-                        </div>
-                        <div className="w-[1px] h-8 bg-gray-100 dark:bg-white/10" />
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">账号身份</span>
-                          <span className="text-[10px] sm:text-xs font-black text-[#7C4DFF] uppercase tracking-[0.15em]">{ROLE_LABELS[currentProfile.role]}</span>
+                    {/* 大数字展示区 - 渐变卡片设计 */}
+                    <div className="relative mb-8 p-6 sm:p-8 rounded-[32px] bg-gradient-to-br from-[#FF4D94]/10 via-[#7C4DFF]/10 to-[#10B981]/10 dark:from-[#FF4D94]/8 dark:via-[#7C4DFF]/8 dark:to-[#10B981]/8 border border-gray-100 dark:border-white/10 overflow-hidden group/hero shadow-sm hover:shadow-md transition-all">
+                      {/* 背景装饰 */}
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#7C4DFF]/10 dark:from-[#7C4DFF]/15 to-transparent blur-[60px]" />
+                      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-[#FF4D94]/10 dark:from-[#FF4D94]/15 to-transparent blur-[50px]" />
+                      
+                      <div className="relative z-10">
+                        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                          {/* 左侧：标签和大数字 */}
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#FF4D94]/20 to-[#7C4DFF]/20 dark:from-[#FF4D94]/30 dark:to-[#7C4DFF]/30 text-[#FF4D94] dark:text-[#FF6BA9] text-[10px] font-black uppercase tracking-[0.2em] w-fit border border-[#FF4D94]/20 dark:border-[#FF4D94]/30">
+                              <Icon name="shield" size={12} className="animate-pulse" />
+                              ENERGY CORE
+                            </div>
+                            <h2 className="text-5xl lg:text-7xl font-black text-gray-900 dark:text-white leading-none tracking-tighter flex items-baseline gap-2">
+                              <span className="points-font bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] dark:from-[#FF6BA9] dark:to-[#9D6FFF] bg-clip-text text-transparent">{currentProfile.balance}</span>
+                              <span className="text-base font-medium text-gray-600 dark:text-gray-300">元气能量</span>
+                            </h2>
+                          </div>
+                          
+                          {/* 右侧：统计信息 */}
+                          <div className="flex items-center gap-4 sm:pb-2">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[9px] font-black text-gray-400 dark:text-gray-400 uppercase tracking-widest">今日增长</span>
+                              <span className="text-lg font-black text-emerald-500 dark:text-emerald-400 points-font">+{todayGain}</span>
+                            </div>
+                            <div className="w-[1px] h-8 bg-gray-200 dark:bg-white/10" />
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[9px] font-black text-gray-400 dark:text-gray-400 uppercase tracking-widest">账号身份</span>
+                              <span className="text-xs font-black text-[#7C4DFF] dark:text-[#9D6FFF] uppercase tracking-wider">{ROLE_LABELS[currentProfile.role]}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* 用户实时境界看板：更紧凑的横向设计 */}
-                    <div className="mb-6 p-4 sm:p-5 rounded-[32px] bg-gray-50/50 dark:bg-white/3 border border-gray-100 dark:border-white/5 flex items-center gap-5 group/banner relative overflow-hidden">
-                       <div className="absolute inset-0 bg-gradient-to-r from-[#FF4D94]/5 to-transparent opacity-0 group-hover/banner:opacity-100 transition-opacity duration-700" />
+                    {/* 用户实时境界看板 */}
+                    <div className="mb-6 p-4 sm:p-5 rounded-[32px] bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/10 flex items-center gap-5 group/banner relative overflow-hidden hover:border-[#FF4D94]/20 dark:hover:border-[#FF4D94]/30 transition-all">
+                       <div className="absolute inset-0 bg-gradient-to-r from-[#FF4D94]/5 dark:from-[#FF4D94]/10 to-transparent opacity-0 group-hover/banner:opacity-100 transition-opacity duration-700" />
                        <div className={`shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center shadow-lg text-white transform group-hover/banner:rotate-6 transition-all duration-500 relative overflow-hidden`}>
                           <Icon name={myLevel.icon as any} size={myLevel.level >= 5 ? 24 : 20} className="z-10 drop-shadow-md" />
                        </div>
@@ -367,15 +445,15 @@ export function DashboardSection({
                         { label: "完成任务", value: totals.count, icon: "check", tone: "emerald" },
                         { label: "账户余额", value: currentProfile.balance, icon: "shield", tone: "amber" }
                       ].map((stat, i) => (
-                        <div key={i} className="flex flex-col p-3 sm:p-4 rounded-[24px] bg-white dark:bg-black/20 border border-gray-100 dark:border-white/5 hover:border-[#FF4D94]/20 transition-all group/stat shadow-sm min-h-[84px]">
+                        <div key={i} className="flex flex-col p-3 sm:p-4 rounded-[24px] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 hover:border-[#FF4D94]/20 dark:hover:border-[#FF4D94]/30 transition-all group/stat shadow-sm min-h-[84px]">
                            <div className="flex items-center justify-between mb-1.5">
-                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider group-hover/stat:text-[#FF4D94] transition-colors">{stat.label}</p>
-                             <Icon name={stat.icon as any} size={12} className="opacity-40" />
+                             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider group-hover/stat:text-[#FF4D94] dark:group-hover/stat:text-[#FF6BA9] transition-colors">{stat.label}</p>
+                             <Icon name={stat.icon as any} size={12} className="opacity-40 text-gray-400" />
                            </div>
                            <p className={`text-lg sm:text-xl font-black points-font truncate mt-auto ${
-                             stat.tone === 'rose' ? 'text-rose-500' : 
-                             stat.tone === 'emerald' ? 'text-emerald-500' : 
-                             stat.tone === 'amber' ? 'text-amber-500' : 'text-[#7C4DFF]'
+                             stat.tone === 'rose' ? 'text-rose-500 dark:text-rose-400' : 
+                             stat.tone === 'emerald' ? 'text-emerald-500 dark:text-emerald-400' : 
+                             stat.tone === 'amber' ? 'text-amber-500 dark:text-amber-400' : 'text-[#7C4DFF] dark:text-[#9D6FFF]'
                            }`}>{stat.value}</p>
                         </div>
                       ))}
@@ -396,9 +474,9 @@ export function DashboardSection({
                         元气成长阶梯
                       </h3>
                     </div>
-                    <div className="px-4 py-2 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5">
-                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">当前累计赚取</p>
-                       <p className="text-base font-black text-[#7C4DFF] points-font text-center">{totals.earned}</p>
+                    <div className="px-4 py-2 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
+                       <p className="text-[10px] font-black text-gray-400 dark:text-gray-400 uppercase tracking-widest text-center">当前累计赚取</p>
+                       <p className="text-base font-black text-[#7C4DFF] dark:text-[#9D6FFF] points-font text-center">{totals.earned}</p>
                     </div>
                   </div>
 
@@ -452,18 +530,18 @@ export function DashboardSection({
               onChange={(id) => setQuickTab(id as "rewards" | "tasks")}
               className="!p-1 bg-gray-50 dark:bg-white/5 mb-6"
             />
-            <div className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-1" style={{ maxHeight: '380px' }}>
-              {(quickTab === "rewards" ? rewards : tasks).slice(0, 8).map((item: any) => (
-                <div key={item.id} className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50/50 dark:bg-white/3 border border-transparent hover:border-[#FF4D94]/20 transition-all group/item shadow-sm">
+            <div className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-1" style={{ maxHeight: '460px' }}>
+              {(quickTab === "rewards" ? mostUsedItems.rewards : mostUsedItems.tasks).slice(0, 10).map((item: any) => (
+                <div key={item.id} className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50/50 dark:bg-white/10 border border-transparent hover:border-[#FF4D94]/20 dark:hover:border-[#FF4D94]/30 transition-all group/item shadow-sm">
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-[12px] font-black text-gray-800 dark:text-white truncate">{item.title}</h4>
-                    <p className={`text-[10px] font-black points-font mt-0.5 ${quickTab === 'tasks' ? 'text-emerald-500' : 'text-[#FF4D94]'}`}>
+                    <h4 className="text-[12px] font-black text-gray-800 dark:text-gray-200 truncate">{item.title}</h4>
+                    <p className={`text-[10px] font-black points-font mt-0.5 ${quickTab === 'tasks' ? 'text-emerald-500 dark:text-emerald-400' : 'text-[#FF4D94] dark:text-[#FF6BA9]'}`}>
                       {quickTab === 'tasks' ? '+' : ''}{item.points} 元气
                     </p>
                   </div>
                   <button 
                     onClick={() => quickTab === 'rewards' ? onRedeem({ title: item.title, points: -item.points, type: 'redeem' }) : onSelectTask({ title: item.title, points: item.points, type: 'earn' })}
-                    className="w-9 h-9 rounded-xl bg-gray-900 dark:bg-white/10 flex items-center justify-center text-white hover:bg-[#FF4D94] hover:shadow-lg transition-all active:scale-95 transition-colors"
+                    className="w-9 h-9 rounded-xl bg-gray-900 dark:bg-white/20 flex items-center justify-center text-white hover:bg-[#FF4D94] dark:hover:bg-[#FF6BA9] hover:shadow-lg transition-all active:scale-95"
                   >
                     <Icon name={quickTab === 'rewards' ? 'reward' : 'plus'} size={14} />
                   </button>
@@ -548,12 +626,15 @@ export function DashboardSection({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {profileInsights.map((p) => {
                     const plv = calculateLevelInfo(p.totalEarned);
+                    
                     return (
                       <div key={p.id} className="p-5 rounded-[28px] bg-gray-50/50 dark:bg-white/5 border border-transparent hover:border-[#10B981]/20 transition-all flex items-center justify-between group">
                         <div className="flex items-center gap-4">
-                            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-lg ${p.avatarColor || 'bg-gray-400'} shadow-md group-hover:scale-110 transition-transform`}>
-                               {p.name.slice(-1)}
-                            </div>
+                            <MemberAvatar 
+                              avatarUrl={p.avatarUrl} 
+                              name={p.name} 
+                              avatarColor={p.avatarColor} 
+                            />
                             <div>
                           <p className="text-sm font-black text-gray-800 dark:text-white">{p.name}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">

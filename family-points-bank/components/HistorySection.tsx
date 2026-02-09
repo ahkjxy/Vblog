@@ -7,7 +7,7 @@ import { Icon } from './Icon';
 import { PillTabs } from './PillTabs';
 import { Pagination } from './Pagination';
 
-type HistoryTab = 'all' | 'earn' | 'penalty' | 'redeem' | 'transfer' | 'lottery' | 'exchange' | 'system';
+type HistoryTab = 'all' | 'earn' | 'penalty' | 'redeem' | 'transfer' | 'system';
 
 interface HistorySectionProps {
   history: Transaction[];
@@ -32,7 +32,6 @@ export function HistorySection({ history, isAdmin = false, onDeleteTransactions 
     { id: 'earn', label: '收入', icon: '💰' },
     { id: 'penalty', label: '支出', icon: '⚠️' },
     { id: 'redeem', label: '商城', icon: '🎁' },
-    { id: 'lottery', label: '抽奖', icon: '🎡' },
     { id: 'transfer', label: '转赠', icon: '💝' },
     { id: 'system', label: '系统', icon: '⚙️' },
   ];
@@ -65,8 +64,8 @@ export function HistorySection({ history, isAdmin = false, onDeleteTransactions 
 
   const stats = useMemo(() => {
     const total = history.length;
-    const earn = history.filter(h => h.type === 'earn' || h.type === 'lottery' || h.type === 'system');
-    const penalty = history.filter(h => h.type === 'penalty' || h.type === 'exchange');
+    const earn = history.filter(h => h.type === 'earn' || h.type === 'system');
+    const penalty = history.filter(h => h.type === 'penalty');
     const redeem = history.filter(h => h.type === 'redeem');
     const transfers = history.filter(h => h.type === 'transfer');
     const now = Date.now();
@@ -92,8 +91,6 @@ export function HistorySection({ history, isAdmin = false, onDeleteTransactions 
       penalty: { label: '支出', cls: 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-transparent', icon: 'penalty' },
       redeem: { label: '兑换', cls: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-transparent', icon: 'reward' },
       transfer: { label: '转赠', cls: 'bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-500/10 dark:text-purple-400 dark:border-transparent', icon: 'history' },
-      lottery: { label: '抽奖', cls: 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-transparent', icon: 'reward' },
-      exchange: { label: '兑换抽奖', cls: 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-transparent', icon: 'history' },
       system: { label: '系统奖励', cls: 'bg-slate-50 text-slate-600 border-slate-100 dark:bg-slate-500/10 dark:text-slate-400 dark:border-transparent', icon: 'plus' },
     };
     const item = map[type] || map['earn'];
@@ -242,12 +239,12 @@ export function HistorySection({ history, isAdmin = false, onDeleteTransactions 
 
             {/* Type Icon */}
             <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-[18px] sm:rounded-[28px] flex items-center justify-center shadow-inner shrink-0 transition-transform group-hover:scale-105 ${
-              h.type === 'earn' || h.type === 'system' || h.type === 'lottery' ? 'bg-emerald-50/50 text-emerald-500 dark:bg-emerald-500/10' : 
-              h.type === 'penalty' || h.type === 'exchange' ? 'bg-rose-50/50 text-rose-500 dark:bg-rose-500/10' : 
+              h.type === 'earn' || h.type === 'system' ? 'bg-emerald-50/50 text-emerald-500 dark:bg-emerald-500/10' : 
+              h.type === 'penalty' ? 'bg-rose-50/50 text-rose-500 dark:bg-rose-500/10' : 
               'bg-indigo-50/50 text-[#7C4DFF] dark:bg-indigo-500/10'
             }`}>
               <Icon 
-                name={h.type === 'redeem' ? 'reward' : h.type === 'lottery' ? 'reward' : h.type === 'penalty' || h.type === 'exchange' ? 'penalty' : 'plus'} 
+                name={h.type === 'redeem' ? 'reward' : h.type === 'penalty' ? 'penalty' : 'plus'} 
                 size={window.innerWidth < 640 ? 20 : 28} 
               />
             </div>

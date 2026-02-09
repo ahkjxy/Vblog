@@ -19,7 +19,5 @@ SELECT * FROM transactions WHERE family_id != '79ed05a1-e0e5-4d8c-9a79-d8756c488
 SELECT * FROM family_members WHERE family_id != '79ed05a1-e0e5-4d8c-9a79-d8756c488171';
 
 -- 7. Messages (消息通知表)
+-- 7. Messages (消息记录表)
 SELECT * FROM messages WHERE family_id != '79ed05a1-e0e5-4d8c-9a79-d8756c488171';
-
--- 8. Lottery Records (抽奖记录表)
-SELECT * FROM lottery_records WHERE family_id != '79ed05a1-e0e5-4d8c-9a79-d8756c488171';

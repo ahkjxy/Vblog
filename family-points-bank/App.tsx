@@ -470,6 +470,7 @@ function AppContent() {
             type: t.type,
           }))
           .sort((a: any, b: any) => b.timestamp - a.timestamp);
+        
         return {
           ...p,
           avatarColor: p.avatar_color || p.avatarColor,

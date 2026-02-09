@@ -7,8 +7,8 @@ BEGIN;
 
 -- 1. 清理子表 (按依赖顺序反向清理)
 
--- 抽奖记录
-DELETE FROM lottery_records WHERE family_id != '79ed05a1-e0e5-4d8c-9a79-d8756c488171';
+-- 消息记录
+DELETE FROM messages WHERE family_id != '79ed05a1-e0e5-4d8c-9a79-d8756c488171';
 
 -- 交易流水 (Transactions)
 DELETE FROM transactions WHERE family_id != '79ed05a1-e0e5-4d8c-9a79-d8756c488171';

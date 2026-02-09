@@ -131,17 +131,6 @@ test('Walkthrough and Screenshot Tour', async ({ page }) => {
       await page.waitForLoadState('networkidle').catch(() => {});
       await page.waitForTimeout(1500);
       await takeShot('04_achievements.png');
-      
-      // Try to take a shot of the lottery modal not open, just the page
-      // If we want to open lottery:
-      // const spinBtn = page.locator('text=积分抽奖').first();
-      // if (await spinBtn.isVisible()) {
-      //    await spinBtn.click();
-      //    await page.waitForTimeout(1000);
-      //    await takeShot('04_b_lottery_modal.png');
-      //    // Close it
-      //    await page.locator('button.close, [aria-label="Close"]').click();
-      // }
   }
 
   // --- Step 5: History ---

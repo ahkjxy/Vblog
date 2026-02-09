@@ -1,11 +1,6 @@
-import { useState, useEffect } from "react";
-import { Profile, LotteryStats } from "../types";
+import { Profile } from "../types";
 import { BadgeSection } from "./BadgeSection";
 import { Icon } from "./Icon";
-import { supabase } from "../supabaseClient";
-import { useToast } from "./Toast";
-import { LotteryWheel } from "./LotteryWheel";
-import { LotteryRulesModal } from "./LotteryRulesModal";
 
 interface AchievementCenterProps {
   currentProfile: Profile;
@@ -14,270 +9,73 @@ interface AchievementCenterProps {
 }
 
 export function AchievementCenter({ currentProfile, familyId, onRefresh }: AchievementCenterProps) {
-  const [lotteryStats, setLotteryStats] = useState<LotteryStats | null>(null);
-  const [showLotteryWheel, setShowLotteryWheel] = useState(false);
-  const [showRulesModal, setShowRulesModal] = useState(false);
-  const [lotterySource, setLotterySource] = useState<'badge' | 'exchange'>('exchange');
-  const [currentBadgeId, setCurrentBadgeId] = useState<string>('');
-  const [currentBadgeTitle, setCurrentBadgeTitle] = useState<string>('新徽章');
-  const [lotteryQueue, setLotteryQueue] = useState<{id: string, title: string}[]>([]);
-  const [lotteryWheelLoading, setLotteryWheelLoading] = useState(false);
-  const { showToast } = useToast();
-
-  useEffect(() => {
-    loadLotteryStats();
-  }, [currentProfile.id]);
-
-  const loadLotteryStats = async () => {
-    try {
-      const { data, error } = await supabase.rpc('get_lottery_stats', {
-        p_profile_id: currentProfile.id,
-      });
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const stats = data[0];
-        setLotteryStats({
-          totalLotteryCount: Number(stats.total_lottery_count ?? 0),
-          totalPointsWon: Number(stats.total_points_won ?? 0),
-          badgeLotteryCount: Number(stats.badge_lottery_count ?? 0),
-          exchangeLotteryCount: Number(stats.exchange_lottery_count ?? 0),
-          todayExchangeCount: Number(stats.today_exchange_count ?? 0),
-          remainingExchangeCount: stats.remaining_exchange_count !== undefined ? Number(stats.remaining_exchange_count) : 3,
-          pendingBadgeCount: Number(stats.pending_badge_count ?? 0),
-        });
-      }
-    } catch (error) {
-      console.error('Failed to load lottery stats:', error);
-    }
-  };
-
-  const handleBadgeLottery = async () => {
-    if (lotteryWheelLoading) return;
-    
-    try {
-      setLotteryWheelLoading(true);
-      
-      // 如果队列为空，先获取待处理的抽奖
-      let currentQueue = [...lotteryQueue];
-      if (currentQueue.length === 0) {
-        const { data, error } = await supabase.rpc('get_pending_badge_lotteries', {
-          p_profile_id: currentProfile.id,
-        });
-
-        if (error) throw error;
-        if (!data || data.length === 0) {
-          showToast({ type: 'info', title: '暂无待领取的徽章奖励' });
-          await loadLotteryStats();
-          return;
-        }
-        currentQueue = data;
-        setLotteryQueue(data);
-      }
-
-      // 启动第一个抽奖
-      const nextBadge = currentQueue[0];
-      setCurrentBadgeId(nextBadge.id);
-      setCurrentBadgeTitle(nextBadge.title);
-      setLotterySource('badge');
-      setShowLotteryWheel(true);
-    } catch (error) {
-      showToast({
-        type: 'error',
-        title: '获取失败',
-        description: (error as Error).message,
-      });
-    } finally {
-      setLotteryWheelLoading(false);
-    }
-  };
-
-  const handleExchangeLottery = async () => {
-    if (currentProfile.balance < 10) {
-      showToast({
-        type: 'error',
-        title: '积分不足',
-        description: '需要10积分才能兑换抽奖机会',
-      });
-      return;
-    }
-
-    if (lotteryStats && lotteryStats.remainingExchangeCount <= 0) {
-      showToast({
-        type: 'error',
-        title: '今日兑换已达上限',
-        description: '每天最多可以兑换3次抽奖机会',
-      });
-      return;
-    }
-
-    setLotterySource('exchange');
-    setCurrentBadgeTitle('幸运能量转盘');
-    setShowLotteryWheel(true);
-  };
-
-  const handleLotteryComplete = async (points: number) => {
-    try {
-      // 调用后端函数执行抽奖
-      const { error } = await supabase.rpc(
-        lotterySource === 'badge' ? 'lottery_from_badge' : 'lottery_from_exchange',
-        lotterySource === 'badge'
-          ? { p_profile_id: currentProfile.id, p_badge_id: currentBadgeId, p_family_id: familyId }
-          : { p_profile_id: currentProfile.id, p_family_id: familyId }
-      );
-
-      if (error) throw error;
-
-      showToast({
-        type: 'success',
-        title: '抽奖成功!',
-        description: `恭喜获得 ${points} 元气值`,
-      });
-
-      // 刷新统计数据
-      await loadLotteryStats();
-      if (onRefresh) await onRefresh();
-      
-      // 关闭转盘
-      setTimeout(() => {
-        setShowLotteryWheel(false);
-        // 如果是徽章抽奖，从队列中移除第一个
-        if (lotterySource === 'badge' && lotteryQueue.length > 0) {
-          setLotteryQueue(prev => prev.slice(1));
-        }
-      }, 500);
-    } catch (error) {
-      showToast({
-        type: 'error',
-        title: '抽奖失败',
-        description: (error as Error).message,
-      });
-    }
-  };
+  const badgeCount = currentProfile.badges?.length || 0;
+  const level = currentProfile.level || 1;
+  const balance = currentProfile.balance || 0;
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-[32px] sm:rounded-[40px] bg-white dark:bg-[#0F172A] border border-gray-100 dark:border-white/5 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)] p-8 lg:p-10 mobile-card">
-        <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-gradient-to-br from-[#7C4DFF]/10 to-[#FF4D94]/10 blur-[60px] rounded-full"></div>
+    <div className="space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Header Card */}
+      <div className="relative overflow-hidden rounded-[32px] sm:rounded-[40px] bg-white dark:bg-[#111827] border border-gray-100 dark:border-white/5 shadow-sm p-6 sm:p-8 mobile-card">
+        {/* Background Decoration */}
+        <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-gradient-to-br from-[#FF4D94]/5 to-[#7C4DFF]/5 blur-[80px] rounded-full"></div>
 
         <div className="relative z-10">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF4D94]/10 text-[#FF4D94] text-[10px] font-black uppercase tracking-[0.2em] mb-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#FF4D94] animate-pulse"></div>
-                成就中心
+          {/* Title Section */}
+          <div className="mb-6 sm:mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FF4D94]/10 text-[#FF4D94] text-[10px] font-black uppercase tracking-[0.2em] mb-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#FF4D94] animate-pulse"></div>
+              成就徽章
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white leading-tight tracking-tight mb-2">
+              成就徽章中心
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+              已获得 {badgeCount} 个徽章，继续加油！
+            </p>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            {/* 已获得徽章 */}
+            <div className="bg-gradient-to-br from-[#FF4D94]/5 to-[#FF4D94]/10 dark:bg-white/10 p-4 sm:p-5 rounded-2xl border border-[#FF4D94]/20 dark:border-white/10 transition-all hover:border-[#FF4D94]/40 dark:hover:border-[#FF4D94]/30 hover:shadow-md hover:shadow-[#FF4D94]/10 group">
+              <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#FF4D94] to-[#FF6BA9] dark:bg-white/20 text-white mb-3 mx-auto shadow-lg shadow-[#FF4D94]/20 group-hover:scale-110 transition-transform">
+                <Icon name="reward" size={20} />
               </div>
-              <h3 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-white leading-tight tracking-tight mb-2">
-                我的成就与抽奖
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 font-medium max-w-lg tracking-wide">
-                查看你的徽章成就,参与幸运抽奖赢取元气值
+              <p className="text-[10px] font-bold text-[#FF4D94]/70 dark:text-gray-400 uppercase tracking-widest text-center mb-1">
+                已获得
+              </p>
+              <p className="text-2xl sm:text-3xl font-black text-[#FF4D94] dark:text-gray-200 text-center points-font">
+                {badgeCount}
               </p>
             </div>
-            <button
-              onClick={() => setShowRulesModal(true)}
-              className="flex-shrink-0 w-12 h-12 rounded-2xl bg-white/50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 flex items-center justify-center transition-all group"
-              title="查看抽奖规则"
-            >
-              <Icon name="settings" size={20} className="text-gray-600 dark:text-gray-400 group-hover:text-[#FF4D94] transition-colors" />
-            </button>
-          </div>
-        </div>
 
-        {/* 抽奖统计卡片 */}
-        {lotteryStats && (
-          <div className="relative z-10 mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              {
-                label: '总抽奖次数',
-                value: lotteryStats.totalLotteryCount,
-                icon: 'reward',
-                color: 'text-[#FF4D94]',
-              },
-              {
-                label: '累计获得',
-                value: `${lotteryStats.totalPointsWon}`,
-                icon: 'plus',
-                color: 'text-emerald-500',
-                suffix: '元气值',
-              },
-              {
-                label: '今日剩余',
-                value: lotteryStats.remainingExchangeCount,
-                icon: 'history',
-                color: 'text-amber-500',
-                suffix: '次',
-              },
-              {
-                label: '当前积分',
-                value: currentProfile.balance,
-                icon: 'home',
-                color: 'text-indigo-500',
-              },
-            ].map((stat, i) => (
-              <div
-                key={i}
-                className="bg-gradient-to-br from-gray-50 to-white dark:from-white/5 dark:to-transparent p-6 rounded-2xl border border-gray-100 dark:border-white/5"
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className={`${stat.color}`}>
-                    <Icon name={stat.icon as any} size={20} />
-                  </div>
-                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {stat.label}
-                  </p>
-                </div>
-                <p className={`text-3xl font-black ${stat.color}`}>
-                  {stat.value}
-                  {stat.suffix && <span className="text-lg ml-1">{stat.suffix}</span>}
-                </p>
+            {/* 当前等级 */}
+            <div className="bg-gradient-to-br from-[#7C4DFF]/5 to-[#7C4DFF]/10 dark:bg-white/10 p-4 sm:p-5 rounded-2xl border border-[#7C4DFF]/20 dark:border-white/10 transition-all hover:border-[#7C4DFF]/40 dark:hover:border-[#7C4DFF]/30 hover:shadow-md hover:shadow-[#7C4DFF]/10 group">
+              <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#7C4DFF] to-[#9D6FFF] dark:bg-white/20 text-white mb-3 mx-auto shadow-lg shadow-[#7C4DFF]/20 group-hover:scale-110 transition-transform">
+                <Icon name="award" size={20} />
               </div>
-            ))}
-          </div>
-        )}
+              <p className="text-[10px] font-bold text-[#7C4DFF]/70 dark:text-gray-400 uppercase tracking-widest text-center mb-1">
+                当前等级
+              </p>
+              <p className="text-2xl sm:text-3xl font-black text-[#7C4DFF] dark:text-gray-200 text-center points-font">
+                {level}
+              </p>
+            </div>
 
-        {/* 抽奖操作按钮容器 */}
-        <div className="relative z-10 mt-6 flex flex-wrap gap-4">
-          <button
-            onClick={() => {
-              if (lotteryStats && lotteryStats.pendingBadgeCount > 0) {
-                handleBadgeLottery();
-              } else {
-                handleExchangeLottery();
-              }
-            }}
-            disabled={
-              !lotteryStats || lotteryWheelLoading ||
-              (lotteryStats.pendingBadgeCount <= 0 && (lotteryStats.remainingExchangeCount <= 0 || currentProfile.balance < 10))
-            }
-            className={`w-full sm:w-auto px-8 py-4 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-3 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${
-              lotteryStats && lotteryStats.pendingBadgeCount > 0
-                ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white animate-bounce-subtle'
-                : lotteryStats && lotteryStats.remainingExchangeCount > 0
-                  ? 'bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white hover:brightness-110'
-                  : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/10'
-            }`}
-          >
-            <Icon 
-              name={lotteryStats && lotteryStats.pendingBadgeCount > 0 ? "reward" : "history"} 
-              size={20} 
-            />
-            <span>
-              {lotteryStats && lotteryStats.pendingBadgeCount > 0 
-                ? `抽奖 (${lotteryStats.pendingBadgeCount}次)` 
-                : lotteryStats && lotteryStats.remainingExchangeCount > 0 
-                  ? '10积分兑换抽奖' 
-                  : '明天再来吧'}
-            </span>
-          </button>
-          
-          {lotteryStats && lotteryStats.remainingExchangeCount <= 0 && lotteryStats.pendingBadgeCount <= 0 && (
-            <p className="w-full text-xs text-gray-500 dark:text-gray-400 mt-0">
-              今日兑换次数已用完,明天再来吧!
-            </p>
-          )}
+            {/* 元气余额 */}
+            <div className="bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 dark:bg-white/10 p-4 sm:p-5 rounded-2xl border border-emerald-500/20 dark:border-white/10 transition-all hover:border-emerald-500/40 dark:hover:border-emerald-400/30 hover:shadow-md hover:shadow-emerald-500/10 group">
+              <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-400 dark:bg-white/20 text-white mb-3 mx-auto shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+                <Icon name="shield" size={20} />
+              </div>
+              <p className="text-[10px] font-bold text-emerald-500/70 dark:text-gray-400 uppercase tracking-widest text-center mb-1">
+                元气余额
+              </p>
+              <p className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-gray-200 text-center points-font">
+                {balance}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -285,32 +83,7 @@ export function AchievementCenter({ currentProfile, familyId, onRefresh }: Achie
       <BadgeSection 
         profile={currentProfile}
         familyId={familyId}
-        onBadgeClaimed={(badges: { id: string; title: string }[]) => {
-          if (badges.length > 0) {
-            setLotteryQueue(prev => [...prev, ...badges]);
-          }
-        }}
-      />
-
-      {/* Lottery Wheel Modal */}
-      <LotteryWheel
-        isOpen={showLotteryWheel}
-        onClose={() => {
-          setShowLotteryWheel(false);
-          // 如果手动关闭，也应该跳过当前队列项
-          if (lotterySource === 'badge' && lotteryQueue.length > 0) {
-            setLotteryQueue(prev => prev.slice(1));
-          }
-        }}
-        onComplete={handleLotteryComplete}
-        source={lotterySource}
-        badgeTitle={currentBadgeTitle}
-      />
-
-      {/* Lottery Rules Modal */}
-      <LotteryRulesModal
-        isOpen={showRulesModal}
-        onClose={() => setShowRulesModal(false)}
+        onBadgeClaimed={() => {}}
       />
     </div>
   );

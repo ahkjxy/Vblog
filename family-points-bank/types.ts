@@ -32,7 +32,7 @@ export interface Transaction {
   title: string;
   points: number;
   timestamp: number;
-  type: 'earn' | 'penalty' | 'redeem' | 'transfer' | 'lottery' | 'exchange' | 'system';
+  type: 'earn' | 'penalty' | 'redeem' | 'transfer' | 'system';
   fromProfileId?: string; // for transfers
   toProfileId?: string; // for transfers
 }
@@ -69,22 +69,4 @@ export interface FamilyState {
   lastSyncedAt?: number;
 }
 
-export interface LotteryRecord {
-  id: string;
-  profileId: string;
-  source: 'badge' | 'exchange';
-  badgeId?: string;
-  pointsWon: number;
-  createdAt: number;
-}
 
-export interface LotteryStats {
-  totalLotteryCount: number;
-  totalPointsWon: number;
-  badgeLotteryCount: number;
-  exchange_lottery_count?: number; // fallback if needed
-  exchangeLotteryCount: number;
-  todayExchangeCount: number;
-  remainingExchangeCount: number;
-  pendingBadgeCount: number;
-}

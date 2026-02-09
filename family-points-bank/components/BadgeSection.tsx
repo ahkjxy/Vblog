@@ -19,6 +19,8 @@ interface AvailableBadge {
   icon: string;
   progress: number;
   requirement: number;
+  is_earned?: boolean;
+  earned_at?: string;
 }
 
 export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSectionProps) {
@@ -71,18 +73,40 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
         }))
       );
 
-      // 加载可获得的徽章
-      const { data: available, error: availableError } = await supabase.rpc(
-        "get_available_badges",
+      // 尝试使用新函数获取所有徽章进度
+      const { data: allBadgesProgress, error: allBadgesError } = await supabase.rpc(
+        "get_all_badges_progress",
         {
           p_profile_id: profile.id,
         }
       );
 
-      if (availableError) {
-        console.warn("Failed to load available badges:", availableError);
+      if (allBadgesError) {
+        console.warn("Failed to load all badges progress, falling back to old method:", allBadgesError);
+        
+        // 回退到旧方法
+        const { data: available, error: availableError } = await supabase.rpc(
+          "get_available_badges",
+          {
+            p_profile_id: profile.id,
+          }
+        );
+
+        if (availableError) {
+          console.warn("Failed to load available badges:", availableError);
+        } else {
+          const earnedBadgeIds = new Set((earnedBadges || []).map(b => b.condition));
+          const filteredAvailable = (available || []).filter(
+            (badge: AvailableBadge) => !earnedBadgeIds.has(badge.condition)
+          );
+          setAvailableBadges(filteredAvailable);
+        }
       } else {
-        setAvailableBadges(available || []);
+        // 使用新方法：过滤出未获得的徽章
+        const unearnedBadges = (allBadgesProgress || []).filter(
+          (badge: AvailableBadge) => !badge.is_earned
+        );
+        setAvailableBadges(unearnedBadges);
       }
     } catch (error) {
       console.error("Failed to load badges:", error);
@@ -162,97 +186,37 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl font-black text-gray-900 dark:text-white">成就徽章</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            已获得 {badges.length} 个徽章
-          </p>
-        </div>
-        <button
-          onClick={handleClaimBadges}
-          className="px-6 py-3 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-2xl text-sm font-bold hover:brightness-110 transition-all flex items-center gap-2 shadow-lg"
-        >
-          <Icon name="reward" size={16} />
-          领取徽章
-        </button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          {
-            label: "已获得",
-            value: badges.length,
-            icon: "reward",
-            color: "text-[#FF4D94]",
-          },
-          {
-            label: "可获得",
-            value: availableBadges.length,
-            icon: "plus",
-            color: "text-emerald-500",
-          },
-          {
-            label: "连续天数",
-            value: profile.history.filter((h) => h.type === "earn").length > 0 ? "7" : "0",
-            icon: "history",
-            color: "text-amber-500",
-          },
-          {
-            label: "完成任务",
-            value: profile.history.filter((h) => h.type === "earn").length,
-            icon: "home",
-            color: "text-indigo-500",
-          },
-        ].map((stat, i) => (
-          <div
-            key={i}
-            className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-gray-100 dark:border-white/5"
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`${stat.color}`}>
-                <Icon name={stat.icon as any} size={20} />
-              </div>
-              <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {stat.label}
-              </p>
-            </div>
-            <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
-          </div>
-        ))}
-      </div>
-
       {/* Tabs */}
-      <div className="flex gap-2 p-1 bg-gray-100 dark:bg-white/5 rounded-2xl">
+      <div className="flex gap-2 p-1 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10">
         <button
           onClick={() => setActiveTab("earned")}
-          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+          className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
             activeTab === "earned"
-              ? "bg-white dark:bg-[#1E293B] text-gray-900 dark:text-white shadow-sm"
-              : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
+              ? "bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm"
+              : "text-gray-400 hover:text-[#FF4D94]"
           }`}
         >
-          已获得 ({badges.length})
+          全部徽章 ({badges.length + availableBadges.length})
         </button>
         <button
           onClick={() => setActiveTab("available")}
-          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+          className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
             activeTab === "available"
-              ? "bg-white dark:bg-[#1E293B] text-gray-900 dark:text-white shadow-sm"
-              : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
+              ? "bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm"
+              : "text-gray-400 hover:text-[#FF4D94]"
           }`}
         >
-          可获得 ({availableBadges.length})
+          可领取 ({availableBadges.filter(b => b.progress >= b.requirement).length})
         </button>
       </div>
 
       {/* Content */}
-      <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-6 border border-gray-100 dark:border-white/5 min-h-[400px]">
+      <div className="bg-white dark:bg-[#0F172A] rounded-3xl p-6 sm:p-8 border border-gray-100 dark:border-white/5 min-h-[400px] shadow-xl">
         {!isValidUUID(profile.id) ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
-            <Icon name="settings" size={64} className="mx-auto mb-4 opacity-20 text-gray-400" />
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-white/5 dark:to-white/10 flex items-center justify-center mb-4">
+              <Icon name="settings" size={40} className="opacity-30 text-gray-400" />
+            </div>
             <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
               数据未同步
             </p>
@@ -262,70 +226,247 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
           </div>
         ) : loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="w-12 h-12 border-4 border-[#FF4D94] border-t-transparent rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : activeTab === "earned" ? (
-          <BadgeDisplay badges={badges} />
-        ) : (
-          <div className="space-y-4">
-            {availableBadges.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <Icon name="reward" size={48} className="mx-auto mb-4 opacity-30" />
-                <p className="text-lg font-bold mb-2">暂无可获得的徽章</p>
-                <p className="text-sm">继续完成任务，解锁更多成就！</p>
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  已获得 {badges.length} / {badges.length + availableBadges.length} 个徽章
+                </p>
+                <div className="mt-2 w-full max-w-xs h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-500"
+                    style={{ width: `${((badges.length / (badges.length + availableBadges.length)) * 100)}%` }}
+                  />
+                </div>
               </div>
-            ) : (
-              availableBadges.map((badge, index) => (
-                <div
-                  key={index}
-                  className="group bg-gray-50 dark:bg-white/5 p-6 rounded-2xl border border-gray-100 dark:border-white/10 hover:border-[#FF4D94]/50 transition-all"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
-                      {badge.icon}
+              <button
+                onClick={handleClaimBadges}
+                className="px-5 py-2.5 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-pink-500/30 transition-all flex items-center gap-2"
+              >
+                <Icon name="reward" size={16} />
+                领取新徽章
+              </button>
+            </div>
+            
+            {/* 已获得的徽章 */}
+            {badges.length > 0 && (
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-5 bg-gradient-to-b from-pink-500 to-purple-500 rounded-full"></div>
+                  <h4 className="text-base font-bold text-gray-900 dark:text-white">
+                    已获得 ({badges.length})
+                  </h4>
+                </div>
+                <BadgeDisplay badges={badges} />
+              </div>
+            )}
+            
+            {/* 未获得的徽章 */}
+            {availableBadges.length > 0 && (
+              <div>
+                {/* 可领取的徽章 */}
+                {availableBadges.filter(b => b.progress >= b.requirement).length > 0 && (
+                  <div className="mb-8">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-1 h-5 bg-gradient-to-b from-emerald-400 to-teal-500 rounded-full animate-pulse"></div>
+                      <h4 className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                        可以领取 ({availableBadges.filter(b => b.progress >= b.requirement).length})
+                      </h4>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h4 className="text-lg font-black text-gray-900 dark:text-white">
-                            {badge.title}
-                          </h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {badge.description}
-                          </p>
-                        </div>
-                        <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full text-xs font-bold">
-                          {badge.badge_type === "streak"
-                            ? "连续"
-                            : badge.badge_type === "milestone"
-                              ? "里程碑"
-                              : badge.badge_type === "achievement"
-                                ? "成就"
-                                : "特殊"}
-                        </span>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400 font-medium">
-                            进度：{badge.progress} / {badge.requirement}
-                          </span>
-                          <span className="text-[#FF4D94] font-bold">
-                            {getProgressPercentage(badge.progress, badge.requirement).toFixed(0)}%
-                          </span>
-                        </div>
-                        <div className="w-full h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] transition-all duration-500"
-                            style={{
-                              width: `${getProgressPercentage(badge.progress, badge.requirement)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {availableBadges
+                        .filter(b => b.progress >= b.requirement)
+                        .map((badge, index) => {
+                          return (
+                            <div
+                              key={index}
+                              className="group relative bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-500/10 dark:via-teal-500/10 dark:to-cyan-500/10 p-4 rounded-2xl border-2 border-emerald-400/60 dark:border-emerald-500/40 transition-all hover:shadow-xl hover:shadow-emerald-500/20 hover:scale-105 cursor-pointer"
+                              onClick={handleClaimBadges}
+                            >
+                              {/* 可领取标记 */}
+                              <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                                <Icon name="check" size={12} className="text-white" />
+                              </div>
+                              
+                              <div className="flex flex-col items-center text-center">
+                                {/* 徽章图标 */}
+                                <div className="w-16 h-16 rounded-2xl bg-white dark:bg-white/10 flex items-center justify-center text-3xl mb-3 shadow-md transition-transform group-hover:scale-110">
+                                  {badge.icon}
+                                </div>
+                                
+                                {/* 徽章信息 */}
+                                <h5 className="text-sm font-black text-gray-900 dark:text-white mb-1 line-clamp-1">
+                                  {badge.title}
+                                </h5>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 line-clamp-2 min-h-[2.5rem]">
+                                  {badge.description}
+                                </p>
+                                
+                                {/* 可领取提示 */}
+                                <div className="w-full px-3 py-1.5 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-lg">
+                                  <p className="text-xs font-black text-white">
+                                    ✨ 点击领取
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
+                )}
+                
+                {/* 未达成的徽章 */}
+                {availableBadges.filter(b => b.progress < b.requirement).length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-1 h-5 bg-gradient-to-b from-gray-400 to-gray-500 rounded-full"></div>
+                      <h4 className="text-base font-bold text-gray-700 dark:text-gray-300">
+                        未达成 ({availableBadges.filter(b => b.progress < b.requirement).length})
+                      </h4>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {availableBadges
+                        .filter(b => b.progress < b.requirement)
+                        .map((badge, index) => {
+                          const remaining = badge.requirement - badge.progress;
+                          
+                          return (
+                            <div
+                              key={index}
+                              className="group relative bg-gradient-to-br from-gray-50 to-white dark:from-white/5 dark:to-transparent p-4 rounded-2xl border border-gray-200 dark:border-white/10 opacity-80 hover:opacity-100 transition-all"
+                            >
+                              <div className="flex flex-col items-center text-center">
+                                {/* 徽章图标 */}
+                                <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-white/5 grayscale flex items-center justify-center text-3xl mb-3 shadow-sm transition-transform group-hover:scale-105">
+                                  {badge.icon}
+                                </div>
+                                
+                                {/* 徽章信息 */}
+                                <h5 className="text-sm font-black text-gray-900 dark:text-white mb-1 line-clamp-1">
+                                  {badge.title}
+                                </h5>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 line-clamp-2 min-h-[2.5rem]">
+                                  {badge.description}
+                                </p>
+                                
+                                {/* 进度信息 */}
+                                <div className="w-full space-y-2">
+                                  <div className="px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 rounded-lg border border-amber-200 dark:border-amber-500/20">
+                                    <p className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                                      还需 <span className="font-black">{remaining}</span>
+                                    </p>
+                                  </div>
+                                  <div className="w-full h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-500 rounded-full"
+                                      style={{
+                                        width: `${getProgressPercentage(badge.progress, badge.requirement)}%`,
+                                      }}
+                                    />
+                                  </div>
+                                  <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                                    {badge.progress} / {badge.requirement}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {badges.length === 0 && availableBadges.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-500/10 dark:to-purple-500/10 flex items-center justify-center mb-4">
+                  <Icon name="reward" size={40} className="opacity-50 text-pink-500" />
                 </div>
-              ))
+                <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  还没有徽章
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mb-6">
+                  完成任务，解锁你的第一个成就徽章！
+                </p>
+                <button
+                  onClick={handleClaimBadges}
+                  className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-2xl text-sm font-bold hover:shadow-lg hover:shadow-pink-500/30 transition-all flex items-center gap-2"
+                >
+                  <Icon name="reward" size={16} />
+                  领取徽章
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {availableBadges.filter(b => b.progress >= b.requirement).length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-500/10 dark:to-teal-500/10 flex items-center justify-center mb-4">
+                  <Icon name="reward" size={40} className="opacity-50 text-emerald-500" />
+                </div>
+                <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  暂无可领取的徽章
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                  继续完成任务，解锁更多成就！
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    {availableBadges.filter(b => b.progress >= b.requirement).length} 个徽章可以领取
+                  </p>
+                  <button
+                    onClick={handleClaimBadges}
+                    className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-emerald-500/30 transition-all flex items-center gap-2"
+                  >
+                    <Icon name="plus" size={16} />
+                    一键领取
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {availableBadges.filter(b => b.progress >= b.requirement).map((badge, index) => (
+                    <div
+                      key={index}
+                      className="group bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-500/10 dark:via-teal-500/10 dark:to-cyan-500/10 p-5 rounded-2xl border-2 border-emerald-400/60 dark:border-emerald-500/40 transition-all hover:shadow-xl hover:shadow-emerald-500/20 cursor-pointer"
+                      onClick={handleClaimBadges}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="w-16 h-16 rounded-2xl bg-white dark:bg-white/10 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform shadow-md flex-shrink-0">
+                          {badge.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-base font-black text-gray-900 dark:text-white truncate">
+                                {badge.title}
+                              </h4>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                                {badge.description}
+                              </p>
+                            </div>
+                            <span className="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                              可领取
+                            </span>
+                          </div>
+                          <div className="mt-3 px-3 py-2 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-xl">
+                            <p className="text-xs font-black text-white text-center">
+                              ✨ 已完成！点击领取
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}

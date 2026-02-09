@@ -3,6 +3,43 @@ import { Profile, UserRole } from '../types';
 import { Icon } from './Icon';
 import { useToast } from './Toast';
 
+// 成员头像组件
+function MemberAvatar({ avatarUrl, name, avatarColor, size = 'md' }: { 
+  avatarUrl?: string | null; 
+  name: string; 
+  avatarColor: string;
+  size?: 'sm' | 'md' | 'lg';
+}) {
+  const [imageError, setImageError] = useState(false);
+  const showAvatar = avatarUrl && !imageError;
+  
+  const sizeClasses = {
+    sm: 'w-8 h-8 text-sm',
+    md: 'w-10 h-10 text-lg',
+    lg: 'w-12 h-12 text-xl'
+  };
+
+  if (showAvatar) {
+    return (
+      <img 
+        src={avatarUrl} 
+        alt={name}
+        className={`${sizeClasses[size]} rounded-full object-cover`}
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+
+  return (
+    <div 
+      className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-bold`}
+      style={{ backgroundColor: avatarColor || '#F3F4F6', color: 'white' }}
+    >
+      {name?.[0] || '?'}
+    </div>
+  );
+}
+
 interface MemberSettingsProps {
   profiles: Profile[];
   selectedIds: Set<string>;
@@ -127,9 +164,12 @@ export function MemberSettings({
               onChange={() => onToggle(profile.id)}
               className="w-4 h-4 rounded border-gray-300"
             />
-            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg font-bold" style={{ backgroundColor: profile.avatarColor || '#F3F4F6' }}>
-              {profile.name?.[0] || '?'}
-            </div>
+            <MemberAvatar 
+              avatarUrl={profile.avatarUrl} 
+              name={profile.name} 
+              avatarColor={profile.avatarColor}
+              size="md"
+            />
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-900">{profile.name}</span>
