@@ -15,6 +15,10 @@ interface FeedbackMessage {
   created_at: string;
   reply_count: number;
   last_reply_at: string | null;
+  profile?: {
+    name: string;
+    family_id: string;
+  };
 }
 
 interface FeedbackReply {
@@ -54,6 +58,9 @@ export function FeedbackModal({
   const [replies, setReplies] = useState<FeedbackReply[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 5;
 
   // Form state
   const [subject, setSubject] = useState('');
@@ -109,6 +116,7 @@ export function FeedbackModal({
       adminReply: '管理员回复',
       userReply: '用户回复',
       createdAt: '创建于',
+      submittedBy: '提交人',
       lastReply: '最后回复',
       updateStatus: '更新状态',
       submitSuccess: '反馈提交成功',
@@ -165,6 +173,7 @@ export function FeedbackModal({
       adminReply: 'Admin Reply',
       userReply: 'User Reply',
       createdAt: 'Created at',
+      submittedBy: 'Submitted by',
       lastReply: 'Last reply',
       updateStatus: 'Update Status',
       submitSuccess: 'Feedback submitted successfully',
@@ -183,24 +192,58 @@ export function FeedbackModal({
     if (isOpen && view === 'list') {
       loadFeedbackList();
     }
-  }, [isOpen, view]);
+  }, [isOpen, view, currentPage]);
 
   const loadFeedbackList = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('feedback_list_view')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // 先获取总数
+      let countQuery = supabase
+        .from('feedback_messages')
+        .select('*', { count: 'exact', head: true });
 
       if (!isSuperAdmin) {
-        query = query.eq('family_id', familyId);
+        countQuery = countQuery.eq('profile_id', profileId);
+      }
+
+      const { count } = await countQuery;
+      setTotalCount(count || 0);
+
+      // 获取当前页数据
+      let query = supabase
+        .from('feedback_messages')
+        .select(`
+          *,
+          profile:profiles(name, family_id)
+        `)
+        .order('created_at', { ascending: false })
+        .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
+
+      if (!isSuperAdmin) {
+        query = query.eq('profile_id', profileId);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
-      setFeedbackList(data || []);
+      
+      // 计算回复数量
+      const messagesWithCounts = await Promise.all(
+        (data || []).map(async (msg) => {
+          const { count } = await supabase
+            .from('feedback_replies')
+            .select('*', { count: 'exact', head: true })
+            .eq('feedback_id', msg.id);
+          
+          return {
+            ...msg,
+            reply_count: count || 0,
+            last_reply_at: null,
+          };
+        })
+      );
+      
+      setFeedbackList(messagesWithCounts);
     } catch (error) {
       console.error('Load feedback error:', error);
       showToast({ type: 'error', title: text.loadFailed });
@@ -212,17 +255,37 @@ export function FeedbackModal({
   const loadFeedbackDetail = async (feedbackId: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_feedback_with_replies', {
-        p_feedback_id: feedbackId,
+      // 获取反馈详情
+      const { data: feedbackData, error: feedbackError } = await supabase
+        .from('feedback_messages')
+        .select(`
+          *,
+          profile:profiles(name, family_id)
+        `)
+        .eq('id', feedbackId)
+        .single();
+
+      if (feedbackError) throw feedbackError;
+
+      // 获取回复列表
+      const { data: repliesData, error: repliesError } = await supabase
+        .from('feedback_replies')
+        .select(`
+          *,
+          profile:profiles(id, name, avatar_url)
+        `)
+        .eq('feedback_id', feedbackId)
+        .order('created_at', { ascending: true });
+
+      if (repliesError) throw repliesError;
+
+      setSelectedFeedback({
+        ...feedbackData,
+        reply_count: repliesData?.length || 0,
+        last_reply_at: null,
       });
-
-      if (error) throw error;
-
-      if (data) {
-        setSelectedFeedback(data.feedback);
-        setReplies(data.replies || []);
-        setView('detail');
-      }
+      setReplies(repliesData || []);
+      setView('detail');
     } catch (error) {
       console.error('Load feedback detail error:', error);
       showToast({ type: 'error', title: text.loadFailed });
@@ -367,7 +430,7 @@ export function FeedbackModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-4xl">
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-6xl">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -441,10 +504,30 @@ export function FeedbackModal({
                         <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
                           {feedback.message}
                         </p>
-                        <div className="flex items-center gap-4 text-xs text-gray-400">
-                          <span>{new Date(feedback.created_at).toLocaleDateString()}</span>
-                          {feedback.reply_count > 0 && (
-                            <span>💬 {feedback.reply_count} {text.replies}</span>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-3 text-xs text-gray-400">
+                            <span>{new Date(feedback.created_at).toLocaleDateString()}</span>
+                            {isSuperAdmin && feedback.profile?.name && (
+                              <>
+                                <span>•</span>
+                                <span className="font-medium text-[#7C4DFF]">
+                                  👤 {feedback.profile.name}
+                                </span>
+                              </>
+                            )}
+                            {feedback.reply_count > 0 && (
+                              <>
+                                <span>•</span>
+                                <span>💬 {feedback.reply_count} {text.replies}</span>
+                              </>
+                            )}
+                          </div>
+                          {isSuperAdmin && feedback.profile?.family_id && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="font-mono text-gray-500 break-all">
+                                🏠 {feedback.profile.family_id}
+                              </span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -452,6 +535,33 @@ export function FeedbackModal({
                     </div>
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalCount > pageSize && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-white/10">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {language === 'zh' 
+                    ? `共 ${totalCount} 条，第 ${currentPage} / ${Math.ceil(totalCount / pageSize)} 页`
+                    : `Total ${totalCount}, Page ${currentPage} / ${Math.ceil(totalCount / pageSize)}`}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium"
+                  >
+                    {language === 'zh' ? '上一页' : 'Previous'}
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(totalCount / pageSize), p + 1))}
+                    disabled={currentPage >= Math.ceil(totalCount / pageSize)}
+                    className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium"
+                  >
+                    {language === 'zh' ? '下一页' : 'Next'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -606,9 +716,28 @@ export function FeedbackModal({
               <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                 {selectedFeedback.message}
               </p>
-              <p className="text-xs text-gray-400">
-                {text.createdAt}: {new Date(selectedFeedback.created_at).toLocaleString()}
-              </p>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-3 text-xs text-gray-400">
+                  <span>
+                    {text.createdAt}: {new Date(selectedFeedback.created_at).toLocaleString()}
+                  </span>
+                  {isSuperAdmin && selectedFeedback.profile?.name && (
+                    <>
+                      <span>•</span>
+                      <span className="font-medium text-[#7C4DFF]">
+                        👤 {selectedFeedback.profile.name}
+                      </span>
+                    </>
+                  )}
+                </div>
+                {isSuperAdmin && selectedFeedback.profile?.family_id && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-mono text-gray-500 break-all">
+                      🏠 {selectedFeedback.profile.family_id}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Replies */}

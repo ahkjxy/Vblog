@@ -16,6 +16,19 @@ interface UserProfile {
   family_id: string | null
 }
 
+interface FeedbackMessage {
+  id: string
+  message: string
+  created_at: string
+  status: string
+}
+
+interface FeedbackReply {
+  feedback_id: string
+  message: string
+  created_at: string
+}
+
 const FAQ_ITEMS = [
   {
     question: '如何开始使用元气银行？',
@@ -92,13 +105,8 @@ export function CustomerSupport() {
     checkAuth()
     
     // 监听认证状态变化
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        checkAuth()
-      } else {
-        setIsLoggedIn(false)
-        setUserProfile(null)
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkAuth()
     })
     
     return () => {
@@ -134,7 +142,7 @@ export function CustomerSupport() {
         }
 
         // 获取所有反馈的回复
-        const feedbackIds = feedbacks.map(f => f.id)
+        const feedbackIds = feedbacks.map((f: FeedbackMessage) => f.id)
         const { data: replies } = await supabase
           .from('feedback_replies')
           .select('feedback_id, message, created_at')
@@ -144,7 +152,7 @@ export function CustomerSupport() {
         // 合并消息和回复
         const historyMessages: Message[] = []
         
-        feedbacks.forEach(feedback => {
+        feedbacks.forEach((feedback: FeedbackMessage) => {
           // 添加用户消息
           historyMessages.push({
             id: feedback.id,
@@ -154,8 +162,8 @@ export function CustomerSupport() {
           })
 
           // 添加对应的回复
-          const feedbackReplies = replies?.filter(r => r.feedback_id === feedback.id) || []
-          feedbackReplies.forEach(reply => {
+          const feedbackReplies = replies?.filter((r: FeedbackReply) => r.feedback_id === feedback.id) || []
+          feedbackReplies.forEach((reply: FeedbackReply) => {
             historyMessages.push({
               id: `reply-${reply.feedback_id}`,
               type: 'bot',

@@ -35,6 +35,15 @@ export default async function DashboardLayout({
   const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
   const isSuperAdmin = userProfile?.role === 'admin' && userProfile?.family_id === SUPER_ADMIN_FAMILY_ID
 
+  // 调试信息
+  console.log('=== Dashboard Layout Debug ===')
+  console.log('User ID:', user.id)
+  console.log('User Email:', user.email)
+  console.log('Profile Role:', userProfile?.role)
+  console.log('Profile Family ID:', userProfile?.family_id)
+  console.log('Is Super Admin:', isSuperAdmin)
+  console.log('==============================')
+
   // 使用可能存在的字段 - 优先使用 profile.name（家长名字）
   const userName = userProfile?.name || user.email?.split('@')[0] || '用户'
   const userRole = userProfile?.role || 'author'
@@ -43,7 +52,7 @@ export default async function DashboardLayout({
   // 获取角色显示名称
   const getRoleLabel = () => {
     if (isSuperAdmin) return '超级管理员'
-    if (userRole === 'admin') return '管理员'
+    if (userRole === 'admin') return '家长'
     if (userRole === 'editor') return '编辑'
     return '作者'
   }
@@ -53,6 +62,7 @@ export default async function DashboardLayout({
     { href: '/dashboard', icon: 'LayoutDashboard', label: '概览' },
     { href: '/dashboard/posts', icon: 'FileText', label: '文章' },
     { href: '/dashboard/media', icon: 'Image', label: '媒体库' },
+    { href: '/dashboard/feedback', icon: 'MessageCircle', label: '反馈留言' },
   ]
 
   // 只有超级管理员才能看到其他菜单
@@ -61,7 +71,6 @@ export default async function DashboardLayout({
       { href: '/dashboard/categories', icon: 'FolderOpen', label: '分类' },
       { href: '/dashboard/tags', icon: 'Tag', label: '标签' },
       { href: '/dashboard/comments', icon: 'MessageSquare', label: '评论' },
-      { href: '/dashboard/feedback', icon: 'MessageCircle', label: '客服管理' },
       { href: '/dashboard/users', icon: 'Users', label: '用户' },
       { href: '/dashboard/settings', icon: 'Settings', label: '设置' }
     )

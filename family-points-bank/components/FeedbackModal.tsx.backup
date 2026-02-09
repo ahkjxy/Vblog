@@ -1,0 +1,793 @@
+import { useState, useEffect } from 'react';
+import { Modal } from './Modal';
+import { Icon } from './Icon';
+import { useToast } from './Toast';
+import { Language } from '../i18n/translations';
+import { supabase } from '../supabaseClient';
+
+interface FeedbackMessage {
+  id: string;
+  subject: string;
+  message: string;
+  category: string;
+  status: 'pending' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  created_at: string;
+  reply_count: number;
+  last_reply_at: string | null;
+  profile?: {
+    name: string;
+    family_id: string;
+  };
+}
+
+interface FeedbackReply {
+  id: string;
+  message: string;
+  is_admin_reply: boolean;
+  created_at: string;
+  profile: {
+    id: string;
+    name: string;
+    avatar_url: string | null;
+  } | null;
+}
+
+interface FeedbackModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  familyId: string;
+  profileId: string;
+  profileName: string;
+  isSuperAdmin: boolean;
+  language?: Language;
+}
+
+export function FeedbackModal({
+  isOpen,
+  onClose,
+  familyId,
+  profileId,
+  isSuperAdmin,
+  language = 'zh',
+}: FeedbackModalProps) {
+  const { showToast } = useToast();
+  const [view, setView] = useState<'list' | 'create' | 'detail'>('list');
+  const [feedbackList, setFeedbackList] = useState<FeedbackMessage[]>([]);
+  const [selectedFeedback, setSelectedFeedback] = useState<FeedbackMessage | null>(null);
+  const [replies, setReplies] = useState<FeedbackReply[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 5;
+
+  // Form state
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [category, setCategory] = useState('general');
+  const [priority, setPriority] = useState<'low' | 'normal' | 'high' | 'urgent'>('normal');
+  const [replyMessage, setReplyMessage] = useState('');
+
+  const t = {
+    zh: {
+      title: isSuperAdmin ? '反馈管理中心' : '反馈与建议',
+      subtitle: isSuperAdmin ? '查看和回复用户反馈' : '向管理员发送反馈',
+      createNew: '新建反馈',
+      backToList: '返回列表',
+      myFeedback: '我的反馈',
+      allFeedback: '所有反馈',
+      subject: '主题',
+      subjectPlaceholder: '简要描述您的问题或建议',
+      message: '详细说明',
+      messagePlaceholder: '请详细描述您的问题、建议或遇到的情况...',
+      category: '分类',
+      categories: {
+        general: '一般反馈',
+        bug: '错误报告',
+        feature: '功能建议',
+        question: '使用咨询',
+        other: '其他',
+      },
+      priority: '优先级',
+      priorities: {
+        low: '低',
+        normal: '普通',
+        high: '高',
+        urgent: '紧急',
+      },
+      status: '状态',
+      statuses: {
+        pending: '待处理',
+        in_progress: '处理中',
+        resolved: '已解决',
+        closed: '已关闭',
+      },
+      submit: '提交反馈',
+      submitting: '提交中...',
+      cancel: '取消',
+      noFeedback: '暂无反馈',
+      noFeedbackDesc: isSuperAdmin ? '目前没有用户反馈' : '您还没有提交过反馈',
+      replies: '回复',
+      replyCount: '{count} 条回复',
+      addReply: '添加回复',
+      replyPlaceholder: '输入您的回复...',
+      sendReply: '发送回复',
+      adminReply: '管理员回复',
+      userReply: '用户回复',
+      createdAt: '创建于',
+      submittedBy: '提交人',
+      lastReply: '最后回复',
+      updateStatus: '更新状态',
+      submitSuccess: '反馈提交成功',
+      submitFailed: '提交失败',
+      replySuccess: '回复成功',
+      replyFailed: '回复失败',
+      loadFailed: '加载失败',
+      statusUpdateSuccess: '状态更新成功',
+      statusUpdateFailed: '状态更新失败',
+    },
+    en: {
+      title: isSuperAdmin ? 'Feedback Management' : 'Feedback & Suggestions',
+      subtitle: isSuperAdmin ? 'View and reply to user feedback' : 'Send feedback to admin',
+      createNew: 'New Feedback',
+      backToList: 'Back to List',
+      myFeedback: 'My Feedback',
+      allFeedback: 'All Feedback',
+      subject: 'Subject',
+      subjectPlaceholder: 'Briefly describe your issue or suggestion',
+      message: 'Details',
+      messagePlaceholder: 'Please describe your issue, suggestion, or situation in detail...',
+      category: 'Category',
+      categories: {
+        general: 'General Feedback',
+        bug: 'Bug Report',
+        feature: 'Feature Request',
+        question: 'Question',
+        other: 'Other',
+      },
+      priority: 'Priority',
+      priorities: {
+        low: 'Low',
+        normal: 'Normal',
+        high: 'High',
+        urgent: 'Urgent',
+      },
+      status: 'Status',
+      statuses: {
+        pending: 'Pending',
+        in_progress: 'In Progress',
+        resolved: 'Resolved',
+        closed: 'Closed',
+      },
+      submit: 'Submit Feedback',
+      submitting: 'Submitting...',
+      cancel: 'Cancel',
+      noFeedback: 'No Feedback',
+      noFeedbackDesc: isSuperAdmin ? 'No user feedback yet' : 'You haven\'t submitted any feedback yet',
+      replies: 'Replies',
+      replyCount: '{count} replies',
+      addReply: 'Add Reply',
+      replyPlaceholder: 'Type your reply...',
+      sendReply: 'Send Reply',
+      adminReply: 'Admin Reply',
+      userReply: 'User Reply',
+      createdAt: 'Created at',
+      submittedBy: 'Submitted by',
+      lastReply: 'Last reply',
+      updateStatus: 'Update Status',
+      submitSuccess: 'Feedback submitted successfully',
+      submitFailed: 'Submit failed',
+      replySuccess: 'Reply sent successfully',
+      replyFailed: 'Reply failed',
+      loadFailed: 'Load failed',
+      statusUpdateSuccess: 'Status updated successfully',
+      statusUpdateFailed: 'Status update failed',
+    },
+  };
+
+  const text = t[language];
+
+  useEffect(() => {
+    if (isOpen && view === 'list') {
+      loadFeedbackList();
+    }
+  }, [isOpen, view, currentPage]);
+
+  const loadFeedbackList = async () => {
+    setLoading(true);
+    try {
+      // 先获取总数
+      let countQuery = supabase
+        .from('feedback_messages')
+        .select('*', { count: 'exact', head: true });
+
+      if (!isSuperAdmin) {
+        countQuery = countQuery.eq('profile_id', profileId);
+      }
+
+      const { count } = await countQuery;
+      setTotalCount(count || 0);
+
+      // 获取当前页数据
+      let query = supabase
+        .from('feedback_messages')
+        .select(`
+          *,
+          profile:profiles(name, family_id)
+        `)
+        .order('created_at', { ascending: false })
+        .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
+
+      if (!isSuperAdmin) {
+        query = query.eq('profile_id', profileId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      
+      // 计算回复数量
+      const messagesWithCounts = await Promise.all(
+        (data || []).map(async (msg) => {
+          const { count } = await supabase
+            .from('feedback_replies')
+            .select('*', { count: 'exact', head: true })
+            .eq('feedback_id', msg.id);
+          
+          return {
+            ...msg,
+            reply_count: count || 0,
+            last_reply_at: null,
+          };
+        })
+      );
+      
+      setFeedbackList(messagesWithCounts);
+    } catch (error) {
+      console.error('Load feedback error:', error);
+      showToast({ type: 'error', title: text.loadFailed });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFeedbackDetail = async (feedbackId: string) => {
+    setLoading(true);
+    try {
+      // 获取反馈详情
+      const { data: feedbackData, error: feedbackError } = await supabase
+        .from('feedback_messages')
+        .select(`
+          *,
+          profile:profiles(name, family_id)
+        `)
+        .eq('id', feedbackId)
+        .single();
+
+      if (feedbackError) throw feedbackError;
+
+      // 获取回复列表
+      const { data: repliesData, error: repliesError } = await supabase
+        .from('feedback_replies')
+        .select(`
+          *,
+          profile:profiles(id, name, avatar_url)
+        `)
+        .eq('feedback_id', feedbackId)
+        .order('created_at', { ascending: true });
+
+      if (repliesError) throw repliesError;
+
+      setSelectedFeedback({
+        ...feedbackData,
+        reply_count: repliesData?.length || 0,
+        last_reply_at: null,
+      });
+      setReplies(repliesData || []);
+      setView('detail');
+    } catch (error) {
+      console.error('Load feedback detail error:', error);
+      showToast({ type: 'error', title: text.loadFailed });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!subject.trim() || !message.trim()) {
+      showToast({ type: 'error', title: 'Please fill in all fields' });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // 先获取当前用户的 profile 信息，确保使用正确的 family_id
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('family_id')
+        .eq('id', profileId)
+        .single();
+
+      if (profileError) throw profileError;
+      if (!profile?.family_id) {
+        throw new Error('Profile family_id not found');
+      }
+
+      const { error } = await supabase.from('feedback_messages').insert({
+        family_id: profile.family_id, // 使用 profile 的 family_id
+        profile_id: profileId,
+        subject: subject.trim(),
+        message: message.trim(),
+        category,
+        priority,
+        status: 'pending',
+      });
+
+      if (error) throw error;
+
+      showToast({ type: 'success', title: text.submitSuccess });
+      setSubject('');
+      setMessage('');
+      setCategory('general');
+      setPriority('normal');
+      setView('list');
+      loadFeedbackList();
+    } catch (error) {
+      console.error('Submit feedback error:', error);
+      showToast({ type: 'error', title: text.submitFailed });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSendReply = async () => {
+    if (!replyMessage.trim() || !selectedFeedback) return;
+
+    setSubmitting(true);
+    try {
+      // 获取当前用户的 profile 信息
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('family_id')
+        .eq('id', profileId)
+        .single();
+
+      if (profileError) throw profileError;
+      if (!profile?.family_id) {
+        throw new Error('Profile family_id not found');
+      }
+
+      const { error } = await supabase.from('feedback_replies').insert({
+        feedback_id: selectedFeedback.id,
+        family_id: profile.family_id, // 使用 profile 的 family_id
+        profile_id: profileId,
+        message: replyMessage.trim(),
+        is_admin_reply: isSuperAdmin,
+      });
+
+      if (error) throw error;
+
+      showToast({ type: 'success', title: text.replySuccess });
+      setReplyMessage('');
+      loadFeedbackDetail(selectedFeedback.id);
+    } catch (error) {
+      console.error('Send reply error:', error);
+      showToast({ type: 'error', title: text.replyFailed });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdateStatus = async (status: string) => {
+    if (!selectedFeedback) return;
+
+    try {
+      const { error } = await supabase
+        .from('feedback_messages')
+        .update({ status })
+        .eq('id', selectedFeedback.id);
+
+      if (error) throw error;
+
+      showToast({ type: 'success', title: text.statusUpdateSuccess });
+      setSelectedFeedback({ ...selectedFeedback, status: status as any });
+      loadFeedbackList();
+    } catch (error) {
+      console.error('Update status error:', error);
+      showToast({ type: 'error', title: text.statusUpdateFailed });
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-amber-100 text-amber-700';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-700';
+      case 'resolved':
+        return 'bg-emerald-100 text-emerald-700';
+      case 'closed':
+        return 'bg-gray-100 text-gray-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent':
+        return 'bg-rose-100 text-rose-700';
+      case 'high':
+        return 'bg-orange-100 text-orange-700';
+      case 'normal':
+        return 'bg-blue-100 text-blue-700';
+      case 'low':
+        return 'bg-gray-100 text-gray-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-4xl">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+              {text.title}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+              {text.subtitle}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+          >
+            <Icon name="x" size={24} className="text-gray-400" />
+          </button>
+        </div>
+
+        {/* List View */}
+        {view === 'list' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300">
+                {isSuperAdmin ? text.allFeedback : text.myFeedback}
+              </h3>
+              {!isSuperAdmin && (
+                <button
+                  onClick={() => setView('create')}
+                  className="px-4 py-2 bg-gradient-to-r from-[#7C4DFF] to-[#FF4D94] text-white rounded-[16px] text-sm font-bold hover:brightness-110 transition-all shadow-lg flex items-center gap-2"
+                >
+                  <Icon name="plus" size={16} />
+                  {text.createNew}
+                </button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-4 border-[#7C4DFF]/30 border-t-[#7C4DFF] rounded-full animate-spin" />
+              </div>
+            ) : feedbackList.length === 0 ? (
+              <div className="text-center py-12 space-y-2">
+                <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center">
+                  <Icon name="chat" size={32} className="text-gray-400" />
+                </div>
+                <p className="text-gray-500 dark:text-gray-400 font-bold">{text.noFeedback}</p>
+                <p className="text-sm text-gray-400">{text.noFeedbackDesc}</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                {feedbackList.map((feedback) => (
+                  <button
+                    key={feedback.id}
+                    onClick={() => loadFeedbackDetail(feedback.id)}
+                    className="w-full p-4 bg-gray-50 dark:bg-white/5 rounded-[20px] hover:bg-gray-100 dark:hover:bg-white/10 transition-all text-left"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-bold text-gray-900 dark:text-white">
+                            {feedback.subject}
+                          </h4>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusColor(feedback.status)}`}>
+                            {text.statuses[feedback.status]}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getPriorityColor(feedback.priority)}`}>
+                            {text.priorities[feedback.priority]}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                          {feedback.message}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-gray-400">
+                          <span>{new Date(feedback.created_at).toLocaleDateString()}</span>
+                          {isSuperAdmin && feedback.profile?.name && (
+                            <span className="font-medium text-[#7C4DFF]">
+                              � {feedback.profile.name}
+                            </span>
+                          )}
+                          {feedback.reply_count > 0 && (
+                            <span>💬 {feedback.reply_count} {text.replies}</span>
+                          )}
+                        </div>
+                      </div>
+                      <Icon name="chevron-right" size={20} className="text-gray-400 shrink-0" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Create View */}
+        {view === 'create' && (
+          <div className="space-y-4">
+            <button
+              onClick={() => setView('list')}
+              className="flex items-center gap-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-[#7C4DFF] transition-colors"
+            >
+              <Icon name="chevron-left" size={16} />
+              {text.backToList}
+            </button>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  {text.subject}
+                </label>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder={text.subjectPlaceholder}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-[16px] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C4DFF]"
+                  maxLength={200}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    {text.category}
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-[16px] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C4DFF]"
+                  >
+                    {Object.entries(text.categories).map(([key, label]) => (
+                      <option key={key} value={key}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    {text.priority}
+                  </label>
+                  <select
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value as any)}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-[16px] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C4DFF]"
+                  >
+                    {Object.entries(text.priorities).map(([key, label]) => (
+                      <option key={key} value={key}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  {text.message}
+                </label>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={text.messagePlaceholder}
+                  rows={8}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-[16px] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C4DFF] resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setView('list')}
+                  className="flex-1 py-3 px-6 rounded-[16px] bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 font-bold text-sm hover:bg-gray-200 dark:hover:bg-white/10 transition-all"
+                >
+                  {text.cancel}
+                </button>
+                <button
+                  onClick={handleSubmitFeedback}
+                  disabled={submitting || !subject.trim() || !message.trim()}
+                  className="flex-1 py-3 px-6 rounded-[16px] bg-gradient-to-r from-[#7C4DFF] to-[#FF4D94] text-white font-bold text-sm hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      {text.submitting}
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="check" size={16} />
+                      {text.submit}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Detail View */}
+        {view === 'detail' && selectedFeedback && (
+          <div className="space-y-4">
+            <button
+              onClick={() => setView('list')}
+              className="flex items-center gap-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-[#7C4DFF] transition-colors"
+            >
+              <Icon name="chevron-left" size={16} />
+              {text.backToList}
+            </button>
+
+            {/* Feedback Header */}
+            <div className="p-6 bg-gradient-to-br from-[#7C4DFF]/5 to-[#FF4D94]/5 rounded-[24px] border border-[#7C4DFF]/10 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <h3 className="text-xl font-black text-gray-900 dark:text-white">
+                  {selectedFeedback.subject}
+                </h3>
+                {isSuperAdmin && (
+                  <select
+                    value={selectedFeedback.status}
+                    onChange={(e) => handleUpdateStatus(e.target.value)}
+                    className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#7C4DFF]"
+                  >
+                    {Object.entries(text.statuses).map(([key, label]) => (
+                      <option key={key} value={key}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(selectedFeedback.status)}`}>
+                  {text.statuses[selectedFeedback.status]}
+                </span>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getPriorityColor(selectedFeedback.priority)}`}>
+                  {text.priorities[selectedFeedback.priority]}
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
+                  {text.categories[selectedFeedback.category as keyof typeof text.categories]}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                {selectedFeedback.message}
+              </p>
+              <div className="flex items-center gap-4 text-xs text-gray-400">
+                <span>
+                  {text.createdAt}: {new Date(selectedFeedback.created_at).toLocaleString()}
+                </span>
+                {isSuperAdmin && selectedFeedback.profile?.name && (
+                  <span className="font-medium text-[#7C4DFF]">
+                    👤 {selectedFeedback.profile.name}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Replies */}
+            <div className="space-y-3 max-h-[40vh] overflow-y-auto">
+              <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                {text.replies} ({replies.length})
+              </h4>
+              {replies.map((reply) => (
+                <div
+                  key={reply.id}
+                  className={`p-4 rounded-[20px] ${
+                    reply.is_admin_reply
+                      ? 'bg-[#7C4DFF]/10 border border-[#7C4DFF]/20'
+                      : 'bg-gray-50 dark:bg-white/5'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C4DFF] to-[#FF4D94] flex items-center justify-center text-white text-sm font-bold shrink-0">
+                      {reply.profile?.name?.slice(0, 1) || '?'}
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">
+                          {reply.profile?.name || 'Unknown'}
+                        </span>
+                        {reply.is_admin_reply && (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#7C4DFF] text-white">
+                            {text.adminReply}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                        {reply.message}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(reply.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Reply Input - 只有超级管理员可以回复 */}
+            {isSuperAdmin && (
+              <div className="space-y-3">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">
+                  {text.addReply}
+                </label>
+                <textarea
+                  value={replyMessage}
+                  onChange={(e) => setReplyMessage(e.target.value)}
+                  placeholder={text.replyPlaceholder}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-[16px] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C4DFF] resize-none"
+                />
+                <button
+                  onClick={handleSendReply}
+                  disabled={submitting || !replyMessage.trim()}
+                  className="w-full py-3 px-6 rounded-[16px] bg-gradient-to-r from-[#7C4DFF] to-[#FF4D94] text-white font-bold text-sm hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      {text.submitting}
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="send" size={16} />
+                      {text.sendReply}
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* 普通用户提示 - 只在待处理或处理中时显示 */}
+            {!isSuperAdmin && selectedFeedback.status !== 'resolved' && selectedFeedback.status !== 'closed' && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-[20px]">
+                <p className="text-sm text-blue-700 dark:text-blue-300 font-medium text-center">
+                  {language === 'zh' 
+                    ? '💬 管理员会尽快回复您的反馈' 
+                    : '💬 Admin will reply to your feedback soon'}
+                </p>
+              </div>
+            )}
+
+            {/* 已解决或已关闭的提示 */}
+            {!isSuperAdmin && (selectedFeedback.status === 'resolved' || selectedFeedback.status === 'closed') && (
+              <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-[20px]">
+                <p className="text-sm text-emerald-700 dark:text-emerald-300 font-medium text-center">
+                  {language === 'zh' 
+                    ? selectedFeedback.status === 'resolved' 
+                      ? '✅ 此反馈已解决' 
+                      : '🔒 此反馈已关闭'
+                    : selectedFeedback.status === 'resolved'
+                      ? '✅ This feedback has been resolved'
+                      : '🔒 This feedback has been closed'}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}

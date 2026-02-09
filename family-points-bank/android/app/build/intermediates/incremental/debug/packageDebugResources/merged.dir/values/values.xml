@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
-    <string name="app_name">元气积分银行</string>
+    <string name="app_name">元气银行</string>
     <string name="custom_url_scheme">com.wly.familypointsbank</string>
     <string name="package_name">com.wly.familypointsbank</string>
-    <string name="title_activity_main">元气积分银行</string>
+    <string name="title_activity_main">元气银行</string>
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         
         <item name="colorPrimary">@color/colorPrimary</item>

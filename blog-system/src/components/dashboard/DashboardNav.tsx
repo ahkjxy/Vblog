@@ -8,7 +8,8 @@ import {
   Image, 
   FolderOpen, 
   Tag, 
-  MessageSquare, 
+  MessageSquare,
+  MessageCircle,
   Users, 
   Settings,
 } from 'lucide-react'
@@ -31,6 +32,7 @@ const iconMap = {
   FolderOpen,
   Tag,
   MessageSquare,
+  MessageCircle,
   Users,
   Settings,
 }

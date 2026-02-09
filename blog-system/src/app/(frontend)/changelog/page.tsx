@@ -23,8 +23,36 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
-    version: '2.2.0',
+    version: '2.3.0',
     date: '2026-02-09',
+    type: 'improvement',
+    changes: [
+      {
+        category: '反馈管理优化',
+        items: [
+          '反馈管理中限制回复功能仅超级管理员可用，普通家长只能查看',
+          '优化反馈列表显示，只显示提交人姓名信息',
+          '新增家庭ID显示功能，超级管理员可查看完整的家庭UUID',
+          '博客系统反馈管理添加分页功能（每页10条）',
+          '家庭积分银行反馈管理添加分页功能（每页5条）',
+          '优化反馈弹窗布局，增大弹窗宽度至max-w-6xl',
+          '家庭ID单独一行显示，使用等宽字体，支持自动换行',
+          '两个系统的反馈管理界面保持一致的显示风格'
+        ]
+      },
+      {
+        category: '用户体验',
+        items: [
+          '优化长文本显示，避免布局混乱',
+          '改进信息层级结构，提升可读性',
+          '统一超级管理员权限控制逻辑'
+        ]
+      }
+    ]
+  },
+  {
+    version: '2.2.0',
+    date: '2026-02-08',
     type: 'improvement',
     changes: [
       {
@@ -50,7 +78,7 @@ const changelog: ChangelogEntry[] = [
   },
   {
     version: '2.1.0',
-    date: '2026-02-09',
+    date: '2026-02-06',
     type: 'feature',
     changes: [
       {
@@ -74,7 +102,7 @@ const changelog: ChangelogEntry[] = [
   },
   {
     version: '2.0.0',
-    date: '2025-12-15',
+    date: '2026-02-04',
     type: 'feature',
     changes: [
       {
@@ -99,7 +127,7 @@ const changelog: ChangelogEntry[] = [
   },
   {
     version: '1.5.0',
-    date: '2025-11-20',
+    date: '2026-02-02',
     type: 'improvement',
     changes: [
       {
@@ -122,7 +150,7 @@ const changelog: ChangelogEntry[] = [
   },
   {
     version: '1.4.0',
-    date: '2025-10-15',
+    date: '2026-01-31',
     type: 'feature',
     changes: [
       {
@@ -146,7 +174,7 @@ const changelog: ChangelogEntry[] = [
   },
   {
     version: '1.3.0',
-    date: '2025-09-10',
+    date: '2026-01-29',
     type: 'fix',
     changes: [
       {
@@ -170,7 +198,7 @@ const changelog: ChangelogEntry[] = [
   },
   {
     version: '1.2.0',
-    date: '2025-08-05',
+    date: '2026-01-28',
     type: 'improvement',
     changes: [
       {
@@ -186,7 +214,7 @@ const changelog: ChangelogEntry[] = [
   },
   {
     version: '1.1.0',
-    date: '2025-07-01',
+    date: '2026-01-27',
     type: 'feature',
     changes: [
       {
@@ -196,22 +224,6 @@ const changelog: ChangelogEntry[] = [
           '新增用户头像上传',
           '支持文章点赞功能',
           '新增阅读统计功能'
-        ]
-      }
-    ]
-  },
-  {
-    version: '1.0.0',
-    date: '2025-06-01',
-    type: 'feature',
-    changes: [
-      {
-        category: '首次发布',
-        items: [
-          '博客系统正式上线',
-          '支持文章发布和管理',
-          '实现用户认证系统',
-          '提供基础的内容管理功能'
         ]
       }
     ]
