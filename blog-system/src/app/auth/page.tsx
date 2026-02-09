@@ -192,12 +192,12 @@ function AuthPageContent() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#FDFCFD] dark:bg-[#0F172A] sm:px-6 py-12 relative overflow-hidden">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#FDFCFD] sm:px-6 py-12 relative overflow-hidden">
       {/* Abstract Background Orbs */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#FF4D94]/10 blur-[120px] rounded-full animate-pulse"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#7C4DFF]/10 blur-[100px] rounded-full animate-pulse duration-[4000ms]"></div>
       
-      <div className="w-full sm:max-w-[420px] bg-white sm:bg-white/80 dark:bg-[#0F172A] sm:dark:bg-[#1E293B]/80 backdrop-blur-3xl sm:rounded-[48px] sm:shadow-[0_32px_100px_-24px_rgba(0,0,0,0.12)] sm:dark:shadow-[0_40px_120px_-30px_rgba(0,0,0,0.6)] sm:border border-white/50 dark:border-white/5 p-6 sm:p-10 space-y-8 animate-in fade-in zoom-in-95 duration-700 relative z-10">
+      <div className="w-full sm:max-w-[420px] bg-white sm:bg-white/80 backdrop-blur-3xl sm:rounded-[48px] sm:shadow-[0_32px_100px_-24px_rgba(0,0,0,0.12)] sm:border border-white/50 p-6 sm:p-10 space-y-8 animate-in fade-in zoom-in-95 duration-700 relative z-10">
         <div className="space-y-3 text-center">
           <Link href="/" className="inline-block">
             <div className="relative inline-block">
@@ -211,8 +211,8 @@ function AuthPageContent() {
           
           <div className="mt-2">
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#FF4D94]">博 客 系 统</p>
-            <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter mt-1">欢迎来到元气银行博客</h2>
-            <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 leading-snug mt-2 max-w-[240px] mx-auto opacity-80">
+            <h2 className="text-3xl font-black text-gray-900 tracking-tighter mt-1">欢迎来到元气银行博客</h2>
+            <p className="text-[11px] font-bold text-gray-400 leading-snug mt-2 max-w-[240px] mx-auto opacity-80">
               分享家庭管理智慧，记录成长点滴
             </p>
           </div>
@@ -228,11 +228,11 @@ function AuthPageContent() {
           </div>
         )}
 
-        <div className="flex gap-1.5 p-1 bg-gray-50 dark:bg-black/20 rounded-[22px] text-[11px] font-black uppercase tracking-widest text-[#FF4D94]">
+        <div className="flex gap-1.5 p-1 bg-gray-50 rounded-[22px] text-[11px] font-black uppercase tracking-widest text-[#FF4D94]">
           <button
             className={`flex-1 py-3.5 rounded-[18px] transition-all duration-300 ${
               mode === 'password' 
-                ? 'bg-white dark:bg-white/10 shadow-sm text-gray-900 dark:text-white' 
+                ? 'bg-white shadow-sm text-gray-900' 
                 : 'text-gray-400 hover:text-gray-500'
             }`}
             onClick={() => setMode('password')}
@@ -242,7 +242,7 @@ function AuthPageContent() {
           <button
             className={`flex-1 py-3.5 rounded-[18px] transition-all duration-300 ${
               mode === 'magic' 
-                ? 'bg-white dark:bg-white/10 shadow-sm text-gray-900 dark:text-white' 
+                ? 'bg-white shadow-sm text-gray-900' 
                 : 'text-gray-400 hover:text-gray-500'
             }`}
             onClick={() => setMode('magic')}
@@ -254,12 +254,12 @@ function AuthPageContent() {
         {mode === 'password' ? (
           <form onSubmit={handlePasswordAuth} className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 电子邮箱
               </label>
               <input
                 type="email"
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7C4DFF] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7C4DFF] focus:border-transparent transition-all"
                 placeholder="请输入您的邮箱"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -269,12 +269,12 @@ function AuthPageContent() {
             </div>
             
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 通行密码
               </label>
               <input
                 type="password"
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7C4DFF] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7C4DFF] focus:border-transparent transition-all"
                 placeholder="请输入您的密码"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -300,7 +300,7 @@ function AuthPageContent() {
                 type="button"
                 disabled={loading}
                 onClick={handleResetPassword}
-                className="w-full text-[10px] font-black uppercase tracking-[0.2em] text-gray-300 dark:text-gray-600 hover:text-[#7C4DFF] transition-colors pb-2"
+                className="w-full text-[10px] font-black uppercase tracking-[0.2em] text-gray-300 hover:text-[#7C4DFF] transition-colors pb-2"
               >
                 忘记密码？点击找回
               </button>
@@ -309,12 +309,12 @@ function AuthPageContent() {
         ) : (
           <form onSubmit={handleMagicLink} className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 验证邮箱
               </label>
               <input
                 type="email"
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7C4DFF] focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7C4DFF] focus:border-transparent transition-all"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

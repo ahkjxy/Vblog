@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Icon } from './Icon';
+import { Language, useTranslation } from '../i18n/translations';
 
 interface BlogPost {
   id: string;
@@ -15,7 +16,12 @@ interface BlogPost {
   } | null;
 }
 
-export function BlogPosts() {
+interface BlogPostsProps {
+  language?: Language;
+}
+
+export function BlogPosts({ language = 'zh' }: BlogPostsProps) {
+  const { t, replace } = useTranslation(language);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -98,12 +104,12 @@ export function BlogPosts() {
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) return '今天';
-    if (diffDays === 1) return '昨天';
-    if (diffDays < 7) return `${diffDays}天前`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)}周前`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)}个月前`;
-    return `${Math.floor(diffDays / 365)}年前`;
+    if (diffDays === 0) return t.blog.today;
+    if (diffDays === 1) return t.blog.yesterday;
+    if (diffDays < 7) return replace(t.blog.daysAgo, { days: diffDays });
+    if (diffDays < 30) return replace(t.blog.weeksAgo, { weeks: Math.floor(diffDays / 7) });
+    if (diffDays < 365) return replace(t.blog.monthsAgo, { months: Math.floor(diffDays / 30) });
+    return replace(t.blog.yearsAgo, { years: Math.floor(diffDays / 365) });
   };
 
   if (loading) {
@@ -111,8 +117,8 @@ export function BlogPosts() {
       <div className="bg-white dark:bg-[#111827] rounded-[40px] p-8 border border-gray-100 dark:border-white/5 shadow-sm mobile-card flex flex-col h-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">最新博客</h3>
-            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">评论最多的文章</p>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t.blog.latestBlog}</h3>
+            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">{t.blog.mostCommented}</p>
           </div>
         </div>
         <div className="space-y-5 flex-1">
@@ -133,11 +139,11 @@ export function BlogPosts() {
       <div className="bg-white dark:bg-[#111827] rounded-[40px] p-8 border border-gray-100 dark:border-white/5 shadow-sm mobile-card flex flex-col h-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">热门博客</h3>
-            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">评论最多的文章</p>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t.blog.hotBlog}</h3>
+            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">{t.blog.mostCommented}</p>
           </div>
         </div>
-        <p className="text-sm text-red-600 dark:text-red-400">加载失败</p>
+        <p className="text-sm text-red-600 dark:text-red-400">{t.blog.loadFailed}</p>
       </div>
     );
   }
@@ -150,8 +156,8 @@ export function BlogPosts() {
     <div className="bg-white dark:bg-[#111827] rounded-[40px] p-8 border border-gray-100 dark:border-white/5 shadow-sm mobile-card flex flex-col h-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">热门博客</h3>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">评论最多的文章</p>
+          <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t.blog.hotBlog}</h3>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">{t.blog.mostCommented}</p>
         </div>
         <a
           href="https://blog.familybank.chat"
@@ -159,7 +165,7 @@ export function BlogPosts() {
           rel="noopener noreferrer"
           className="text-xs font-black text-[#7C4DFF] uppercase tracking-wider hover:underline shrink-0"
         >
-          查看全部
+          {t.blog.viewAll}
         </a>
       </div>
 
@@ -183,11 +189,11 @@ export function BlogPosts() {
             <div className="flex items-center gap-4 text-xs font-bold text-gray-500 dark:text-gray-400">
               <span className="inline-flex items-center gap-2">
                 <Icon name="user" size={14} className="flex-shrink-0" />
-                {post.profiles?.name ? `${post.profiles.name}的家庭` : '未知作者'}
+                {post.profiles?.name ? replace(t.blog.familyOf, { name: post.profiles.name }) : t.blog.unknownAuthor}
               </span>
               <span className="inline-flex items-center gap-2">
                 <Icon name="message-circle" size={14} className="flex-shrink-0" />
-                {post.comment_count || 0} 评论
+                {post.comment_count || 0} {t.blog.comments}
               </span>
               <span className="inline-flex items-center gap-2">
                 <Icon name="eye" size={14} className="flex-shrink-0" />
@@ -206,7 +212,7 @@ export function BlogPosts() {
           className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-gray-900 dark:bg-white/10 text-white text-xs font-black uppercase tracking-wider hover:bg-gray-800 transition-all hover:shadow-lg"
         >
           <Icon name="book-open" className="w-4 h-4" />
-          访问博客
+          {t.blog.visitBlog}
           <Icon name="external-link" className="w-4 h-4" />
         </a>
       </div>

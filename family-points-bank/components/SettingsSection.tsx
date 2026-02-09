@@ -6,8 +6,10 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { useToast } from "./Toast";
 import { PillTabs } from "./PillTabs";
 import { Pagination } from "./Pagination";
+import { SystemSettings } from "./SystemSettings";
 import { supabase } from "../supabaseClient";
-import { calculateLevelInfo, getProfileTotalEarned, ROLE_LABELS } from "../utils/leveling";
+import { calculateLevelInfo, getProfileTotalEarned, getRoleLabel } from "../utils/leveling";
+import { Language, useTranslation } from "../i18n/translations";
 
 
 interface SettingsSectionProps {
@@ -34,6 +36,7 @@ interface SettingsSectionProps {
   onSendSystemNotification?: (content: string) => void;
   onApproveWishlist?: (rewardId: string) => void;
   onRejectWishlist?: (rewardId: string) => void;
+  language?: Language;
 }
 
 export function SettingsSection({
@@ -57,7 +60,9 @@ export function SettingsSection({
   onSendSystemNotification,
   onApproveWishlist,
   onRejectWishlist,
+  language = 'zh',
 }: SettingsSectionProps) {
+  const { t, replace } = useTranslation(language);
   const { showToast } = useToast();
   const currentProfile = profiles.find((p) => p.id === currentProfileId);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -69,7 +74,7 @@ export function SettingsSection({
     onConfirm: () => void;
   } | null>(null);
   const closeConfirm = () => setConfirmDialog(null);
-  const [activeTab, setActiveTab] = useState<"members" | "tasks" | "rewards">("members");
+  const [activeTab, setActiveTab] = useState<"members" | "tasks" | "rewards" | "system">("members");
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [selectedRewardIds, setSelectedRewardIds] = useState<Set<string>>(new Set());
   const [roleLoading, setRoleLoading] = useState<Set<string>>(new Set());
@@ -178,7 +183,7 @@ export function SettingsSection({
       if (error) throw error;
       // 移除 onSync 调用，依赖外部状态刷新或静默成功
       if (target && onSendSystemNotification) {
-        const roleText = ROLE_LABELS[role];
+        const roleText = getRoleLabel(role, language);
         await onSendSystemNotification(
           `${currentProfile?.name || "家长"} 将 ${target.name} 设置为${roleText}`
         );
@@ -378,9 +383,10 @@ export function SettingsSection({
 
 
   const settingsTabs = [
-    { id: "members", label: "成员管理", icon: "👥" },
-    { id: "tasks", label: "任务配置", icon: "📋" },
-    { id: "rewards", label: "商店配置", icon: "🎁" },
+    { id: "members", label: t.settings.members, icon: "👥" },
+    { id: "tasks", label: t.settings.tasks, icon: "📋" },
+    { id: "rewards", label: t.settings.rewards, icon: "🎁" },
+    { id: "system", label: t.settings.system, icon: "⚙️" },
   ];
 
   return (
@@ -393,13 +399,13 @@ export function SettingsSection({
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF4D94]/10 text-[#FF4D94] text-[10px] font-black uppercase tracking-[0.2em] mb-4">
               <div className="w-1.5 h-1.5 rounded-full bg-[#FF4D94] animate-pulse"></div>
-              管理中心
+              {t.settings.managementCenter}
             </div>
             <h3 className="text-3xl lg:text-4xl font-black text-gray-900 dark:text-white leading-tight tracking-tight mb-2">
-              系统配置与权限管理
+              {t.settings.systemConfig}
             </h3>
             <p className="text-gray-500 dark:text-gray-400 font-medium max-w-lg tracking-wide">
-              在这里调整银行的核心运行规则，管理家庭成员及其元气权限。
+              {t.settings.systemDescription}
             </p>
           </div>
         </div>
@@ -415,10 +421,10 @@ export function SettingsSection({
       {/* Overview Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "家庭成员", val: overview.members, color: "text-gray-900 dark:text-white", sub: "活跃人数" },
-          { label: "系统家长", val: overview.admins, color: "text-indigo-500", sub: "管理员" },
-          { label: "元气任务", val: overview.tasks, color: "text-[#FF4D94]", sub: "生效规则" },
-          { label: "梦想奖品", val: overview.rewards, color: "text-emerald-500", sub: "上架商品" },
+          { label: t.settings.familyMembers, val: overview.members, color: "text-gray-900 dark:text-white", sub: t.settings.activeMembers },
+          { label: t.settings.systemParents, val: overview.admins, color: "text-indigo-500", sub: t.settings.administrators },
+          { label: t.settings.familyTasks, val: overview.tasks, color: "text-[#FF4D94]", sub: t.settings.activeRules },
+          { label: t.settings.dreamRewards, val: overview.rewards, color: "text-emerald-500", sub: t.settings.listedProducts },
         ].map((s, i) => (
           <div
             key={i}
@@ -429,7 +435,7 @@ export function SettingsSection({
             </p>
             <p className={`text-3xl font-black points-font ${s.color}`}>{s.val}</p>
             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter opacity-60 mt-1">
-              {s.sub} 条
+              {s.sub} {t.settings.items}
             </p>
           </div>
         ))}
@@ -440,10 +446,10 @@ export function SettingsSection({
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-                成员权限矩阵
+                {t.settings.memberMatrix}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 font-medium">
-                快速管理家庭成员的权限、余额与个人资料。
+                {t.settings.memberMatrixDesc}
               </p>
             </div>
             <button
@@ -451,7 +457,7 @@ export function SettingsSection({
               className="px-8 py-4 bg-[#1A1A1A] dark:bg-white text-white dark:text-gray-900 rounded-[20px] text-xs font-black uppercase tracking-widest hover:bg-[#FF4D94] dark:hover:bg-[#FF4D94] hover:text-white transition-all shadow-lg flex items-center justify-center gap-2"
             >
               <Icon name="plus" size={14} />
-              添加新成员
+              {t.settings.addNewMember}
             </button>
           </div>
 
@@ -494,11 +500,11 @@ export function SettingsSection({
                               : "bg-gray-50 text-gray-500"
                           }`}
                         >
-                          {ROLE_LABELS[p.role]}
+                          {getRoleLabel(p.role, language)}
                         </span>
                         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5">
-                           <Icon name={calculateLevelInfo(getProfileTotalEarned(p)).icon as any} size={10} className={calculateLevelInfo(getProfileTotalEarned(p)).color} />
-                           <span className="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">{calculateLevelInfo(getProfileTotalEarned(p)).name}</span>
+                           <Icon name={calculateLevelInfo(getProfileTotalEarned(p), language).icon as any} size={10} className={calculateLevelInfo(getProfileTotalEarned(p), language).color} />
+                           <span className="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">{calculateLevelInfo(getProfileTotalEarned(p), language).name}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-4 text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">
@@ -518,19 +524,19 @@ export function SettingsSection({
                           className="py-3 px-3 rounded-2xl bg-gray-50 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5"
                         >
                           <Icon name="reward" size={11} />
-                          头像
+                          {t.settings.avatar}
                         </button>
                         <button
                           onClick={() => openEditModal(p)}
                           className="py-3 px-4 rounded-2xl bg-gray-50 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400 hover:bg-gray-100 transition-colors"
                         >
-                          编辑资料
+                          {t.settings.editProfile}
                         </button>
                         <button
                           onClick={() => openAdjustModal(p)}
                           className="py-3 px-4 rounded-2xl bg-[#FF4D94]/10 text-[10px] font-black uppercase tracking-widest text-[#FF4D94] hover:bg-[#FF4D94] hover:text-white transition-all"
                         >
-                          调整余额
+                          {t.settings.adjustBalance}
                         </button>
                       </div>
                     </div>
@@ -539,7 +545,7 @@ export function SettingsSection({
                   <div className="mt-8 pt-6 border-t border-gray-50 dark:border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        角色权限
+                        {t.settings.rolePermission}
                       </label>
                       <select
                         value={p.role}
@@ -547,8 +553,8 @@ export function SettingsSection({
                         disabled={isOnlyAdmin || loadingRole}
                         className="bg-transparent text-xs font-black text-[#7C4DFF] focus:outline-none cursor-pointer hover:underline"
                       >
-                        <option value="admin">家长 (Parent)</option>
-                        <option value="child">萌宝 (Moppet)</option>
+                        <option value="admin">{t.settings.role.parent} (Parent)</option>
+                        <option value="child">{t.settings.role.moppet} (Moppet)</option>
                       </select>
                     </div>
                     {!isOnlyAdmin && (
@@ -585,9 +591,9 @@ export function SettingsSection({
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
               <div className="space-y-1">
                 <h3 className="text-sm font-bold text-gray-400 font-display uppercase tracking-[0.2em]">
-                  元气任务配置
+                  {t.settings.taskConfig}
                 </h3>
-                <p className="text-xs text-gray-400">分类筛选 + 快速新增任务</p>
+                <p className="text-xs text-gray-400">{t.settings.taskConfigDesc}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -605,20 +611,20 @@ export function SettingsSection({
                   }
                   className="px-5 py-2.5 min-h-[44px] bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-xl text-[12px] font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[#FF4D94]/30"
                 >
-                  <Icon name="plus" size={13} /> 新增规则
+                  <Icon name="plus" size={13} /> {t.settings.addNewRule}
                 </button>
                 <button
                   disabled={!selectedTaskIds.size || deletingTask}
                   onClick={handleBatchDeleteTasks}
                   className={`px-5 py-2.5 min-h-[44px] rounded-xl text-[12px] font-bold flex items-center gap-2 border transition-all ${!selectedTaskIds.size || deletingTask ? "bg-gray-100 text-gray-400 border-gray-100 cursor-not-allowed" : "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100"}`}
                 >
-                  {deletingTask ? "删除中..." : `批量删除 (${selectedTaskIds.size})`}
+                  {deletingTask ? t.settings.processing : `${t.settings.batchDelete} (${selectedTaskIds.size})`}
                 </button>
                 <button
                   onClick={() => setSelectedTaskIds(new Set())}
                   className="px-5 py-2.5 min-h-[44px] rounded-xl text-[12px] font-bold bg-white border border-gray-200 text-gray-600 hover:border-[#FF4D94]/50 hover:text-[#FF4D94] transition-all"
                 >
-                  清空选择
+                  {t.settings.clearSelection}
                 </button>
               </div>
             </div>
@@ -630,14 +636,14 @@ export function SettingsSection({
                   className={`px-5 py-2.5 rounded-full text-[12px] font-bold whitespace-nowrap transition-all border min-h-[44px] ${taskFilter === cat ? "bg-[#FF4D94] text-white border-[#FF4D94] shadow-md shadow-[#FF4D94]/30" : "bg-white border-gray-200 text-gray-500 hover:border-[#FF4D94]/50 hover:text-[#FF4D94]"}`}
                 >
                   {cat === "all"
-                    ? "全部"
+                    ? t.settings.all
                     : cat === "learning"
-                      ? "学习"
+                      ? t.earn.learning
                       : cat === "chores"
-                        ? "家务"
+                        ? t.earn.chores
                         : cat === "discipline"
-                          ? "自律"
-                          : "警告"}
+                          ? t.earn.discipline
+                          : t.earn.penalty}
                 </button>
               ))}
             </div>
@@ -658,7 +664,7 @@ export function SettingsSection({
                   className="w-5 h-5 rounded border-gray-300 text-[#FF4D94] focus:ring-[#FF4D94]"
                 />
                 <span>
-                  全选任务 ({selectedTaskIds.size}/{tasks.length})
+                  {t.settings.selectAllTasks} ({selectedTaskIds.size}/{tasks.length})
                 </span>
               </div>
             </div>
@@ -683,7 +689,7 @@ export function SettingsSection({
                           {t.title}
                         </span>
                         <span className="text-[11px] text-gray-400 truncate block">
-                          {t.description || "暂无详细描述"}
+                          {t.description || t.settings.noDescription}
                         </span>
                       </div>
                     </div>
@@ -734,11 +740,43 @@ export function SettingsSection({
                   onPageChange={setTaskPage}
                   itemsPerPage={itemsPerPage}
                   totalItems={tasks.length}
+                  language={language}
                 />
               </div>
             )}
           </div>
         </div>
+      )}
+
+      {activeTab === "system" && (
+        <SystemSettings
+          currentSyncId={currentSyncId}
+          currentProfileId={currentProfileId}
+          profileName={currentProfile?.name}
+          language={language}
+          onLanguageChange={(lang) => {
+            // Language change will be handled by parent component
+            // This is just a placeholder - parent should implement this
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('language', lang);
+              window.location.reload();
+            }
+          }}
+          onLogout={() => {
+            // Logout will be handled by parent component
+            if (typeof window !== 'undefined') {
+              localStorage.clear();
+              window.location.href = '/';
+            }
+          }}
+          onExportData={() => {
+            // Export data functionality
+            if (onPrint) {
+              onPrint();
+            }
+          }}
+          appVersion="1.0.0"
+        />
       )}
 
       {activeTab === "rewards" && (
@@ -747,9 +785,9 @@ export function SettingsSection({
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
               <div className="space-y-1">
                 <h3 className="text-sm font-bold text-gray-400 font-display uppercase tracking-[0.2em]">
-                  梦想商店配置
+                  {t.settings.rewardConfig}
                 </h3>
-                <p className="text-xs text-gray-400">筛选类别 / 上架新品</p>
+                <p className="text-xs text-gray-400">{t.settings.rewardConfigDesc}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -758,20 +796,20 @@ export function SettingsSection({
                   }
                   className="px-5 py-2.5 min-h-[44px] bg-gradient-to-r from-[#111827] to-[#0F172A] text-white rounded-xl text-[12px] font-bold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[#0F172A]/20"
                 >
-                  <Icon name="plus" size={13} /> 上架新品
+                  <Icon name="plus" size={13} /> {t.settings.addNewProduct}
                 </button>
                 <button
                   disabled={!selectedRewardIds.size || deletingReward}
                   onClick={handleBatchDeleteRewards}
                   className={`px-5 py-2.5 min-h-[44px] rounded-xl text-[12px] font-bold flex items-center gap-2 border transition-all ${!selectedRewardIds.size || deletingReward ? "bg-gray-100 text-gray-400 border-gray-100 cursor-not-allowed" : "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100"}`}
                 >
-                  {deletingReward ? "删除中..." : `批量删除 (${selectedRewardIds.size})`}
+                  {deletingReward ? t.settings.processing : `${t.settings.batchDelete} (${selectedRewardIds.size})`}
                 </button>
                 <button
                   onClick={() => setSelectedRewardIds(new Set())}
                   className="px-5 py-2.5 min-h-[44px] rounded-xl text-[12px] font-bold bg-white border border-gray-200 text-gray-600 hover:border-[#FF4D94]/50 hover:text-[#FF4D94] transition-all"
                 >
-                  清空选择
+                  {t.settings.clearSelection}
                 </button>
               </div>
             </div>
@@ -782,7 +820,7 @@ export function SettingsSection({
                   onClick={() => onRewardFilterChange(type as "实物奖品" | "特权奖励" | "all")}
                   className={`px-5 py-2.5 rounded-full text-[12px] font-bold transition-all border min-h-[44px] ${rewardFilter === type ? "bg-[#FF4D94] text-white border-[#FF4D94] shadow-md shadow-[#FF4D94]/30" : "bg-white border-gray-200 text-gray-500 hover:border-[#FF4D94]/50 hover:text-[#FF4D94]"}`}
                 >
-                  {type === "all" ? "全部" : type}
+                  {type === "all" ? t.settings.all : (type === "实物奖品" ? t.redeem.physicalRewards : t.redeem.privilegeRewards)}
                 </button>
               ))}
             </div>
@@ -803,7 +841,7 @@ export function SettingsSection({
                   className="w-5 h-5 rounded border-gray-300 text-[#FF4D94] focus:ring-[#FF4D94]"
                 />
                 <span>
-                  全选奖品 ({selectedRewardIds.size}/{rewards.length})
+                  {t.settings.selectAllRewards} ({selectedRewardIds.size}/{rewards.length})
                 </span>
               </div>
             </div>
@@ -838,17 +876,17 @@ export function SettingsSection({
                           </span>
                           {r.status === 'pending' && (
                             <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold uppercase">
-                              待审核
+                              {t.settings.pendingReview}
                             </span>
                           )}
                           {r.status === 'rejected' && (
                             <span className="text-[9px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-bold uppercase">
-                              已拒绝
+                              {t.settings.rejected}
                             </span>
                           )}
                           {r.requestedBy && profiles.find(p => p.id === r.requestedBy) && (
                             <span className="text-[9px] px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 font-bold">
-                              💝 {profiles.find(p => p.id === r.requestedBy)?.name}的愿望
+                              💝 {replace(t.settings.wishFrom, { name: profiles.find(p => p.id === r.requestedBy)?.name || '' })}
                             </span>
                           )}
                         </div>
@@ -866,14 +904,14 @@ export function SettingsSection({
                           <button
                             onClick={() => onApproveWishlist(r.id)}
                             className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                            title="批准"
+                            title={t.settings.approve}
                           >
                             <Icon name="plus" size={16} />
                           </button>
                           <button
                             onClick={() => onRejectWishlist(r.id)}
                             className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                            title="拒绝"
+                            title={t.settings.reject}
                           >
                             <Icon name="plus" size={16} className="rotate-45" />
                           </button>
@@ -922,6 +960,7 @@ export function SettingsSection({
                   onPageChange={setRewardPage}
                   itemsPerPage={itemsPerPage}
                   totalItems={rewards.length}
+                  language={language}
                 />
               </div>
             )}
@@ -939,8 +978,8 @@ export function SettingsSection({
               <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">Account</p>
               <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
                 {memberModal?.mode === "create"
-                  ? "录入新账户"
-                  : memberModal?.profile?.name || "编辑成员"}
+                  ? t.settings.createAccount
+                  : memberModal?.profile?.name || t.settings.editAccount}
               </h3>
             </div>
             <button
@@ -959,19 +998,19 @@ export function SettingsSection({
 
           <div className="space-y-6">
             <div>
-              <label className="label-pop">真实姓名</label>
+              <label className="label-pop">{t.settings.realName}</label>
               <input
                 value={modalName}
                 onChange={(e) => setModalName(e.target.value)}
                 className="input-pop"
-                placeholder="输入姓名"
+                placeholder={t.settings.namePlaceholder}
                 maxLength={32}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label-pop">系统权限</label>
+                <label className="label-pop">{t.settings.systemPermission}</label>
                 <select
                   value={modalRole}
                   onChange={(e) => setModalRole(e.target.value as UserRole)}
@@ -982,13 +1021,13 @@ export function SettingsSection({
                     adminCount <= 1
                   }
                 >
-                  <option value="child" className="text-gray-900">萌宝 (Moppet)</option>
-                  <option value="admin" className="text-gray-900">家长 (Parent)</option>
+                  <option value="child" className="text-gray-900">{t.settings.role.moppet} (Moppet)</option>
+                  <option value="admin" className="text-gray-900">{t.settings.role.parent} (Parent)</option>
                 </select>
               </div>
               {memberModal?.mode === "create" && (
                 <div>
-                  <label className="label-pop">初始元气</label>
+                  <label className="label-pop">{t.settings.initialEnergy}</label>
                   <input
                     type="number"
                     value={modalInitialBalance === "" ? "" : modalInitialBalance}
@@ -1008,7 +1047,7 @@ export function SettingsSection({
               onClick={closeModal}
               className="btn-base btn-secondary flex-1"
             >
-              取消
+              {t.common.cancel}
             </button>
             <button
               onClick={handleModalSave}
@@ -1020,7 +1059,7 @@ export function SettingsSection({
               ) : (
                 <Icon name="check" size={16} />
               )}
-              {modalSaving ? "同步中..." : "确认保存"}
+              {modalSaving ? t.settings.syncing : t.settings.confirmSave}
             </button>
           </div>
       </Modal>
@@ -1034,8 +1073,8 @@ export function SettingsSection({
           <div className="flex justify-between items-start mb-6">
             <div className="space-y-1">
               <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">Balance Adjust</p>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">调整账户余额</h3>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">正在修改 {adjustModal?.name} 的元气余额</p>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t.settings.adjustBalanceTitle}</h3>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{replace(t.settings.adjustBalanceDesc, { name: adjustModal?.name || '' })}</p>
             </div>
             <button 
               onClick={closeAdjustModal} 
@@ -1053,7 +1092,7 @@ export function SettingsSection({
 
             <div className="space-y-4 text-left">
               <div>
-                <label className="label-pop">变动数值</label>
+                <label className="label-pop">{t.settings.changeValue}</label>
                 <div className="relative group">
                   <input
                     type="number"
@@ -1062,37 +1101,37 @@ export function SettingsSection({
                     className="w-full px-8 py-6 bg-gray-50 dark:bg-white/5 border border-transparent dark:border-white/5 rounded-[32px] font-black text-4xl points-font text-center outline-none focus:ring-2 focus:ring-[#7C4DFF] focus:bg-white dark:focus:bg-gray-800 transition-all shadow-inner"
                     placeholder="0"
                   />
-                  <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs font-black text-gray-300 uppercase tracking-widest pointer-events-none">元气</span>
+                  <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs font-black text-gray-300 uppercase tracking-widest pointer-events-none">{t.common.energy}</span>
                 </div>
               </div>
 
               <div>
-                <label className="label-pop">变动类型</label>
+                <label className="label-pop">{t.settings.changeType}</label>
                 <div className="flex p-1.5 bg-gray-100 dark:bg-white/5 rounded-[24px]">
                   <button
                     onClick={() => setAdjustType("earn")}
                     className={`flex-1 py-4 rounded-[20px] transition-all duration-300 flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest ${adjustType === "earn" ? "bg-white dark:bg-white/10 shadow-sm text-emerald-500" : "text-gray-400 dark:text-gray-500"}`}
                   >
                     <Icon name="plus" size={14} />
-                    增加 (Plus)
+                    {t.settings.increaseLabel}
                   </button>
                   <button
                     onClick={() => setAdjustType("penalty")}
                     className={`flex-1 py-4 rounded-[20px] transition-all duration-300 flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest ${adjustType === "penalty" ? "bg-white dark:bg-white/10 shadow-sm text-rose-500" : "text-gray-400 dark:text-gray-500"}`}
                   >
                     <Icon name="plus" size={14} className="rotate-45" />
-                    扣减 (Minus)
+                    {t.settings.decreaseLabel}
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="label-pop">备注说明</label>
+                <label className="label-pop">{t.settings.memoLabel}</label>
                 <input
                   value={adjustMemo}
                   onChange={(e) => setAdjustMemo(e.target.value)}
                   className="input-pop"
-                  placeholder="如：奖励完成作业 / 迟到扣分"
+                  placeholder={t.settings.memoPlaceholder}
                 />
               </div>
             </div>
@@ -1102,7 +1141,7 @@ export function SettingsSection({
               onClick={closeAdjustModal}
               className="btn-base btn-secondary flex-1"
             >
-              返回
+              {t.settings.returnButton}
             </button>
             <button
               onClick={handleModalAdjust}
@@ -1114,12 +1153,12 @@ export function SettingsSection({
               ) : (
                 <Icon name="check" size={16} />
               )}
-              {adjustLoading ? "同步中..." : "确认记录"}
+              {adjustLoading ? t.settings.syncing : t.settings.confirmRecord}
             </button>
           </div>
 
           <p className="text-[10px] font-bold text-gray-300 dark:text-gray-600 uppercase tracking-widest mt-4">
-            当前账户余额：{adjustModal?.balance} 元气
+            {replace(t.settings.currentBalance, { balance: adjustModal?.balance || 0 })}
           </p>
       </Modal>
 
@@ -1132,7 +1171,7 @@ export function SettingsSection({
           <div className="flex justify-between items-start mb-2">
             <div className="space-y-1">
               <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">Avatar</p>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">编辑头像</h3>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t.settings.editAvatar}</h3>
               <p className="text-sm font-bold text-gray-500 dark:text-gray-400">{avatarModal?.name}</p>
             </div>
             <button
@@ -1158,7 +1197,7 @@ export function SettingsSection({
                 {/* Overlay Actions */}
                 <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all cursor-pointer flex flex-col items-center justify-center gap-3">
                   <div className="px-4 py-2 bg-white/20 backdrop-blur-md rounded-xl border border-white/40 text-white text-xs font-bold uppercase tracking-widest hover:bg-white/30 transition-colors">
-                    更换图片
+                    {t.settings.uploadZone}
                   </div>
                   <input
                     type="file"
@@ -1173,7 +1212,7 @@ export function SettingsSection({
                 <button
                   onClick={() => setAvatarPreview(null)}
                   className="absolute -bottom-2 -right-2 w-10 h-10 bg-rose-500 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-10"
-                  title="移除图片"
+                  title={t.settings.removeImage}
                 >
                   <Icon name="trash" size={16} />
                 </button>
@@ -1181,7 +1220,7 @@ export function SettingsSection({
             </div>
 
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">
-              推荐使用正方形高清照片
+              {t.settings.recommendSquare}
             </p>
           </div>
 
@@ -1190,7 +1229,7 @@ export function SettingsSection({
               onClick={closeAvatarModal}
               className="btn-base btn-secondary flex-1"
             >
-              取消
+              {t.common.cancel}
             </button>
             <button
               onClick={handleAvatarSave}
@@ -1202,7 +1241,7 @@ export function SettingsSection({
               ) : (
                 <Icon name="check" size={16} />
               )}
-              保存头像
+              {t.settings.saveAvatar}
             </button>
           </div>
       </Modal>

@@ -4,6 +4,7 @@ import { PillTabs } from './PillTabs';
 import { Pagination } from './Pagination';
 import { calculateLevelInfo, getProfileTotalEarned } from "../utils/leveling";
 import { useState, useMemo, useEffect } from "react";
+import { Language, useTranslation } from '../i18n/translations';
 
 interface RedeemSectionProps {
   rewards: Reward[];
@@ -15,17 +16,19 @@ interface RedeemSectionProps {
   profiles?: Profile[];
   onAddWish?: () => void;
   currentProfile: Profile;
+  language?: Language;
 }
 
-export function RedeemSection({ rewards, balance, onRedeem, isAdmin = false, onApproveWishlist, onRejectWishlist, profiles = [], onAddWish, currentProfile }: RedeemSectionProps) {
+export function RedeemSection({ rewards, balance, onRedeem, isAdmin = false, onApproveWishlist, onRejectWishlist, profiles = [], onAddWish, currentProfile, language = 'zh' }: RedeemSectionProps) {
+  const { t } = useTranslation(language);
   const [activeTab, setActiveTab] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   const rewardTabs = [
-    { id: 'all', label: '全部梦想', icon: '✨' },
-    { id: '实物奖品', label: '实物奖品', icon: '🎁' },
-    { id: '特权奖励', label: '特权奖励', icon: '💎' },
+    { id: 'all', label: t.redeem.allDreams, icon: '✨' },
+    { id: '实物奖品', label: t.redeem.physicalRewards, icon: '🎁' },
+    { id: '特权奖励', label: t.redeem.privilegeRewards, icon: '💎' },
   ];
 
   const filtered = useMemo(() => {
@@ -78,18 +81,18 @@ export function RedeemSection({ rewards, balance, onRedeem, isAdmin = false, onA
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#7C4DFF]/10 text-[#7C4DFF] text-[10px] font-black uppercase tracking-[0.3em] mb-4">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#7C4DFF] animate-pulse"></div>
-                梦想商店
+                {t.redeem.dreamStore}
               </div>
-              <h3 className="text-4xl lg:text-5xl font-black text-gray-900 dark:text-white leading-tight tracking-tighter">想要兑换哪份心愿？</h3>
+              <h3 className="text-4xl lg:text-5xl font-black text-gray-900 dark:text-white leading-tight tracking-tighter">{t.redeem.whichWish}</h3>
             </div>
             
             <div className="flex items-center gap-5 p-5 rounded-[32px] bg-gray-50/80 dark:bg-white/5 border border-white/40 dark:border-white/5 max-w-lg shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] group/progress relative overflow-hidden">
-               <div className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-transform group-hover/progress:scale-110 bg-white dark:bg-gray-800 ${calculateLevelInfo(getProfileTotalEarned(currentProfile)).color} relative z-10">
-                  <Icon name={calculateLevelInfo(getProfileTotalEarned(currentProfile)).icon as any} size={28} />
+               <div className={`shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-transform group-hover/progress:scale-110 bg-white dark:bg-gray-800 ${calculateLevelInfo(getProfileTotalEarned(currentProfile), language).color} relative z-10`}>
+                  <Icon name={calculateLevelInfo(getProfileTotalEarned(currentProfile), language).icon as any} size={28} />
                </div>
                <div className="flex-1 min-w-0 relative z-10">
                   <div className="flex justify-between items-end mb-2">
-                    <p className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-widest opacity-80">当前账户可用元气</p>
+                    <p className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-widest opacity-80">{t.redeem.availableBalance}</p>
                     <p className="text-[14px] font-black tabular-nums text-[#FF4D94] points-font">{balance} BP</p>
                   </div>
                   <div className="h-2 w-full bg-white dark:bg-black/40 rounded-full overflow-hidden p-[1px] shadow-inner">
@@ -112,7 +115,7 @@ export function RedeemSection({ rewards, balance, onRedeem, isAdmin = false, onA
                   className="px-6 py-4 rounded-[24px] bg-[#10B981] hover:bg-[#059669] text-white text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95 group/wish"
                 >
                   <Icon name="plus" size={14} className="group-hover/wish:rotate-90 transition-transform" />
-                  <span>添加新的许愿</span>
+                  <span>{t.redeem.addNewWish}</span>
                 </button>
               )}
             </div>
@@ -120,11 +123,11 @@ export function RedeemSection({ rewards, balance, onRedeem, isAdmin = false, onA
             <div className="flex gap-4 p-4 bg-white dark:bg-black/20 rounded-[28px] border border-gray-100 dark:border-white/5 shadow-sm">
               <div className="flex-1 flex items-center gap-3 px-3">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]"></div>
-                <span className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">可即刻拥有</span>
+                <span className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t.redeem.canAffordNow}</span>
               </div>
               <div className="flex-1 flex items-center gap-3 px-3 border-l border-gray-100 dark:border-white/5">
                 <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]"></div>
-                <span className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">差一点点</span>
+                <span className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t.redeem.almostThere}</span>
               </div>
             </div>
           </div>
@@ -163,7 +166,7 @@ export function RedeemSection({ rewards, balance, onRedeem, isAdmin = false, onA
                   
                   {/* Category Tag */}
                   <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md text-[8px] font-bold bg-black/40 backdrop-blur-md text-white border border-white/10">
-                    {reward.type === '实物奖品' ? '实物' : '特权'}
+                    {reward.type === '实物奖品' ? t.redeem.physical : t.redeem.privilege}
                   </div>
 
                   {/* Points Badge - Compact */}
@@ -177,7 +180,7 @@ export function RedeemSection({ rewards, balance, onRedeem, isAdmin = false, onA
                       <div className="w-12 h-1 bg-white/20 rounded-full overflow-hidden mb-1">
                         <div className="h-full bg-[#FF4D94]" style={{ width: `${progress}%` }}></div>
                       </div>
-                      <p className="text-white font-bold text-[9px]">差 {gap}</p>
+                      <p className="text-white font-bold text-[9px]">{t.redeem.need} {gap}</p>
                     </div>
                   )}
                 </div>
@@ -187,22 +190,22 @@ export function RedeemSection({ rewards, balance, onRedeem, isAdmin = false, onA
               <div className="p-2.5 sm:p-6 flex flex-col flex-1 gap-2">
                 <div className="min-h-[2.5em]">
                   <h4 className="text-[11px] sm:text-lg font-bold text-gray-900 dark:text-white leading-tight line-clamp-2 mb-0.5">{reward.title}</h4>
-                  {reward.status === 'pending' && <p className="text-[8px] text-amber-500 font-bold">审核中</p>}
+                  {reward.status === 'pending' && <p className="text-[8px] text-amber-500 font-bold">{t.redeem.pending}</p>}
                 </div>
 
                 <div className="mt-auto">
                   {!canAfford && reward.status !== 'pending' && (
                     <button disabled className="w-full h-7 sm:h-12 rounded-[10px] sm:rounded-[20px] bg-gray-100 dark:bg-white/5 text-gray-400 text-[9px] sm:text-sm font-bold flex items-center justify-center gap-1 cursor-not-allowed">
                       <Icon name="lock" size={10} className="sm:hidden" />
-                      <span className="hidden sm:inline">余额不足</span>
-                      <span className="sm:hidden">不可兑</span>
+                      <span className="hidden sm:inline">{t.redeem.insufficientBalance}</span>
+                      <span className="sm:hidden">{t.redeem.cannotRedeem}</span>
                     </button>
                   )}
 
                   {reward.status === 'pending' && (
                     <div className="w-full h-7 sm:h-12 rounded-[10px] sm:rounded-[20px] bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] sm:text-sm font-bold flex items-center justify-center border border-amber-100 dark:border-transparent">
-                      <span className="hidden sm:inline">等待审核</span>
-                      <span className="sm:hidden">审核中</span>
+                      <span className="hidden sm:inline">{t.redeem.waitingApproval}</span>
+                      <span className="sm:hidden">{t.redeem.pending}</span>
                     </div>
                   )}
 
@@ -218,10 +221,10 @@ export function RedeemSection({ rewards, balance, onRedeem, isAdmin = false, onA
                       {canAfford ? (
                         <>
                           <Icon name="reward" size={16} />
-                          立即兑换
+                          {t.redeem.redeemNow}
                         </>
                       ) : (
-                        '元气不足'
+                        t.redeem.insufficientBalance
                       )}
                     </button>
                   )}
@@ -240,13 +243,14 @@ export function RedeemSection({ rewards, balance, onRedeem, isAdmin = false, onA
           onPageChange={setCurrentPage}
           itemsPerPage={itemsPerPage}
           totalItems={filtered.length}
+          language={language}
         />
       )}
 
       {filtered.length === 0 && (
         <div className="py-20 flex flex-col items-center justify-center text-center gap-4 bg-white/50 dark:bg-white/5 rounded-[40px] border border-dashed border-gray-200 dark:border-white/10">
           <div className="w-20 h-20 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center text-4xl opacity-50">🎁</div>
-          <p className="text-lg font-black text-gray-400 uppercase tracking-widest">目前商店空空如也</p>
+          <p className="text-lg font-black text-gray-400 uppercase tracking-widest">{t.redeem.emptyStore}</p>
         </div>
       )}
     </div>

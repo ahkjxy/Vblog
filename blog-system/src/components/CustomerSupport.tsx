@@ -1,13 +1,19 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { MessageCircle, X, Send, Mail, ExternalLink, Sparkles, HelpCircle } from 'lucide-react'
+import { MessageCircle, X, Send, Mail, ExternalLink, Sparkles, HelpCircle, LogIn } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 interface Message {
   id: string
   type: 'user' | 'bot'
   content: string
   timestamp: Date
+}
+
+interface UserProfile {
+  id: string
+  family_id: string | null
 }
 
 const FAQ_ITEMS = [
@@ -54,8 +60,144 @@ export function CustomerSupport() {
   ])
   const [inputValue, setInputValue] = useState('')
   const [showFAQ, setShowFAQ] = useState(true)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const supabase = createClient()
+
+  // 检查登录状态
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setIsLoggedIn(!!user)
+      
+      if (user) {
+        // 获取用户 profile 信息（profiles 表的 id 就是 auth.users 的 id）
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, family_id')
+          .eq('id', user.id)
+          .maybeSingle()
+        
+        if (profile) {
+          setUserProfile(profile)
+        }
+      }
+    }
+    
+    checkAuth()
+    
+    // 监听认证状态变化
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        checkAuth()
+      } else {
+        setIsLoggedIn(false)
+        setUserProfile(null)
+      }
+    })
+    
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [supabase])
+
+  // 加载历史消息
+  useEffect(() => {
+    const loadHistory = async () => {
+      if (!isLoggedIn || !userProfile || historyLoaded) return
+
+      setIsLoadingHistory(true)
+      
+      try {
+        // 获取用户的反馈消息
+        const { data: feedbacks } = await supabase
+          .from('feedback_messages')
+          .select(`
+            id,
+            message,
+            created_at,
+            status
+          `)
+          .eq('profile_id', userProfile.id)
+          .order('created_at', { ascending: true })
+          .limit(20)
+
+        if (!feedbacks || feedbacks.length === 0) {
+          setHistoryLoaded(true)
+          setIsLoadingHistory(false)
+          return
+        }
+
+        // 获取所有反馈的回复
+        const feedbackIds = feedbacks.map(f => f.id)
+        const { data: replies } = await supabase
+          .from('feedback_replies')
+          .select('feedback_id, message, created_at')
+          .in('feedback_id', feedbackIds)
+          .order('created_at', { ascending: true })
+
+        // 合并消息和回复
+        const historyMessages: Message[] = []
+        
+        feedbacks.forEach(feedback => {
+          // 添加用户消息
+          historyMessages.push({
+            id: feedback.id,
+            type: 'user',
+            content: feedback.message,
+            timestamp: new Date(feedback.created_at)
+          })
+
+          // 添加对应的回复
+          const feedbackReplies = replies?.filter(r => r.feedback_id === feedback.id) || []
+          feedbackReplies.forEach(reply => {
+            historyMessages.push({
+              id: `reply-${reply.feedback_id}`,
+              type: 'bot',
+              content: `💬 客服回复：\n\n${reply.message}`,
+              timestamp: new Date(reply.created_at)
+            })
+          })
+        })
+
+        // 如果有历史消息，替换初始消息
+        if (historyMessages.length > 0) {
+          setMessages([
+            {
+              id: '0',
+              type: 'bot',
+              content: '📜 以下是您的历史消息记录：',
+              timestamp: new Date()
+            },
+            ...historyMessages,
+            {
+              id: 'welcome-back',
+              type: 'bot',
+              content: '👋 欢迎回来！有什么可以帮助你的吗？',
+              timestamp: new Date()
+            }
+          ])
+          setShowFAQ(false)
+        }
+        
+        setHistoryLoaded(true)
+        setIsLoadingHistory(false)
+      } catch (error) {
+        console.error('加载历史消息失败:', error)
+        setHistoryLoaded(true)
+        setIsLoadingHistory(false)
+      }
+    }
+
+    if (isOpen && isLoggedIn && userProfile) {
+      loadHistory()
+    }
+  }, [isOpen, isLoggedIn, userProfile, historyLoaded, supabase])
 
   // 自动滚动到底部
   const scrollToBottom = () => {
@@ -85,8 +227,20 @@ export function CustomerSupport() {
   }, [])
 
   // 发送消息
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return
+    
+    // 检查登录状态
+    if (!isLoggedIn || !userProfile) {
+      const botMessage: Message = {
+        id: Date.now().toString(),
+        type: 'bot',
+        content: '⚠️ 请先登录后再发送消息。\n\n登录后，您的消息将被保存，我们的客服团队会尽快回复。',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, botMessage])
+      return
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -96,19 +250,63 @@ export function CustomerSupport() {
     }
 
     setMessages(prev => [...prev, userMessage])
+    const messageContent = inputValue
     setInputValue('')
     setShowFAQ(false)
+    setIsSubmitting(true)
 
-    // 模拟机器人回复
-    setTimeout(() => {
+    try {
+      // 获取最新的 profile 信息（包含 family_id）
+      const { data: currentProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, family_id')
+        .eq('id', userProfile.id)
+        .maybeSingle()
+
+      if (profileError || !currentProfile) {
+        throw new Error('无法获取用户信息')
+      }
+
+      if (!currentProfile.family_id) {
+        throw new Error('用户没有关联的家庭，请先在元气银行系统中完成设置')
+      }
+
+      // 保存到数据库
+      const { error } = await supabase.from('feedback_messages').insert({
+        family_id: currentProfile.family_id,
+        profile_id: currentProfile.id,
+        subject: '博客系统客服咨询',
+        message: messageContent,
+        category: 'question',
+        priority: 'normal',
+        status: 'pending'
+      })
+
+      if (error) {
+        throw error
+      }
+
+      // 成功提示
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: '感谢你的提问！我们的客服团队会尽快回复你。\n\n如需紧急帮助，请发送邮件至：ahkjxy@qq.com',
+        content: '✅ 您的消息已成功发送！\n\n我们的客服团队会在24小时内回复您。您可以在元气银行后台的"系统设置 → 反馈与建议"中查看回复。',
         timestamp: new Date()
       }
       setMessages(prev => [...prev, botMessage])
-    }, 1000)
+    } catch (error: any) {
+      console.error('发送消息失败:', error)
+      const errorMessage = error.message || '未知错误'
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: `❌ 消息发送失败：${errorMessage}\n\n如需紧急帮助，请发送邮件至：ahkjxy@qq.com`,
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, botMessage])
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   // 处理快捷问题
@@ -177,7 +375,10 @@ export function CustomerSupport() {
               </div>
             </div>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                setIsOpen(false)
+                setHistoryLoaded(false) // 重置历史加载状态
+              }}
               className="w-8 h-8 rounded-lg hover:bg-white/20 flex items-center justify-center transition-colors"
               aria-label="关闭"
             >
@@ -187,6 +388,15 @@ export function CustomerSupport() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-purple-50/30 to-white">
+            {isLoadingHistory && (
+              <div className="flex justify-center items-center py-4">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="w-4 h-4 border-2 border-purple-600/30 border-t-purple-600 rounded-full animate-spin" />
+                  <span>加载历史消息...</span>
+                </div>
+              </div>
+            )}
+            
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -269,28 +479,50 @@ export function CustomerSupport() {
 
           {/* Input */}
           <div className="p-4 border-t border-gray-200 bg-white">
-            <div className="flex items-center gap-2">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="输入你的问题..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={!inputValue.trim()}
-                className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
-                aria-label="发送"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              我们通常在24小时内回复
-            </p>
+            {!isLoggedIn ? (
+              <div className="text-center space-y-3">
+                <p className="text-sm text-gray-600">
+                  请先登录后再发送消息
+                </p>
+                <a
+                  href="/auth"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all font-medium"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>立即登录</span>
+                </a>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !isSubmitting && handleSendMessage()}
+                    placeholder="输入你的问题..."
+                    disabled={isSubmitting}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={!inputValue.trim() || isSubmitting}
+                    className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
+                    aria-label="发送"
+                  >
+                    {isSubmitting ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  消息将保存到数据库，我们会在24小时内回复
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}

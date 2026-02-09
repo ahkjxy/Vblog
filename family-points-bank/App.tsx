@@ -8,6 +8,7 @@ import { FamilyState, Transaction, Profile, Category } from "./types";
 import { INITIAL_TASKS, INITIAL_REWARDS } from "./constants";
 import { supabase } from "./supabaseClient";
 import { printReport } from "./utils/export";
+import { Language } from "./i18n/translations";
 import {
   Sidebar,
   HeaderBar,
@@ -104,6 +105,17 @@ function AppContent() {
   const [showSplash, setShowSplash] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [language, setLanguage] = useState<Language>(() => {
+    // 从 localStorage 读取语言设置，默认中文
+    const saved = localStorage.getItem('fpb_language');
+    return (saved === 'en' || saved === 'zh') ? saved : 'zh';
+  });
+
+  // 保存语言设置到 localStorage
+  const handleChangeLanguage = (lang: Language) => {
+    setLanguage(lang);
+    localStorage.setItem('fpb_language', lang);
+  };
 
   // Android Back Button Handling
   useEffect(() => {
@@ -309,12 +321,31 @@ function AppContent() {
     let targetFamilyId = syncId?.trim() || "";
 
     if (targetFamilyId) {
-      await supabase
+      const { error: upsertError } = await supabase
         .from("family_members")
         .upsert(
           { family_id: targetFamilyId, user_id: userId, role: "owner" },
           { onConflict: "family_id,user_id" }
         );
+      
+      // 检测家庭已被删除的情况（外键约束失败）
+      if (upsertError && (upsertError as any).code === "23503") {
+        // 家庭已被删除，清除本地数据并跳转到登录页
+        await supabase.auth.signOut();
+        setSession(null);
+        setFatalError(null);
+        setState({
+          currentProfileId: null,
+          profiles: [],
+          tasks: [],
+          rewards: [],
+          syncId: "",
+        });
+        navigate("/", { replace: true });
+        return "";
+      }
+      
+      if (upsertError) throw upsertError;
     } else {
       const { data: memberships } = await supabase
         .from("family_members")
@@ -336,12 +367,31 @@ function AppContent() {
       targetFamilyId = created.id as string;
     }
 
-    await supabase
+    const { error: finalUpsertError } = await supabase
       .from("family_members")
       .upsert(
         { family_id: targetFamilyId, user_id: userId, role: "owner" },
         { onConflict: "family_id,user_id" }
       );
+    
+    // 再次检测家庭已被删除的情况
+    if (finalUpsertError && (finalUpsertError as any).code === "23503") {
+      await supabase.auth.signOut();
+      setSession(null);
+      setFatalError(null);
+      setState({
+        currentProfileId: null,
+        profiles: [],
+        tasks: [],
+        rewards: [],
+        syncId: "",
+      });
+      navigate("/", { replace: true });
+      return "";
+    }
+    
+    if (finalUpsertError) throw finalUpsertError;
+    
     await seedFamilyIfEmpty(targetFamilyId);
     return targetFamilyId;
   };
@@ -454,7 +504,18 @@ function AppContent() {
         .single();
 
       if (error || !data) {
-        setFatalError("家庭未开通或链接失效，请检查 Sync ID。");
+        // 家庭不存在，直接跳转到登录页面，不显示错误
+        await supabase.auth.signOut();
+        setSession(null);
+        setFatalError(null);
+        setState({
+          currentProfileId: null,
+          profiles: [],
+          tasks: [],
+          rewards: [],
+          syncId: "",
+        });
+        navigate("/", { replace: true });
         return;
       }
 
@@ -1409,7 +1470,7 @@ function AppContent() {
   }, [location.pathname]);
 
   if (!authReady) {
-    return <Splash duration={0} message="正在初始化系统..." />;
+    return <Splash duration={0} message={language === 'zh' ? "正在初始化系统..." : "Initializing system..."} language={language} />;
   }
 
   if (!session) {
@@ -1423,7 +1484,7 @@ function AppContent() {
 
 
   if (!activeFamilyId && !fatalError) {
-    return <Splash duration={0} message="正在进入元气空间..." />;
+    return <Splash duration={0} message={language === 'zh' ? "正在进入元气空间..." : "Entering family space..."} language={language} />;
   }
 
   if (fatalError && !activeFamilyId) {
@@ -1457,7 +1518,8 @@ function AppContent() {
         <Splash 
           duration={2500} 
           onComplete={() => setShowSplash(false)} 
-          message={!authReady ? "正在初始化系统..." : "系统就绪，欢迎回来"}
+          message={!authReady ? (language === 'zh' ? "正在初始化系统..." : "Initializing system...") : (language === 'zh' ? "系统就绪，欢迎回来" : "System ready, welcome back")}
+          language={language}
         />
       )}
       
@@ -1480,6 +1542,7 @@ function AppContent() {
           isAdmin={isAdmin}
           currentProfile={currentProfile}
           onToggleProfileSwitcher={() => setShowProfileSwitcher(true)}
+          language={language}
         />
       </div>
 
@@ -1502,7 +1565,9 @@ function AppContent() {
           profiles={state.profiles}
           isAdmin={isAdmin}
           theme={theme}
+          language={language}
           onToggleTheme={toggleTheme}
+          onChangeLanguage={handleChangeLanguage}
           onPrint={() => printReport(state)}
           onLogout={handleLogout}
           onTransfer={() => setShowTransferModal(true)}
@@ -1550,6 +1615,7 @@ function AppContent() {
                 onGoHistory={() => goTab("history")}
                 onRedeem={(payload: any) => setPendingAction(payload)}
                 onSelectTask={(payload: any) => setPendingAction(payload)}
+                language={language}
               />
             }
           />
@@ -1560,6 +1626,7 @@ function AppContent() {
                 tasks={state.tasks}
                 onSelectTask={(payload: any) => setPendingAction(payload)}
                 currentProfile={currentProfile}
+                language={language}
               />
             }
           />
@@ -1576,6 +1643,7 @@ function AppContent() {
                 profiles={state.profiles}
                 onAddWish={() => setShowWishlistModal(true)}
                 currentProfile={currentProfile}
+                language={language}
               />
             }
           />
@@ -1586,6 +1654,7 @@ function AppContent() {
                 history={currentProfile.history}
                 isAdmin={isAdmin}
                 onDeleteTransactions={handleDeleteTransactions}
+                language={language}
               />
             }
           />
@@ -1618,6 +1687,7 @@ function AppContent() {
                   onSendSystemNotification={sendSystemNotification}
                   onApproveWishlist={handleApproveWishlist}
                   onRejectWishlist={handleRejectWishlist}
+                  language={language}
                 />
               ) : (
                 <Navigate to={`/${resolveFamilyId()}/dashboard`} replace />
@@ -1631,6 +1701,7 @@ function AppContent() {
                 currentProfile={currentProfile} 
                 familyId={activeFamilyId || ""} 
                 onRefresh={() => refreshFamily()}
+                language={language}
               />
             }
           />
@@ -1643,6 +1714,7 @@ function AppContent() {
         activeTab={activeTab}
         onChangeTab={goTab}
         isAdmin={isAdmin}
+        language={language}
       />
 
       {activeFamilyId && (
@@ -1663,6 +1735,7 @@ function AppContent() {
         currentProfileId={state.currentProfileId ?? ""}
         onSelect={(id) => handleSwitchProfile(id)}
         onClose={() => setShowProfileSwitcher(false)}
+        language={language}
       />
 
       {editingItem && isAdmin && (
@@ -1674,6 +1747,7 @@ function AppContent() {
           fileInputRef={fileInputRef}
           onImageChange={handleImageUpload}
           saving={crudSaving}
+          language={language}
         />
       )}
 
@@ -1686,6 +1760,7 @@ function AppContent() {
           setPendingAction(null);
         }}
         onConfirm={handleTransaction}
+        language={language}
       />
 
       <PasswordResetModal open={showPasswordReset} onClose={() => setShowPasswordReset(false)} />
@@ -1696,12 +1771,14 @@ function AppContent() {
         currentProfile={currentProfile}
         profiles={state.profiles}
         onTransfer={handleTransfer}
+        language={language}
       />
 
       <WishlistModal
         open={showWishlistModal}
         onClose={() => setShowWishlistModal(false)}
         onSubmit={handleSubmitWishlist}
+        language={language}
       />
 
       <GlobalSearchModal

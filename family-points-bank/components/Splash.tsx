@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
+import { Language, useTranslation } from "../i18n/translations";
 
 interface SplashProps {
   onComplete?: () => void;
   duration?: number;
   message?: string;
+  language?: Language;
 }
 
-export function Splash({ onComplete, duration = 3000, message }: SplashProps) {
+export function Splash({ onComplete, duration = 3000, message, language = 'zh' }: SplashProps) {
+  const { t } = useTranslation(language);
   const [isVisible, setIsVisible] = useState(true);
   const [isFadingOut, setIsFadingOut] = useState(false);
 
@@ -96,7 +99,13 @@ export function Splash({ onComplete, duration = 3000, message }: SplashProps) {
         <div className="text-center space-y-6">
           <div className="space-y-1 relative">
             <h1 className="text-5xl font-black tracking-tight text-[#0F172A] drop-shadow-sm animate-[fade-slide-up_0.8s_ease-out]">
-              <span className="text-[#FF4D94]">元气</span>银行
+              {language === 'zh' ? (
+                <>
+                  <span className="text-[#FF4D94]">{t.app.energyBank}</span>银行
+                </>
+              ) : (
+                <span className="text-[#FF4D94]">{t.app.name}</span>
+              )}
             </h1>
             <p className="text-xs font-bold text-[#7C4DFF] tracking-[0.4em] uppercase opacity-70 animate-[fade-slide-up_1s_ease-out]">
               MAGIC ADVENTURE
@@ -109,7 +118,7 @@ export function Splash({ onComplete, duration = 3000, message }: SplashProps) {
           </div>
           
           <p className="text-[10px] font-bold text-gray-400 animate-pulse">
-            {message || "正在开启奇幻之旅..."}
+            {message || t.app.loading}
           </p>
         </div>
       </div>

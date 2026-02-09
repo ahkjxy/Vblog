@@ -1,4 +1,9 @@
 import { Profile, UserRole } from "../types";
+import { Language, translations } from "../i18n/translations";
+
+export const getRoleLabel = (role: UserRole, language: Language = 'zh'): string => {
+  return translations[language].leveling.roles[role];
+};
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   admin: "家长",
@@ -13,6 +18,11 @@ export interface LevelInfo {
   minPoints: number;
 }
 
+export const getLevelName = (level: number, language: Language = 'zh'): string => {
+  const levelKey = `level${level}` as keyof typeof translations.zh.leveling.levels;
+  return translations[language].leveling.levels[levelKey];
+};
+
 export const LEVELS: LevelInfo[] = [
   { level: 1, name: "元气萌新", icon: "zap", color: "text-gray-400", minPoints: 0 },
   { level: 2, name: "活力先锋", icon: "fire", color: "text-emerald-500", minPoints: 50 },
@@ -22,10 +32,18 @@ export const LEVELS: LevelInfo[] = [
   { level: 6, name: "元气主神", icon: "reward", color: "text-[#FF4D94]", minPoints: 5000 },
 ];
 
-export const calculateLevelInfo = (totalEarned: number): LevelInfo & { progress: number; nextPoints: number | null } => {
-  const levelIdx = [...LEVELS].reverse().findIndex(l => totalEarned >= l.minPoints);
-  const currentLevel = LEVELS[LEVELS.length - 1 - levelIdx] || LEVELS[0];
-  const nextLevel = LEVELS[LEVELS.length - levelIdx] || null;
+export const getLevels = (language: Language = 'zh'): LevelInfo[] => {
+  return LEVELS.map(level => ({
+    ...level,
+    name: getLevelName(level.level, language),
+  }));
+};
+
+export const calculateLevelInfo = (totalEarned: number, language: Language = 'zh'): LevelInfo & { progress: number; nextPoints: number | null } => {
+  const levels = getLevels(language);
+  const levelIdx = [...levels].reverse().findIndex(l => totalEarned >= l.minPoints);
+  const currentLevel = levels[levels.length - 1 - levelIdx] || levels[0];
+  const nextLevel = levels[levels.length - levelIdx] || null;
 
   let progress = 100;
   if (nextLevel) {

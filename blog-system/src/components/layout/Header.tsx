@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Logo } from '@/components/Logo'
-import { LayoutDashboard, LogOut, ChevronDown, Sparkles, BookOpen, FolderOpen, Tag, Menu, X } from 'lucide-react'
+import { LayoutDashboard, LogOut, ChevronDown, Sparkles, BookOpen, FolderOpen, Tag, Menu, X, Calendar } from 'lucide-react'
 
 export function Header() {
   const [user, setUser] = useState<{ name: string; avatar_url?: string; role?: string; avatar_color?: string } | null>(null)
@@ -143,6 +143,13 @@ export function Header() {
           >
             <Tag className="w-4 h-4" />
             <span>标签</span>
+          </Link>
+          <Link 
+            href="/changelog" 
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
+          >
+            <Calendar className="w-4 h-4" />
+            <span>更新日志</span>
           </Link>
           
           <div className="w-px h-6 bg-gray-200 mx-2"></div>
@@ -301,6 +308,14 @@ export function Header() {
             >
               <Tag className="w-5 h-5" />
               <span>标签</span>
+            </Link>
+            <Link 
+              href="/changelog"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
+            >
+              <Calendar className="w-5 h-5" />
+              <span>更新日志</span>
             </Link>
             
             <div className="h-px bg-gray-200 my-2"></div>

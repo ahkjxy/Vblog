@@ -4,7 +4,8 @@ import { Icon } from "./Icon";
 import { BlogPosts } from "./BlogPosts";
 import { formatDateTime } from "../utils/datetime";
 import { PillTabs } from "./PillTabs";
-import { calculateLevelInfo, LEVELS, getProfileTotalEarned, ROLE_LABELS } from "../utils/leveling";
+import { calculateLevelInfo, getLevels, getRoleLabel } from "../utils/leveling";
+import { Language, useTranslation } from "../i18n/translations";
 
 // 成员头像组件
 function MemberAvatar({ avatarUrl, name, avatarColor }: { avatarUrl?: string | null; name: string; avatarColor: string }) {
@@ -41,6 +42,7 @@ interface DashboardSectionProps {
   onGoHistory: () => void;
   onRedeem: (payload: { title: string; points: number; type: 'redeem' }) => void;
   onSelectTask: (payload: { title: string; points: number; type: 'earn' }) => void;
+  language?: Language;
 }
 
 type ChartPoint = { label: string; value: number };
@@ -90,7 +92,9 @@ export function DashboardSection({
   onGoHistory,
   onRedeem,
   onSelectTask,
+  language = 'zh',
 }: DashboardSectionProps) {
+  const { t } = useTranslation(language);
   const [isTopMembersExpanded, setIsTopMembersExpanded] = useState(false);
   const todayGain = currentProfile.history
     .filter(
@@ -115,11 +119,6 @@ export function DashboardSection({
       ),
     [profiles]
   );
-
-  const weekly = useMemo<ChartPoint[]>(() => buildTrend(allTransactions, 7), [allTransactions]);
-  const monthly = useMemo<ChartPoint[]>(() => buildTrend(allTransactions, 30), [allTransactions]);
-  const maxWeek = Math.max(...weekly.map((d: ChartPoint) => Math.abs(d.value)), 1);
-  const maxMonth = Math.max(...monthly.map((d: ChartPoint) => Math.abs(d.value)), 1);
 
   const profileInsights = useMemo<ProfileInsight[]>(() => {
     const now = Date.now();
@@ -149,120 +148,8 @@ export function DashboardSection({
     });
   }, [profiles]);
 
-  const [chartView, setChartView] = useState<"week" | "month">("week");
-
-  const renderLineChart = (data: ChartPoint[], max: number) => {
-    if (!data.length)
-      return <div className="text-sm text-gray-400 py-10 text-center">暂无波动数据</div>;
-    const height = 140;
-    const maxValue = Math.max(max, 1);
-    const step = data.length === 1 ? 0 : Math.max(30, 320 / (data.length - 1));
-    const zeroY = height / 2;
-
-    const points = data.map((d, i) => {
-      const x = i * step;
-      const y = zeroY - (d.value / (maxValue * 2)) * height;
-      return { x, y };
-    });
-
-    const pathData =
-      points.length > 1
-        ? `M ${points[0].x} ${points[0].y} ` +
-          points
-            .slice(1)
-            .map((p) => `L ${p.x} ${p.y}`)
-            .join(" ")
-        : "";
-
-    const width = (data.length - 1) * step || 1;
-
-    return (
-      <div className="overflow-x-auto no-scrollbar py-4">
-        <svg
-          viewBox={`0 -20 ${Math.max(width, 1)} ${height + 40}`}
-          className="w-full min-w-[320px] h-[160px]"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <defs>
-            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#FF4D94" stopOpacity="0.15" />
-              <stop offset="100%" stopColor="#FF4D94" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <line
-            x1={0}
-            y1={zeroY}
-            x2={width}
-            y2={zeroY}
-            className="stroke-gray-100 dark:stroke-white/5"
-            strokeWidth={1}
-            strokeDasharray="4 4"
-          />
-          {pathData && (
-            <>
-              <path
-                d={pathData}
-                fill="none"
-                className="stroke-[#FF4D94]"
-                strokeWidth={3}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d={`${pathData} L ${width} ${height} L 0 ${height} Z`}
-                fill="url(#chartGradient)"
-              />
-            </>
-          )}
-          {data.map((d, i) => {
-            const { x, y } = points[i];
-            const shouldShowLabel = data.length <= 14 || i % 5 === 0 || i === data.length - 1;
-            return (
-              <g key={i} className="group cursor-pointer">
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={data.length > 15 ? 4 : 5}
-                  className="fill-white dark:fill-[#0F172A] stroke-[2.5] stroke-[#FF4D94] transition-all group-hover:r-7"
-                />
-                {shouldShowLabel && (
-                  <text
-                    x={x}
-                    y={height + 18}
-                    textAnchor="middle"
-                    className="text-[9px] font-black fill-gray-400 dark:fill-gray-500 tabular-nums uppercase tracking-tighter"
-                  >
-                    {d.label}
-                  </text>
-                )}
-                <g className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <rect
-                    x={x - 20}
-                    y={y - 34}
-                    width={40}
-                    height={22}
-                    rx={8}
-                    className="fill-gray-900 dark:fill-white shadow-xl"
-                  />
-                  <text
-                    x={x}
-                    y={y - 20}
-                    textAnchor="middle"
-                    className="text-[10px] font-black fill-white dark:fill-gray-900"
-                  >
-                    {d.value > 0 ? '+' : ''}{d.value}
-                  </text>
-                </g>
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-    );
-  };
-
   const renderMiniTrend = (data: ChartPoint[]) => {
-    if (!data.length) return <div className="text-[10px] text-gray-400 italic">能量平衡</div>;
+    if (!data.length) return <div className="text-[10px] text-gray-400 italic">{t.dashboard.energyBalance}</div>;
     const height = 40;
     const maxVal = Math.max(...data.map((d) => Math.abs(d.value)), 1);
     const step = data.length === 1 ? 0 : Math.max(20, 140 / (data.length - 1));
@@ -303,7 +190,7 @@ export function DashboardSection({
 
   const [quickTab, setQuickTab] = useState<"rewards" | "tasks">("rewards");
   const [heroTab, setHeroTab] = useState<"stats" | "progress">("stats");
-  const myLevel = calculateLevelInfo(totals.earned);
+  const myLevel = calculateLevelInfo(totals.earned, language);
 
   // 计算最常用的任务和奖励
   const mostUsedItems = useMemo(() => {
@@ -356,14 +243,14 @@ export function DashboardSection({
                className={`flex-1 py-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-[24px] ${heroTab === 'stats' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}
              >
                <Icon name="shield" size={14} />
-               核心元气管理
+               {t.dashboard.coreManagement}
              </button>
              <button 
                onClick={() => setHeroTab('progress')}
                className={`flex-1 py-4 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 rounded-[24px] ${heroTab === 'progress' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'}`}
              >
                <Icon name="award" size={14} />
-               元气成长阶梯
+               {t.dashboard.growthLadder}
              </button>
           </div>
 
@@ -384,24 +271,24 @@ export function DashboardSection({
                           <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#FF4D94]/20 to-[#7C4DFF]/20 dark:from-[#FF4D94]/30 dark:to-[#7C4DFF]/30 text-[#FF4D94] dark:text-[#FF6BA9] text-[10px] font-black uppercase tracking-[0.2em] w-fit border border-[#FF4D94]/20 dark:border-[#FF4D94]/30">
                               <Icon name="shield" size={12} className="animate-pulse" />
-                              ENERGY CORE
+                              {t.dashboard.energyCore}
                             </div>
                             <h2 className="text-5xl lg:text-7xl font-black text-gray-900 dark:text-white leading-none tracking-tighter flex items-baseline gap-2">
                               <span className="points-font bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] dark:from-[#FF6BA9] dark:to-[#9D6FFF] bg-clip-text text-transparent">{currentProfile.balance}</span>
-                              <span className="text-base font-medium text-gray-600 dark:text-gray-300">元气能量</span>
+                              <span className="text-base font-medium text-gray-600 dark:text-gray-300">{t.dashboard.energyPower}</span>
                             </h2>
                           </div>
                           
                           {/* 右侧：统计信息 */}
                           <div className="flex items-center gap-4 sm:pb-2">
                             <div className="flex flex-col gap-0.5">
-                              <span className="text-[9px] font-black text-gray-400 dark:text-gray-400 uppercase tracking-widest">今日增长</span>
+                              <span className="text-[9px] font-black text-gray-400 dark:text-gray-400 uppercase tracking-widest">{t.dashboard.todayGrowth}</span>
                               <span className="text-lg font-black text-emerald-500 dark:text-emerald-400 points-font">+{todayGain}</span>
                             </div>
                             <div className="w-[1px] h-8 bg-gray-200 dark:bg-white/10" />
                             <div className="flex flex-col gap-0.5">
-                              <span className="text-[9px] font-black text-gray-400 dark:text-gray-400 uppercase tracking-widest">账号身份</span>
-                              <span className="text-xs font-black text-[#7C4DFF] dark:text-[#9D6FFF] uppercase tracking-wider">{ROLE_LABELS[currentProfile.role]}</span>
+                              <span className="text-[9px] font-black text-gray-400 dark:text-gray-400 uppercase tracking-widest">{t.dashboard.accountRole}</span>
+                              <span className="text-xs font-black text-[#7C4DFF] dark:text-[#9D6FFF] uppercase tracking-wider">{getRoleLabel(currentProfile.role, language)}</span>
                             </div>
                           </div>
                         </div>
@@ -419,7 +306,7 @@ export function DashboardSection({
                              <div className="flex items-center gap-2">
                                 <h4 className="text-base font-black text-gray-900 dark:text-white truncate">{currentProfile.name}</h4>
                                 <span className="px-1.5 py-0.5 rounded-md bg-[#7C4DFF]/10 text-[#7C4DFF] text-[9px] font-black uppercase tracking-wider border border-[#7C4DFF]/15">
-                                  {ROLE_LABELS[currentProfile.role]}
+                                  {getRoleLabel(currentProfile.role, language)}
                                 </span>
                              </div>
                              <span className={`text-[10px] font-black uppercase tracking-wider ${myLevel.color} opacity-80`}>
@@ -431,8 +318,8 @@ export function DashboardSection({
                                 <div className="h-full bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] transition-all duration-1000 shadow-[0_0_8px_rgba(255,77,148,0.3)]" style={{ width: `${myLevel.progress}%` }} />
                              </div>
                              <div className="flex justify-between items-center text-[9px] font-bold text-gray-400/80 uppercase tabular-nums">
-                                <span>当前境界进度</span>
-                                <span>{myLevel.nextPoints ? `${totals.earned} / ${myLevel.nextPoints}` : '极致巅峰'}</span>
+                                <span>{t.dashboard.currentProgress}</span>
+                                <span>{myLevel.nextPoints ? `${totals.earned} / ${myLevel.nextPoints}` : t.dashboard.peakLevel}</span>
                              </div>
                           </div>
                        </div>
@@ -440,10 +327,10 @@ export function DashboardSection({
 
                     <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       {[
-                        { label: "累计赚取", value: totals.earned, icon: "plus", tone: "indigo" },
-                        { label: "累计消耗", value: totals.spent, icon: "reward", tone: "rose" },
-                        { label: "完成任务", value: totals.count, icon: "check", tone: "emerald" },
-                        { label: "账户余额", value: currentProfile.balance, icon: "shield", tone: "amber" }
+                        { label: t.dashboard.totalEarned, value: totals.earned, icon: "plus", tone: "indigo" },
+                        { label: t.dashboard.totalSpent, value: totals.spent, icon: "reward", tone: "rose" },
+                        { label: t.dashboard.tasksCompleted, value: totals.count, icon: "check", tone: "emerald" },
+                        { label: t.dashboard.accountBalance, value: currentProfile.balance, icon: "shield", tone: "amber" }
                       ].map((stat, i) => (
                         <div key={i} className="flex flex-col p-3 sm:p-4 rounded-[24px] bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 hover:border-[#FF4D94]/20 dark:hover:border-[#FF4D94]/30 transition-all group/stat shadow-sm min-h-[84px]">
                            <div className="flex items-center justify-between mb-1.5">
@@ -468,20 +355,20 @@ export function DashboardSection({
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-6 h-px bg-[#FF4D94]" />
-                        <span className="text-[9px] font-black text-[#FF4D94] uppercase tracking-[0.3em]">Cultivation Path</span>
+                        <span className="text-[9px] font-black text-[#FF4D94] uppercase tracking-[0.3em]">{t.dashboard.cultivationPath}</span>
                       </div>
                       <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-                        元气成长阶梯
+                        {t.dashboard.growthLadder}
                       </h3>
                     </div>
                     <div className="px-4 py-2 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
-                       <p className="text-[10px] font-black text-gray-400 dark:text-gray-400 uppercase tracking-widest text-center">当前累计赚取</p>
+                       <p className="text-[10px] font-black text-gray-400 dark:text-gray-400 uppercase tracking-widest text-center">{t.dashboard.currentTotalEarned}</p>
                        <p className="text-base font-black text-[#7C4DFF] dark:text-[#9D6FFF] points-font text-center">{totals.earned}</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {LEVELS.map((lv) => {
+                    {getLevels(language).map((lv) => {
                       const isUnlocked = totals.earned >= lv.minPoints;
                       return (
                         <div key={lv.level} className={`p-3.5 rounded-[20px] border transition-all duration-500 flex items-center gap-4 relative overflow-hidden ${isUnlocked ? 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md hover:border-[#FF4D94]/20' : 'bg-gray-50/50 dark:bg-transparent border-transparent opacity-50 grayscale'}`}>
@@ -523,8 +410,8 @@ export function DashboardSection({
           <div className="p-6 lg:p-8 flex flex-col h-full"> 
             <PillTabs
               tabs={[
-                { id: "rewards", label: "梦想兑换", icon: "🎁" },
-                { id: "tasks", label: "快速任务", icon: "⚡" },
+                { id: "rewards", label: t.dashboard.dreamExchange, icon: "🎁" },
+                { id: "tasks", label: t.dashboard.quickTasks, icon: "⚡" },
               ]}
               activeId={quickTab}
               onChange={(id) => setQuickTab(id as "rewards" | "tasks")}
@@ -536,7 +423,7 @@ export function DashboardSection({
                   <div className="flex-1 min-w-0">
                     <h4 className="text-[12px] font-black text-gray-800 dark:text-gray-200 truncate">{item.title}</h4>
                     <p className={`text-[10px] font-black points-font mt-0.5 ${quickTab === 'tasks' ? 'text-emerald-500 dark:text-emerald-400' : 'text-[#FF4D94] dark:text-[#FF6BA9]'}`}>
-                      {quickTab === 'tasks' ? '+' : ''}{item.points} 元气
+                      {quickTab === 'tasks' ? '+' : ''}{item.points} {t.common.energy}
                     </p>
                   </div>
                   <button 
@@ -549,7 +436,7 @@ export function DashboardSection({
               ))}
             </div>
             <button onClick={quickTab === 'rewards' ? onGoRedeem : onGoEarn} className="mt-6 w-full py-4 bg-gray-100/50 dark:bg-white/5 rounded-2xl text-[10px] font-black text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2">
-              <span>管理全部列表</span>
+              <span>{t.dashboard.manageAll}</span>
               <Icon name="arrow-down" size={12} className="-rotate-90 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
@@ -559,19 +446,19 @@ export function DashboardSection({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* 博客文章区域 - 替换原来的元气波动走势 */}
         <div className="lg:col-span-8">
-          <BlogPosts />
+          <BlogPosts language={language} />
         </div>
 
         <div className="lg:col-span-4 bg-white dark:bg-[#111827] rounded-[40px] border border-gray-100 dark:border-white/5 shadow-sm flex flex-col h-full mobile-card">
           <div className="p-6 lg:p-8 flex flex-col h-full">
             <div className="flex items-center justify-between mb-8">
                <div className="flex-1">
-                  <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">实时动态流</h3>
-                  <p className="text-xs font-bold text-emerald-500 uppercase tracking-wider mt-1">云端实时同步中</p>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t.dashboard.liveStream}</h3>
+                  <p className="text-xs font-bold text-emerald-500 uppercase tracking-wider mt-1">{t.dashboard.cloudSync}</p>
                </div>
                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shrink-0">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-wider">LIVE</span>
+                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-wider">{t.dashboard.live}</span>
                </div>
             </div>
             <div className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-1" style={{ minHeight: '440px', maxHeight: '440px' }}>
@@ -588,7 +475,7 @@ export function DashboardSection({
                         className={`shrink-0 ${msg.type === 'earn' ? 'text-emerald-500' : msg.type === 'redeem' ? 'text-rose-500' : msg.type === 'penalty' ? 'text-amber-500' : 'text-[#7C4DFF]'}`}
                       />
                       <span className={`text-[11px] font-black uppercase tracking-wider ${msg.type === 'earn' ? 'text-emerald-500' : msg.type === 'redeem' ? 'text-rose-500' : msg.type === 'penalty' ? 'text-amber-500' : 'text-[#7C4DFF]'}`}>
-                        {msg.type === 'earn' ? '任务奖励' : msg.type === 'redeem' ? '梦想兑换' : msg.type === 'penalty' ? '违规扣减' : '能量转移'}
+                        {msg.type === 'earn' ? t.dashboard.taskReward : msg.type === 'redeem' ? t.dashboard.dreamRedeem : msg.type === 'penalty' ? t.dashboard.violationDeduction : t.dashboard.energyTransfer}
                       </span>
                     </div>
                     <p className="text-[15px] font-black text-gray-800 dark:text-gray-200 mb-2 line-clamp-1 leading-tight">{msg.title}</p>
@@ -596,7 +483,7 @@ export function DashboardSection({
                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         <div className="inline-flex items-center gap-1.5">
                           <Icon name="user" size={14} className="opacity-60 shrink-0 flex-shrink-0" />
-                          <span className="font-medium truncate max-w-[80px]">{msg.profileName || '成员'}</span>
+                          <span className="font-medium truncate max-w-[80px]">{msg.profileName || t.dashboard.member}</span>
                         </div>
                         <span className="opacity-40">·</span>
                         <span className="font-medium shrink-0">{formatDateTime(msg.timestamp)}</span>
@@ -617,15 +504,15 @@ export function DashboardSection({
         <div className="lg:col-span-8 bg-white dark:bg-[#111827] rounded-[40px] border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden flex flex-col mobile-card">
            <div className="p-8 flex flex-col h-full">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">身份成长矩阵</h3>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t.dashboard.identityGrowthMatrix}</h3>
               <button onClick={() => setIsTopMembersExpanded(!isTopMembersExpanded)} className="text-[10px] font-black text-[#7C4DFF] uppercase tracking-widest hover:underline">
-                {isTopMembersExpanded ? "收起明细" : "查看全体"}
+                {isTopMembersExpanded ? t.dashboard.collapseDetails : t.dashboard.viewAll}
               </button>
             </div>
             <div className="flex-1 overflow-y-auto no-scrollbar pr-2" style={{ maxHeight: '360px' }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {profileInsights.map((p) => {
-                    const plv = calculateLevelInfo(p.totalEarned);
+                    const plv = calculateLevelInfo(p.totalEarned, language);
                     
                     return (
                       <div key={p.id} className="p-5 rounded-[28px] bg-gray-50/50 dark:bg-white/5 border border-transparent hover:border-[#10B981]/20 transition-all flex items-center justify-between group">
@@ -647,7 +534,7 @@ export function DashboardSection({
                      </div>
                      <div className="text-right">
                         <div className="w-16 h-6 mb-1">{renderMiniTrend(p.trend7d)}</div>
-                        <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded uppercase leading-none">活跃 {p.completionRate}%</span>
+                        <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded uppercase leading-none">{t.dashboard.active} {p.completionRate}%</span>
                      </div>
                       </div>
                     );
@@ -662,26 +549,26 @@ export function DashboardSection({
              <Icon name="award" size={160} />
           </div>
           <div className="relative z-10 flex flex-col h-full">
-            <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight mb-6">家族经济枢纽</h3>
+            <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight mb-6">{t.dashboard.familyEconomicHub}</h3>
             <div className="space-y-5">
                <div className="p-5 rounded-3xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-transparent">
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">全网元气流通量</p>
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">{t.dashboard.totalCirculation}</p>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-black points-font text-gray-900 dark:text-white">
                       {profiles.reduce((sum, p) => sum + p.balance, 0)}
                     </span>
-                    <span className="text-[10px] font-black text-[#10B981] uppercase tracking-[0.2em]">能量守恒</span>
+                    <span className="text-[10px] font-black text-[#10B981] uppercase tracking-[0.2em]">{t.dashboard.energyConservation}</span>
                   </div>
                </div>
                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">今日产出</p>
+                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{t.dashboard.todayOutput}</p>
                      <p className="text-lg font-black text-emerald-500 points-font">
                         +{allTransactions.filter(t => t.points > 0 && new Date(t.timestamp).toDateString() === new Date().toDateString()).reduce((s, t) => s + t.points, 0)}
                      </p>
                   </div>
                   <div className="space-y-1 text-right">
-                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">今日消耗</p>
+                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{t.dashboard.todayConsumption}</p>
                      <p className="text-lg font-black text-rose-500 points-font">
                         -{allTransactions.filter(t => t.points < 0 && new Date(t.timestamp).toDateString() === new Date().toDateString()).reduce((s, t) => s + Math.abs(t.points), 0)}
                      </p>
@@ -689,7 +576,7 @@ export function DashboardSection({
                </div>
                <div className="pt-4 border-t border-gray-100 dark:border-white/5">
                   <div className="flex justify-between items-center mb-2">
-                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">元气转化效率</span>
+                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{t.dashboard.conversionEfficiency}</span>
                      <span className="text-[10px] font-black text-[#7C4DFF] font-mono">92.4%</span>
                   </div>
                   <div className="h-1.5 w-full bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
@@ -698,7 +585,7 @@ export function DashboardSection({
                </div>
             </div>
             <button onClick={onGoHistory} className="mt-8 flex items-center justify-center gap-2 py-4 rounded-2xl bg-gray-900 dark:bg-white/10 text-white dark:text-white text-[10px] font-black uppercase tracking-[0.25em] hover:bg-gray-800 transition-all">
-               查看数据总账目
+               {t.dashboard.viewTotalLedger}
                <Icon name="arrow-down" size={14} className="-rotate-90" />
             </button>
           </div>

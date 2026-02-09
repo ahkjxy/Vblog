@@ -1,14 +1,17 @@
 import { Profile } from "../types";
 import { BadgeSection } from "./BadgeSection";
 import { Icon } from "./Icon";
+import { Language, useTranslation } from "../i18n/translations";
 
 interface AchievementCenterProps {
   currentProfile: Profile;
   familyId: string;
   onRefresh?: () => Promise<void>;
+  language?: Language;
 }
 
-export function AchievementCenter({ currentProfile, familyId, onRefresh }: AchievementCenterProps) {
+export function AchievementCenter({ currentProfile, familyId, onRefresh, language = 'zh' }: AchievementCenterProps) {
+  const { t, replace } = useTranslation(language);
   const badgeCount = currentProfile.badges?.length || 0;
   const level = currentProfile.level || 1;
   const balance = currentProfile.balance || 0;
@@ -25,13 +28,13 @@ export function AchievementCenter({ currentProfile, familyId, onRefresh }: Achie
           <div className="mb-6 sm:mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FF4D94]/10 text-[#FF4D94] text-[10px] font-black uppercase tracking-[0.2em] mb-3">
               <div className="w-1.5 h-1.5 rounded-full bg-[#FF4D94] animate-pulse"></div>
-              成就徽章
+              {t.achievements.achievementBadge}
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white leading-tight tracking-tight mb-2">
-              成就徽章中心
+              {t.achievements.title}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-              已获得 {badgeCount} 个徽章，继续加油！
+              {replace(t.achievements.earnedBadgesMessage, { count: badgeCount })}
             </p>
           </div>
 
@@ -43,7 +46,7 @@ export function AchievementCenter({ currentProfile, familyId, onRefresh }: Achie
                 <Icon name="reward" size={20} />
               </div>
               <p className="text-[10px] font-bold text-[#FF4D94]/70 dark:text-gray-400 uppercase tracking-widest text-center mb-1">
-                已获得
+                {t.achievements.earned}
               </p>
               <p className="text-2xl sm:text-3xl font-black text-[#FF4D94] dark:text-gray-200 text-center points-font">
                 {badgeCount}
@@ -56,7 +59,7 @@ export function AchievementCenter({ currentProfile, familyId, onRefresh }: Achie
                 <Icon name="award" size={20} />
               </div>
               <p className="text-[10px] font-bold text-[#7C4DFF]/70 dark:text-gray-400 uppercase tracking-widest text-center mb-1">
-                当前等级
+                {t.achievements.level}
               </p>
               <p className="text-2xl sm:text-3xl font-black text-[#7C4DFF] dark:text-gray-200 text-center points-font">
                 {level}
@@ -69,7 +72,7 @@ export function AchievementCenter({ currentProfile, familyId, onRefresh }: Achie
                 <Icon name="shield" size={20} />
               </div>
               <p className="text-[10px] font-bold text-emerald-500/70 dark:text-gray-400 uppercase tracking-widest text-center mb-1">
-                元气余额
+                {t.achievements.balance}
               </p>
               <p className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-gray-200 text-center points-font">
                 {balance}
@@ -84,6 +87,7 @@ export function AchievementCenter({ currentProfile, familyId, onRefresh }: Achie
         profile={currentProfile}
         familyId={familyId}
         onBadgeClaimed={() => {}}
+        language={language}
       />
     </div>
   );

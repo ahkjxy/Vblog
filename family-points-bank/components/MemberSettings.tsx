@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Profile, UserRole } from '../types';
 import { Icon } from './Icon';
 import { useToast } from './Toast';
+import { Language, useTranslation } from '../i18n/translations';
 
 // 成员头像组件
 function MemberAvatar({ avatarUrl, name, avatarColor, size = 'md' }: { 
@@ -52,6 +53,7 @@ interface MemberSettingsProps {
   roleLoading: Set<string>;
   adminCount: number;
   isSyncing: boolean;
+  language?: Language;
 }
 
 export function MemberSettings({
@@ -66,7 +68,9 @@ export function MemberSettings({
   roleLoading,
   adminCount,
   isSyncing,
+  language = 'zh',
 }: MemberSettingsProps) {
+  const { t, replace } = useTranslation(language);
   const { showToast } = useToast();
   const [adjustModal, setAdjustModal] = useState<Profile | null>(null);
   const [adjustPoints, setAdjustPoints] = useState<number>(0);
@@ -78,20 +82,20 @@ export function MemberSettings({
   const handleAdjust = async () => {
     if (!adjustModal) return;
     if (!adjustPoints) {
-      setAdjustError('请输入调整金额');
+      setAdjustError(t.settings.enterAmount);
       return;
     }
     if (!adjustMemo.trim()) {
-      setAdjustError('请输入调整说明');
+      setAdjustError(t.settings.enterReason);
       return;
     }
     setAdjustError(null);
     setAdjustLoading(true);
     try {
       setAdjustModal(null);
-      showToast({ type: 'success', title: '余额调整已提交' });
+      showToast({ type: 'success', title: t.settings.balanceAdjusted });
     } catch (e) {
-      setAdjustError((e as Error)?.message || '调整失败');
+      setAdjustError((e as Error)?.message || t.settings.adjustFailed);
     } finally {
       setAdjustLoading(false);
     }
@@ -113,7 +117,7 @@ export function MemberSettings({
             }}
             className="w-4 h-4 rounded border-gray-300"
           />
-          <span className="text-sm text-gray-600">已选 {selectedIds.size} 位成员</span>
+          <span className="text-sm text-gray-600">{replace(t.settings.selected, { count: selectedIds.size })}</span>
         </div>
         <div className="flex gap-2">
           {selectedIds.size > 0 && (
@@ -123,21 +127,21 @@ export function MemberSettings({
                 disabled={roleLoading.size > 0 || isSyncing}
                 className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 disabled:opacity-50"
               >
-                设为管理员
+                {t.settings.setAsAdmin}
               </button>
               <button
                 onClick={() => onBulkRole('child')}
                 disabled={roleLoading.size > 0 || isSyncing}
                 className="px-3 py-1.5 text-xs font-semibold text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
               >
-                设为成员
+                {t.settings.setAsMember}
               </button>
               <button
                 onClick={onDelete}
                 disabled={isSyncing}
                 className="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 disabled:opacity-50"
               >
-                删除
+                {t.common.delete}
               </button>
             </>
           )}
@@ -147,7 +151,7 @@ export function MemberSettings({
             className="px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] rounded-lg hover:opacity-90 disabled:opacity-50"
           >
             <Icon name="plus" size={16} className="inline-block mr-1" />
-            添加成员
+            {t.settings.addMember}
           </button>
         </div>
       </div>
@@ -174,11 +178,11 @@ export function MemberSettings({
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-900">{profile.name}</span>
                 <span className={`text-xs px-2 py-0.5 rounded-full ${profile.role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
-                  {profile.role === 'admin' ? '管理员' : '成员'}
+                  {profile.role === 'admin' ? t.settings.role.admin : t.settings.role.child}
                 </span>
               </div>
               <div className="text-sm text-gray-500 mt-0.5">
-                余额: <span className="font-semibold text-gray-700">{profile.balance}</span>
+                {t.settings.balance}: <span className="font-semibold text-gray-700">{profile.balance}</span>
               </div>
             </div>
             <div className="flex gap-1">
@@ -220,37 +224,37 @@ export function MemberSettings({
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-6">
           <div className="fixed inset-0 bg-black/50" onClick={() => setAdjustModal(null)} />
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative z-10">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">调整余额 - {adjustModal.name}</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">{replace(t.settings.adjustBalanceFor, { name: adjustModal.name })}</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">调整金额</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">{t.settings.adjustAmount}</label>
                 <input
                   type="number"
                   value={adjustPoints}
                   onChange={(e) => setAdjustPoints(parseInt(e.target.value) || 0)}
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF4D94]"
-                  placeholder="输入正数为加分，负数为扣分"
+                  placeholder={t.settings.adjustAmountPlaceholder}
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">调整说明</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">{t.settings.adjustReason}</label>
                 <input
                   type="text"
                   value={adjustMemo}
                   onChange={(e) => setAdjustMemo(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF4D94]"
-                  placeholder="例如：手动调整、特殊奖励等"
+                  placeholder={t.settings.adjustReasonPlaceholder}
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">调整类型</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">{t.settings.adjustType}</label>
                 <select
                   value={adjustType}
                   onChange={(e) => setAdjustType(e.target.value as 'earn' | 'penalty')}
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF4D94]"
                 >
-                  <option value="earn">奖励（加分）</option>
-                  <option value="penalty">扣减（减分）</option>
+                  <option value="earn">{t.settings.adjustTypeEarn}</option>
+                  <option value="penalty">{t.settings.adjustTypePenalty}</option>
                 </select>
               </div>
               {adjustError && <div className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-lg">{adjustError}</div>}
@@ -260,14 +264,14 @@ export function MemberSettings({
                   disabled={adjustLoading}
                   className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50"
                 >
-                  取消
+                  {t.common.cancel}
                 </button>
                 <button
                   onClick={handleAdjust}
                   disabled={adjustLoading}
                   className="flex-1 px-4 py-2 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-lg font-semibold hover:opacity-90 disabled:opacity-50"
                 >
-                  {adjustLoading ? '处理中...' : '确认调整'}
+                  {adjustLoading ? t.common.processing : t.settings.confirmAdjust}
                 </button>
               </div>
             </div>

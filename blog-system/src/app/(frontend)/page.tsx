@@ -3,10 +3,21 @@ import Link from 'next/link'
 import { formatDate, formatAuthorName } from '@/lib/utils'
 import { ArrowRight, Eye, FolderOpen, Tag, MessageCircle, BookOpen, FileText } from 'lucide-react'
 import { FamilyBankCTA } from '@/components/FamilyBankCTA'
+import type { Metadata } from 'next'
 
 // 禁用静态生成，每次请求都重新获取数据
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+
+export const metadata: Metadata = {
+  title: '首页',
+  description: '元气银行官方博客 - 分享家庭教育、积分管理、习惯养成等内容。通过游戏化的方式激励家庭成员养成良好习惯，让家庭关系更加和谐。',
+  openGraph: {
+    title: '元气银行博客 - 家庭教育与积分管理系统',
+    description: '分享家庭教育、积分管理、习惯养成等内容',
+    type: 'website',
+  },
+}
 
 // 定义文章类型
 type PostWithProfile = {

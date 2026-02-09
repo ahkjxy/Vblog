@@ -61,6 +61,7 @@ export default async function DashboardLayout({
       { href: '/dashboard/categories', icon: 'FolderOpen', label: '分类' },
       { href: '/dashboard/tags', icon: 'Tag', label: '标签' },
       { href: '/dashboard/comments', icon: 'MessageSquare', label: '评论' },
+      { href: '/dashboard/feedback', icon: 'MessageCircle', label: '客服管理' },
       { href: '/dashboard/users', icon: 'Users', label: '用户' },
       { href: '/dashboard/settings', icon: 'Settings', label: '设置' }
     )

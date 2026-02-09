@@ -3,6 +3,7 @@ import { Modal } from "./Modal";
 import { Profile } from "../types";
 import { Icon } from "./Icon";
 import { useToast } from "./Toast";
+import { Language, useTranslation } from "../i18n/translations";
 
 interface TransferModalProps {
   open: boolean;
@@ -10,6 +11,7 @@ interface TransferModalProps {
   currentProfile: Profile;
   profiles: Profile[];
   onTransfer: (toProfileId: string, points: number, message: string) => Promise<void>;
+  language?: Language;
 }
 
 export function TransferModal({
@@ -18,7 +20,9 @@ export function TransferModal({
   currentProfile,
   profiles,
   onTransfer,
+  language = 'zh',
 }: TransferModalProps) {
+  const { t, replace } = useTranslation(language);
   const [selectedProfileId, setSelectedProfileId] = useState("");
   const [points, setPoints] = useState<number>(1);
   const [message, setMessage] = useState("");
@@ -31,17 +35,21 @@ export function TransferModal({
     e.preventDefault();
 
     if (!selectedProfileId) {
-      showToast({ type: "error", title: "请选择接收成员" });
+      showToast({ type: "error", title: t.transferModal.selectMember });
       return;
     }
 
     if (points <= 0) {
-      showToast({ type: "error", title: "元气必须大于0" });
+      showToast({ type: "error", title: t.transferModal.mustBePositive });
       return;
     }
 
     if (points > currentProfile.balance) {
-      showToast({ type: "error", title: "元气不足", description: `当前余额：${currentProfile.balance}` });
+      showToast({ 
+        type: "error", 
+        title: t.transferModal.insufficientBalance, 
+        description: replace(t.transferModal.currentBalance, { balance: currentProfile.balance })
+      });
       return;
     }
 
@@ -51,15 +59,15 @@ export function TransferModal({
       const toProfile = profiles.find((p) => p.id === selectedProfileId);
       showToast({
         type: "success",
-        title: "转赠成功",
-        description: `已向 ${toProfile?.name} 转赠 ${points} 元气值`,
+        title: t.transferModal.transferSuccess,
+        description: replace(t.transferModal.transferredTo, { name: toProfile?.name || '', points }),
       });
       setSelectedProfileId("");
       setPoints(1);
       setMessage("");
       onClose();
     } catch (error) {
-      showToast({ type: "error", title: "转赠失败", description: (error as Error).message });
+      showToast({ type: "error", title: t.transferModal.transferFailed, description: (error as Error).message });
     } finally {
       setLoading(false);
     }
@@ -69,9 +77,9 @@ export function TransferModal({
     <Modal isOpen={open} onClose={onClose} maxWidth="max-w-lg">
         <div className="flex justify-between items-start mb-6">
           <div className="space-y-1">
-            <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">元气转赠</p>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">赠送元气能量</h3>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">将您的剩余能量分享给其他成员</p>
+            <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">{t.transferModal.title}</p>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t.transferModal.subtitle}</h3>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t.transferModal.description}</p>
           </div>
           <button 
             onClick={onClose} 
@@ -84,7 +92,7 @@ export function TransferModal({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Recipient Selection */}
           <div>
-            <label className="label-pop">选择接收成员</label>
+            <label className="label-pop">{t.transferModal.selectRecipient}</label>
             <div className="grid grid-cols-1 gap-3">
               {availableProfiles.map((profile) => (
                 <button
@@ -117,7 +125,7 @@ export function TransferModal({
 
           {/* Amount */}
           <div>
-            <label className="label-pop">转赠数量</label>
+            <label className="label-pop">{t.transferModal.transferAmount}</label>
             <div className="relative group">
               <input
                 type="number"
@@ -127,7 +135,9 @@ export function TransferModal({
                 max={currentProfile.balance}
                 className="w-full px-8 py-4 bg-gray-50 dark:bg-white/5 border border-transparent dark:border-white/5 rounded-[24px] font-black text-xl points-font outline-none focus:ring-2 focus:ring-[#FF4D94] transition-all shadow-inner"
               />
-              <span className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-300 uppercase tracking-widest pointer-events-none">元气</span>
+              <span className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-300 uppercase tracking-widest pointer-events-none">
+                {t.app.points}
+              </span>
             </div>
             <div className="flex gap-2 mt-3">
               <button
@@ -135,25 +145,25 @@ export function TransferModal({
                 onClick={() => setPoints(Math.min(50, currentProfile.balance))}
                 className="px-4 py-2 bg-white dark:bg-white/10 rounded-full text-xs font-bold text-gray-500 hover:text-[#FF4D94] transition-colors"
               >
-                50 元气
+                {replace(t.transferModal.quickAmount, { amount: 50 })}
               </button>
               <button
                 type="button"
                 onClick={() => setPoints(currentProfile.balance)}
                 className="px-4 py-2 bg-white dark:bg-white/10 rounded-full text-xs font-bold text-gray-500 hover:text-[#FF4D94] transition-colors"
               >
-                MAX 元气
+                {t.transferModal.maxAmount}
               </button>
             </div>
           </div>
 
           {/* Message */}
           <div>
-            <label className="label-pop">留言说明</label>
+            <label className="label-pop">{t.transferModal.leaveMessage}</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="写点什么鼓励的话吧..."
+              placeholder={t.transferModal.messagePlaceholder}
               rows={2}
               maxLength={100}
               className="input-pop resize-none"
@@ -167,14 +177,14 @@ export function TransferModal({
               onClick={onClose}
               className="btn-base btn-secondary flex-1"
             >
-              取消
+              {t.transferModal.cancel}
             </button>
             <button
               type="submit"
               disabled={loading || !selectedProfileId || points <= 0}
               className="btn-base btn-primary flex-1"
             >
-              {loading ? '正在同步...' : '确认转赠'}
+              {loading ? t.transferModal.transferring : t.transferModal.confirmTransfer}
             </button>
           </div>
         </form>

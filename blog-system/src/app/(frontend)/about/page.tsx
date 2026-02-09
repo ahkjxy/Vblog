@@ -1,5 +1,16 @@
 import { Zap, Target, Heart, Users, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: '关于我们',
+  description: '了解元气银行的使命、愿景和核心价值观。我们致力于通过科技的力量，帮助每个家庭建立积极的激励机制，让孩子在快乐中成长。',
+  openGraph: {
+    title: '关于我们 | 元气银行博客',
+    description: '了解元气银行的使命、愿景和核心价值观',
+    type: 'website',
+  },
+}
 
 export default function AboutPage() {
   return (

@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const { data, error } = await supabase
       .from('posts')
-      .select('title, seo_title, seo_description, excerpt, status, review_status')
+      .select('title, seo_title, seo_description, excerpt, status, review_status, published_at, author_id, profiles!posts_author_id_fkey(name)')
       .eq('slug', slug)
       .eq('status', 'published')
       .eq('review_status', 'approved')
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     if (error && error.code === '42703') {
       const { data: fallbackData } = await supabase
         .from('posts')
-        .select('title, seo_title, seo_description, excerpt, status, review_status')
+        .select('title, seo_title, seo_description, excerpt, status, review_status, published_at, author_id, profiles!posts_author_id_fkey(name)')
         .eq('slug', slug)
         .eq('status', 'published')
         .maybeSingle()
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     console.error('Metadata query error:', err)
     const { data: fallbackData } = await supabase
       .from('posts')
-      .select('title, seo_title, seo_description, excerpt, status, review_status')
+      .select('title, seo_title, seo_description, excerpt, status, review_status, published_at, author_id, profiles!posts_author_id_fkey(name)')
       .eq('slug', slug)
       .eq('status', 'published')
       .maybeSingle()
@@ -61,9 +61,32 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   }
 
+  const title = post.seo_title || post.title
+  const description = post.seo_description || post.excerpt || ''
+  const profile = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles
+  const authorName = profile?.name || '元气银行团队'
+  const publishedTime = post.published_at ? new Date(post.published_at).toISOString() : undefined
+
   return {
-    title: post.seo_title || post.title,
-    description: post.seo_description || post.excerpt || '',
+    title,
+    description,
+    authors: [{ name: authorName }],
+    openGraph: {
+      title,
+      description,
+      type: 'article',
+      publishedTime,
+      authors: [authorName],
+      siteName: '元气银行博客',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
+    alternates: {
+      canonical: `https://blog.familybank.chat/blog/${slug}`,
+    },
   }
 }
 

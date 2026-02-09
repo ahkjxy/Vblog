@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
+import { Language, useTranslation } from '../i18n/translations';
 
 interface PaginationProps {
   currentPage: number;
@@ -7,6 +8,7 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
   itemsPerPage?: number;
   totalItems?: number;
+  language?: Language;
 }
 
 export function Pagination({ 
@@ -14,8 +16,11 @@ export function Pagination({
   totalPages, 
   onPageChange,
   itemsPerPage = 10,
-  totalItems = 0
+  totalItems = 0,
+  language = 'zh',
 }: PaginationProps) {
+  const { t, replace } = useTranslation(language);
+  
   if (totalPages <= 1) return null;
 
   const getPageNumbers = () => {
@@ -56,7 +61,7 @@ export function Pagination({
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 pb-4">
       {/* Info Text */}
       <div className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-        显示 <span className="text-[#FF4D94] font-black">{startItem}</span> - <span className="text-[#FF4D94] font-black">{endItem}</span> / 共 <span className="text-[#7C4DFF] font-black">{totalItems}</span> 条
+        {t.pagination.showing} <span className="text-[#FF4D94] font-black">{startItem}</span> {t.pagination.to} <span className="text-[#FF4D94] font-black">{endItem}</span> {t.pagination.ofTotal} <span className="text-[#7C4DFF] font-black">{totalItems}</span> {t.pagination.items}
       </div>
 
       {/* Pagination Controls */}
@@ -66,7 +71,7 @@ export function Pagination({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           className="w-9 h-9 rounded-xl flex items-center justify-center border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-gray-50 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all group"
-          aria-label="上一页"
+          aria-label={t.pagination.previous}
         >
           <Icon name="chevron-left" size={16} className="group-hover:-translate-x-0.5 transition-transform" />
         </button>
@@ -106,7 +111,7 @@ export function Pagination({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           className="w-9 h-9 rounded-xl flex items-center justify-center border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-gray-50 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all group"
-          aria-label="下一页"
+          aria-label={t.pagination.next}
         >
           <Icon name="chevron-right" size={16} className="group-hover:translate-x-0.5 transition-transform" />
         </button>

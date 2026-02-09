@@ -1,7 +1,8 @@
 import { Modal } from './Modal';
 import { Profile } from '../types';
 import { Icon } from './Icon';
-import { calculateLevelInfo, getProfileTotalEarned, ROLE_LABELS } from '../utils/leveling';
+import { calculateLevelInfo, getProfileTotalEarned, getRoleLabel } from '../utils/leveling';
+import { Language, useTranslation } from '../i18n/translations';
 
 interface ProfileSwitcherModalProps {
   open: boolean;
@@ -9,16 +10,19 @@ interface ProfileSwitcherModalProps {
   currentProfileId: string;
   onSelect: (id: string) => void;
   onClose: () => void;
+  language?: Language;
 }
 
-export function ProfileSwitcherModal({ open, profiles, currentProfileId, onSelect, onClose }: ProfileSwitcherModalProps) {
+export function ProfileSwitcherModal({ open, profiles, currentProfileId, onSelect, onClose, language = 'zh' }: ProfileSwitcherModalProps) {
+  const { t } = useTranslation(language);
+  
   return (
     <Modal isOpen={open} onClose={onClose} maxWidth="max-w-[400px]">
         <div className="flex justify-between items-start mb-6">
           <div className="space-y-1 text-left">
-            <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">Account System</p>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">切换账户身份</h3>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">选择您要进入的家庭通行证</p>
+            <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">{t.profileSwitcher.accountSystem}</p>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t.profileSwitcher.switchAccount}</h3>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t.profileSwitcher.selectPass}</p>
           </div>
           <button 
             onClick={onClose} 
@@ -57,17 +61,17 @@ export function ProfileSwitcherModal({ open, profiles, currentProfileId, onSelec
                   <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full ${
                     currentProfileId === p.id ? 'bg-white/20 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400'
                   }`}>
-                    {ROLE_LABELS[p.role]}
+                    {getRoleLabel(p.role, language)}
                   </span>
                   <span className={`text-[8px] font-black points-font ${
                     currentProfileId === p.id ? 'text-white/80' : 'text-[#FF4D94]'
                   }`}>
-                    {p.balance} 元气
+                    {p.balance} {t.common.energy}
                   </span>
                   <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
-                    <Icon name={calculateLevelInfo(getProfileTotalEarned(p)).icon as any} size={8} className={currentProfileId === p.id ? 'text-white' : calculateLevelInfo(getProfileTotalEarned(p)).color} />
+                    <Icon name={calculateLevelInfo(getProfileTotalEarned(p), language).icon as any} size={8} className={currentProfileId === p.id ? 'text-white' : calculateLevelInfo(getProfileTotalEarned(p), language).color} />
                     <span className={`text-[8px] font-black uppercase tracking-tighter ${currentProfileId === p.id ? 'text-white/90' : 'text-gray-400'}`}>
-                      {calculateLevelInfo(getProfileTotalEarned(p)).name}
+                      {calculateLevelInfo(getProfileTotalEarned(p), language).name}
                     </span>
                   </div>
                 </div>

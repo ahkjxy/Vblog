@@ -1,6 +1,7 @@
 import { Icon } from "./Icon";
 import { Profile } from "../types";
-import { calculateLevelInfo, getProfileTotalEarned, ROLE_LABELS } from "../utils/leveling";
+import { calculateLevelInfo, getProfileTotalEarned, getRoleLabel } from "../utils/leveling";
+import { Language, useTranslation } from "../i18n/translations";
 
 interface SidebarProps {
   activeTab: "dashboard" | "earn" | "redeem" | "history" | "settings" | "achievements";
@@ -8,6 +9,7 @@ interface SidebarProps {
   isAdmin: boolean;
   currentProfile: Profile;
   onToggleProfileSwitcher?: () => void;
+  language?: Language;
 }
 
 export function Sidebar({
@@ -16,8 +18,19 @@ export function Sidebar({
   isAdmin,
   currentProfile,
   onToggleProfileSwitcher,
+  language = 'zh',
 }: SidebarProps) {
-  const levelInfo = calculateLevelInfo(getProfileTotalEarned(currentProfile));
+  const { t } = useTranslation(language);
+  const levelInfo = calculateLevelInfo(getProfileTotalEarned(currentProfile), language);
+
+  const navItems = [
+    { id: "dashboard" as const, icon: "home", label: t.nav.dashboard },
+    { id: "earn" as const, icon: "plus", label: t.nav.earn },
+    { id: "redeem" as const, icon: "reward", label: t.nav.redeem },
+    { id: "history" as const, icon: "history", label: t.nav.history },
+    { id: "achievements" as const, icon: "reward", label: t.nav.achievements },
+    ...(isAdmin ? [{ id: "settings" as const, icon: "settings", label: t.nav.settings }] : []),
+  ];
 
   return (
     <aside className="glass-sidebar w-64 flex flex-col p-6 h-screen sticky top-0 shrink-0 overflow-hidden border-r border-white/20 dark:border-white/5 shadow-[20px_0_40px_-20px_rgba(0,0,0,0.05)]">
@@ -27,23 +40,16 @@ export function Sidebar({
         </div>
         <div>
           <h1 className="text-xl font-bold font-display leading-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
-            元气银行
+            {t.app.name}
           </h1>
           <p className="text-[10px] font-bold text-[#FF4D94] uppercase tracking-[0.2em] opacity-80">
-            让家庭更美好
+            {t.app.slogan}
           </p>
         </div>
       </div>
 
       <nav className="flex-1 space-y-1.5 overflow-y-auto no-scrollbar pb-4">
-        {[
-          { id: "dashboard", icon: "home", label: "账户概览" },
-          { id: "earn", icon: "plus", label: "元气任务" },
-          { id: "redeem", icon: "reward", label: "梦想商店" },
-          { id: "history", icon: "history", label: "能量账单" },
-          { id: "achievements", icon: "reward", label: "成就中心" },
-          ...(isAdmin ? [{ id: "settings", icon: "settings", label: "系统配置" }] : []),
-        ].map((tab) => {
+        {navItems.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
@@ -83,7 +89,7 @@ export function Sidebar({
             <Icon name="book-open" size={16} />
           </div>
           <div className="flex-1 min-w-0 relative z-10">
-            <p className="text-sm font-black text-gray-900 dark:text-white">访问博客</p>
+            <p className="text-sm font-black text-gray-900 dark:text-white">{t.nav.blog}</p>
             <p className="text-[9px] font-bold text-[#FF4D94] uppercase tracking-widest">Family Bank Blog</p>
           </div>
           <Icon name="arrow-right" size={14} className="text-[#FF4D94] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all relative z-10" />
@@ -103,7 +109,7 @@ export function Sidebar({
                <div className="flex-1 min-w-0">
                   <p className="text-sm font-black text-gray-900 dark:text-white truncate">{currentProfile.name}</p>
                   <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none flex items-center gap-1">
-                    {ROLE_LABELS[currentProfile.role]}
+                    {getRoleLabel(currentProfile.role, language)}
                     <Icon name="settings" size={8} className="opacity-0 group-hover/sidebar-me:opacity-100 transition-opacity ml-1" />
                   </p>
                </div>
@@ -115,7 +121,7 @@ export function Sidebar({
                   <span className={`text-[8px] font-black uppercase ${levelInfo.color}`}>{levelInfo.name}</span>
                </div>
                <div className="text-right">
-                  <p className="text-[10px] font-black text-[#FF4D94] points-font leading-none">{currentProfile.balance} <span className="text-[7px] font-bold ml-0.5 mt-[-1px] align-middle">元气</span></p>
+                  <p className="text-[10px] font-black text-[#FF4D94] points-font leading-none">{currentProfile.balance} <span className="text-[7px] font-bold ml-0.5 mt-[-1px] align-middle">{t.dashboard.points}</span></p>
                </div>
             </div>
           </div>

@@ -6,6 +6,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { Icon } from './Icon';
 import { PillTabs } from './PillTabs';
 import { Pagination } from './Pagination';
+import { Language, useTranslation } from '../i18n/translations';
 
 type HistoryTab = 'all' | 'earn' | 'penalty' | 'redeem' | 'transfer' | 'system';
 
@@ -13,9 +14,11 @@ interface HistorySectionProps {
   history: Transaction[];
   isAdmin?: boolean;
   onDeleteTransactions?: (ids: string[]) => Promise<boolean>;
+  language?: Language;
 }
 
-export function HistorySection({ history, isAdmin = false, onDeleteTransactions }: HistorySectionProps) {
+export function HistorySection({ history, isAdmin = false, onDeleteTransactions, language = 'zh' }: HistorySectionProps) {
+  const { t } = useTranslation(language);
   const { showToast } = useToast();
   const [confirmDialog, setConfirmDialog] = useState<{
     title: string;
@@ -28,12 +31,12 @@ export function HistorySection({ history, isAdmin = false, onDeleteTransactions 
   const [activeTab, setActiveTab] = useState<HistoryTab>('all');
 
   const historyTabs = [
-    { id: 'all', label: '全部', icon: '🧾' },
-    { id: 'earn', label: '收入', icon: '💰' },
-    { id: 'penalty', label: '支出', icon: '⚠️' },
-    { id: 'redeem', label: '商城', icon: '🎁' },
-    { id: 'transfer', label: '转赠', icon: '💝' },
-    { id: 'system', label: '系统', icon: '⚙️' },
+    { id: 'all', label: t.history.all, icon: '🧾' },
+    { id: 'earn', label: t.history.income, icon: '💰' },
+    { id: 'penalty', label: t.history.expense, icon: '⚠️' },
+    { id: 'redeem', label: t.history.store, icon: '🎁' },
+    { id: 'transfer', label: t.history.transfer, icon: '💝' },
+    { id: 'system', label: t.history.system, icon: '⚙️' },
   ];
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
@@ -87,11 +90,11 @@ export function HistorySection({ history, isAdmin = false, onDeleteTransactions 
 
   const renderTypeBadge = (type: Transaction['type']) => {
     const map: Record<Transaction['type'], { label: string; cls: string; icon: string }> = {
-      earn: { label: '收入', cls: 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-transparent', icon: 'plus' },
-      penalty: { label: '支出', cls: 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-transparent', icon: 'penalty' },
-      redeem: { label: '兑换', cls: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-transparent', icon: 'reward' },
-      transfer: { label: '转赠', cls: 'bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-500/10 dark:text-purple-400 dark:border-transparent', icon: 'history' },
-      system: { label: '系统奖励', cls: 'bg-slate-50 text-slate-600 border-slate-100 dark:bg-slate-500/10 dark:text-slate-400 dark:border-transparent', icon: 'plus' },
+      earn: { label: t.history.income, cls: 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-transparent', icon: 'plus' },
+      penalty: { label: t.history.expense, cls: 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-transparent', icon: 'penalty' },
+      redeem: { label: t.history.redeem, cls: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-transparent', icon: 'reward' },
+      transfer: { label: t.history.transfer, cls: 'bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-500/10 dark:text-purple-400 dark:border-transparent', icon: 'history' },
+      system: { label: t.history.systemReward, cls: 'bg-slate-50 text-slate-600 border-slate-100 dark:bg-slate-500/10 dark:text-slate-400 dark:border-transparent', icon: 'plus' },
     };
     const item = map[type] || map['earn'];
     return <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${item.cls}`}>{item.label}</span>;
@@ -162,22 +165,22 @@ export function HistorySection({ history, isAdmin = false, onDeleteTransactions 
           <div className="max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF4D94]/10 text-[#FF4D94] text-[10px] font-black uppercase tracking-[0.2em] mb-4">
               <div className="w-1.5 h-1.5 rounded-full bg-[#FF4D94] animate-pulse"></div>
-              交易日志
+              {t.history.transactionLog}
             </div>
             <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 dark:text-white leading-tight tracking-tight mb-1.5 sm:mb-2">
-              梦想商店
+              {t.history.title}
             </h3>
             <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 font-medium hidden sm:block">
-              用努力赚来的元气能量，去兑换那些期待已久的梦想吧！
+              {t.history.subtitle}
             </p>
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full lg:w-auto">
             {[
-              { label: '全部记录', val: stats.total, color: 'text-gray-900 dark:text-white' },
-              { label: '本周活跃', val: stats.week, color: 'text-blue-500' },
-              { label: '净能量', val: `${stats.net > 0 ? '+' : ''}${stats.net}`, color: stats.net >= 0 ? 'text-emerald-500' : 'text-rose-500' },
-              { label: '兑换数', val: stats.redeemCount, color: 'text-[#7C4DFF]' },
+              { label: t.history.totalRecords, val: stats.total, color: 'text-gray-900 dark:text-white' },
+              { label: t.history.weeklyActive, val: stats.week, color: 'text-blue-500' },
+              { label: t.history.netEnergy, val: `${stats.net > 0 ? '+' : ''}${stats.net}`, color: stats.net >= 0 ? 'text-emerald-500' : 'text-rose-500' },
+              { label: t.history.redeemCount, val: stats.redeemCount, color: 'text-[#7C4DFF]' },
             ].map((s, i) => (
               <div key={i} className="bg-gray-50/50 dark:bg-white/5 p-4 rounded-[24px] border border-gray-100 dark:border-transparent text-center">
                 <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 truncate">{s.label}</p>
@@ -200,21 +203,21 @@ export function HistorySection({ history, isAdmin = false, onDeleteTransactions 
         <div className="flex items-center justify-between px-8 py-4 bg-[#1A1A1A] dark:bg-white text-white dark:text-gray-900 rounded-[24px] shadow-2xl animate-in slide-in-from-top-4 duration-300">
           <div className="flex items-center gap-4">
             <div className="w-8 h-8 rounded-full bg-[#FF4D94] flex items-center justify-center text-xs font-black">{selectedCount}</div>
-            <span className="text-sm font-black uppercase tracking-widest">已选记录</span>
+            <span className="text-sm font-black uppercase tracking-widest">{t.history.selectedRecords}</span>
           </div>
           <div className="flex gap-3 flex-1 justify-end max-w-[280px]">
             <button 
               onClick={clearSelection} 
               className="btn-base btn-secondary flex-1"
             >
-              取消
+              {t.common.cancel}
             </button>
             <button 
               onClick={handleBatchDelete} 
               disabled={isDeleting}
               className="btn-base bg-rose-500 text-white flex-[1.5] shadow-lg shadow-rose-500/20"
             >
-              {isDeleting ? '中...' : '永久删除'}
+              {isDeleting ? t.history.deleting : t.history.permanentDelete}
             </button>
           </div>
         </div>
@@ -269,10 +272,10 @@ export function HistorySection({ history, isAdmin = false, onDeleteTransactions 
                   {h.points > 0 ? '+' : ''}{h.points}
                 </span>
                 <span className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest pb-1">
-                  元气
+                  {t.common.energy}
                 </span>
               </div>
-              <p className="text-[8px] font-bold text-gray-300 dark:text-gray-600 uppercase tracking-[0.2em] transform -translate-y-1">能量记录</p>
+              <p className="text-[8px] font-bold text-gray-300 dark:text-gray-600 uppercase tracking-[0.2em] transform -translate-y-1">{t.history.energyRecord}</p>
             </div>
 
             {/* Selection UI (Desktop) */}
@@ -289,7 +292,7 @@ export function HistorySection({ history, isAdmin = false, onDeleteTransactions 
         {filtered.length === 0 && (
           <div className="py-32 flex flex-col items-center justify-center text-center gap-4 bg-white/50 dark:bg-white/5 rounded-[40px] border border-dashed border-gray-200 dark:border-white/10">
             <div className="w-20 h-20 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center text-4xl opacity-50">📑</div>
-            <p className="text-lg font-black text-gray-400 uppercase tracking-widest">目前没有任何账单记录</p>
+            <p className="text-lg font-black text-gray-400 uppercase tracking-widest">{t.history.noRecords}</p>
           </div>
         )}
       </div>

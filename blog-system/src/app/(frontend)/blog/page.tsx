@@ -3,6 +3,17 @@ import Link from 'next/link'
 import { formatDate, formatAuthorName } from '@/lib/utils'
 import { Calendar, Eye, User, ArrowRight } from 'lucide-react'
 import { FamilyBankCTA } from '@/components/FamilyBankCTA'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: '文档中心',
+  description: '浏览元气银行的所有文档和教程，了解如何使用家庭积分管理系统，学习家庭教育和习惯养成的最佳实践。',
+  openGraph: {
+    title: '文档中心 | 元气银行博客',
+    description: '浏览元气银行的所有文档和教程',
+    type: 'website',
+  },
+}
 
 // 定义文章类型
 type PostWithProfile = {

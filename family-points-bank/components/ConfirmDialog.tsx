@@ -1,5 +1,6 @@
 import { Icon } from './Icon';
 import { Modal } from './Modal';
+import { Language, useTranslation } from '../i18n/translations';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -10,9 +11,12 @@ interface ConfirmDialogProps {
   tone?: 'danger' | 'info';
   onConfirm: () => void;
   onCancel: () => void;
+  language?: Language;
 }
 
-export function ConfirmDialog({ open, title, description, confirmText = '确认', cancelText = '取消', tone = 'danger', onConfirm, onCancel }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, title, description, confirmText, cancelText, tone = 'danger', onConfirm, onCancel, language = 'zh' }: ConfirmDialogProps) {
+  const { t } = useTranslation(language);
+  
   return (
     <Modal isOpen={open} onClose={onCancel} maxWidth="max-w-[420px]">
         <div className="flex flex-col items-center text-center space-y-6">
@@ -23,7 +27,7 @@ export function ConfirmDialog({ open, title, description, confirmText = '确认'
           </div>
           
           <div className="space-y-2">
-            <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">Confirmation</p>
+            <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">{t.confirmDialog.confirmation}</p>
             <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{title}</h3>
             {description && <p className="text-sm font-medium text-gray-500 dark:text-gray-400 max-w-[280px] mx-auto leading-relaxed">{description}</p>}
           </div>
@@ -33,7 +37,7 @@ export function ConfirmDialog({ open, title, description, confirmText = '确认'
               onClick={onCancel}
               className="btn-base btn-secondary flex-1"
             >
-              {cancelText}
+              {cancelText || t.buttons.cancel}
             </button>
             <button
               onClick={onConfirm}
@@ -43,7 +47,7 @@ export function ConfirmDialog({ open, title, description, confirmText = '确认'
                   : 'btn-primary'
               }`}
             >
-              {confirmText}
+              {confirmText || t.buttons.confirm}
             </button>
           </div>
         </div>

@@ -87,17 +87,27 @@ export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
             
             {/* Right side - CTA Button */}
             <div className="flex-shrink-0">
-              <a
-                href={familyBankUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-purple-600 rounded-full font-bold text-lg hover:bg-purple-50 transition-all hover:scale-110 hover:shadow-2xl group"
-              >
-                <span>{isLoggedIn ? '进入元气银行后台' : '立即免费体验'}</span>
-                <ExternalLink className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </a>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <a
+                  href={familyBankUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-white text-purple-600 rounded-full font-bold text-lg hover:bg-purple-50 transition-all hover:scale-110 hover:shadow-2xl group"
+                >
+                  <span>{isLoggedIn ? '进入后台' : '立即体验'}</span>
+                  <ExternalLink className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </a>
+                <a
+                  href="https://www.familybank.chat/download/family-bank.apk"
+                  download
+                  className="inline-flex items-center gap-2 px-6 py-4 bg-white/20 backdrop-blur-sm text-white border-2 border-white/50 rounded-full font-bold hover:bg-white/30 transition-all hover:scale-110 group"
+                >
+                  <Smartphone className="w-5 h-5" />
+                  <span>安卓版</span>
+                </a>
+              </div>
               <div className="text-center mt-3 text-xs text-white/80">
-                ✨ 无需注册 · 即刻体验
+                ✨ 无需注册 · 即刻体验 · 支持安卓
               </div>
             </div>
           </div>
@@ -137,9 +147,18 @@ export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
             <ExternalLink className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
           </a>
           
-          <div className="text-sm text-white/80">
-            ✨ 无需注册 · 即刻体验
-          </div>
+          <a
+            href="https://www.familybank.chat/download/family-bank.apk"
+            download
+            className="inline-flex items-center gap-3 px-10 py-5 bg-white/20 backdrop-blur-sm text-white border-2 border-white/50 rounded-full font-bold text-lg hover:bg-white/30 transition-all hover:scale-110 hover:shadow-2xl group"
+          >
+            <Smartphone className="w-6 h-6" />
+            <span>下载安卓版</span>
+          </a>
+        </div>
+        
+        <div className="text-sm text-white/80 mb-8">
+          ✨ 无需注册 · 即刻体验 · 支持安卓手机
         </div>
         
         {/* Features Grid */}

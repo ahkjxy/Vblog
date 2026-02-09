@@ -3,25 +3,28 @@ import { Icon } from "./Icon";
 import { PillTabs } from "./PillTabs";
 import { Pagination } from "./Pagination";
 import { calculateLevelInfo, getProfileTotalEarned } from "../utils/leveling";
-import { useState, useMemo, useEffect } from "react"; // Added missing imports
+import { useState, useMemo, useEffect } from "react";
+import { Language, useTranslation } from "../i18n/translations";
 
 interface EarnSectionProps {
   tasks: Task[];
   onSelectTask: (payload: { title: string; points: number; type: "earn" | "penalty" }) => void;
   currentProfile: Profile;
+  language?: Language;
 }
 
-export function EarnSection({ tasks, onSelectTask, currentProfile }: EarnSectionProps) {
+export function EarnSection({ tasks, onSelectTask, currentProfile, language = 'zh' }: EarnSectionProps) {
+  const { t } = useTranslation(language);
   const [activeTab, setActiveTab] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   const categoryTabs = [
-    { id: "all", label: "全部任务", icon: "✨" },
-    { id: "learning", label: "学习习惯", icon: "📘" },
-    { id: "chores", label: "家务帮手", icon: "🧹" },
-    { id: "discipline", label: "自律养成", icon: "⏰" },
-    { id: "penalty", label: "违规警示", icon: "⚠️" },
+    { id: "all", label: t.earn.allTasks, icon: "✨" },
+    { id: "learning", label: t.earn.learning, icon: "📘" },
+    { id: "chores", label: t.earn.chores, icon: "🧹" },
+    { id: "discipline", label: t.earn.discipline, icon: "⏰" },
+    { id: "penalty", label: t.earn.penalty, icon: "⚠️" },
   ];
 
   const getMeta = (cat: string) => {
@@ -90,10 +93,10 @@ export function EarnSection({ tasks, onSelectTask, currentProfile }: EarnSection
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF4D94]/10 text-[#FF4D94] text-[10px] font-black uppercase tracking-[0.3em] mb-4">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#FF4D94] animate-pulse"></div>
-                任务中心
+                {t.earn.taskCenter}
               </div>
               <h3 className="text-4xl lg:text-5xl font-black text-gray-900 dark:text-white leading-tight tracking-tighter">
-                元气任务工场
+                {t.earn.taskWorkshop}
               </h3>
             </div>
             
@@ -101,18 +104,18 @@ export function EarnSection({ tasks, onSelectTask, currentProfile }: EarnSection
             <div className="flex items-center gap-5 p-5 rounded-[32px] bg-gray-50/80 dark:bg-white/5 border border-white/40 dark:border-white/5 max-w-lg shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] group/progress relative overflow-hidden">
                <div className="absolute inset-0 bg-gradient-to-r from-[#FF4D94]/5 to-transparent opacity-0 group-hover/progress:opacity-100 transition-opacity duration-700" />
                
-               <div className={`shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-transform group-hover/progress:scale-110 bg-white dark:bg-gray-800 ${calculateLevelInfo(getProfileTotalEarned(currentProfile)).color} relative z-10`}>
-                  <Icon name={calculateLevelInfo(getProfileTotalEarned(currentProfile)).icon as any} size={28} />
+               <div className={`shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-transform group-hover/progress:scale-110 bg-white dark:bg-gray-800 ${calculateLevelInfo(getProfileTotalEarned(currentProfile), language).color} relative z-10`}>
+                  <Icon name={calculateLevelInfo(getProfileTotalEarned(currentProfile), language).icon as any} size={28} />
                </div>
                <div className="flex-1 min-w-0 relative z-10">
                   <div className="flex justify-between items-end mb-2">
-                    <p className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-widest opacity-80">{calculateLevelInfo(getProfileTotalEarned(currentProfile)).name}</p>
-                    <p className="text-[10px] font-black tabular-nums text-[#FF4D94] bg-[#FF4D94]/10 px-2 py-0.5 rounded-full">LV.{calculateLevelInfo(getProfileTotalEarned(currentProfile)).level}</p>
+                    <p className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-widest opacity-80">{calculateLevelInfo(getProfileTotalEarned(currentProfile), language).name}</p>
+                    <p className="text-[10px] font-black tabular-nums text-[#FF4D94] bg-[#FF4D94]/10 px-2 py-0.5 rounded-full">LV.{calculateLevelInfo(getProfileTotalEarned(currentProfile), language).level}</p>
                   </div>
                   <div className="h-2 w-full bg-white dark:bg-black/40 rounded-full overflow-hidden p-[1px] shadow-inner">
                      <div 
                        className="h-full bg-gradient-to-r from-[#FF4D94] via-[#FF7AB8] to-[#7C4DFF] rounded-full transition-all duration-1000 relative" 
-                       style={{ width: `${calculateLevelInfo(getProfileTotalEarned(currentProfile)).progress}%` }}
+                       style={{ width: `${calculateLevelInfo(getProfileTotalEarned(currentProfile), language).progress}%` }}
                      >
                        <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.3)_50%,transparent_100%)] animate-[shimmer_2s_infinite] -skew-x-12" />
                      </div>
@@ -123,9 +126,9 @@ export function EarnSection({ tasks, onSelectTask, currentProfile }: EarnSection
 
           <div className="flex gap-3 lg:gap-4 lg:min-w-[420px] mb-2">
             {[
-              { label: "任务库", val: stats.total, sub: "总数", color: "text-gray-900 dark:text-white" },
-              { label: "每日必做", val: stats.daily, sub: "每日", color: "text-emerald-500" },
-              { label: "高额挑战", val: stats.highValue, sub: "高额", color: "text-[#7C4DFF]" },
+              { label: t.earn.taskLibrary, val: stats.total, sub: t.earn.total, color: "text-gray-900 dark:text-white" },
+              { label: t.earn.dailyMust, val: stats.daily, sub: t.earn.daily, color: "text-emerald-500" },
+              { label: t.earn.highValue, val: stats.highValue, sub: t.earn.high, color: "text-[#7C4DFF]" },
             ].map((s, i) => (
               <div
                 key={i}
@@ -199,13 +202,13 @@ export function EarnSection({ tasks, onSelectTask, currentProfile }: EarnSection
                   {task.title}
                 </h4>
                 <p className="text-[11px] sm:text-sm text-gray-500 dark:text-gray-400 font-medium line-clamp-1 sm:line-clamp-2 leading-snug">
-                  {task.description || "完成后请点击记录"}
+                  {task.description || t.earn.clickToRecord}
                 </p>
               </div>
 
               <div className="mt-2 sm:mt-4 pt-2 sm:pt-3 border-t border-gray-50 dark:border-white/5 flex items-center justify-between">
                 <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400">
-                  {task.frequency || "随时"}
+                  {task.frequency || t.earn.anytime}
                 </span>
                 <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-300 dark:text-gray-600 group-hover:bg-[#FF4D94] group-hover:text-white transition-all">
                   <Icon name="plus" size={10} className="sm:hidden" />
@@ -234,7 +237,7 @@ export function EarnSection({ tasks, onSelectTask, currentProfile }: EarnSection
             📋
           </div>
           <p className="text-lg font-black text-gray-400 uppercase tracking-widest">
-            暂无该分类任务
+            {t.earn.noTasks}
           </p>
         </div>
       )}

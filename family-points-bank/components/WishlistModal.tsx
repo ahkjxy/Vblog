@@ -2,14 +2,17 @@ import { useState } from "react";
 import { Modal } from "./Modal";
 import { Icon } from "./Icon";
 import { useToast } from "./Toast";
+import { Language, useTranslation } from "../i18n/translations";
 
 interface WishlistModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (title: string, points: number, type: "实物奖品" | "特权奖励", imageUrl?: string) => Promise<void>;
+  language?: Language;
 }
 
-export function WishlistModal({ open, onClose, onSubmit }: WishlistModalProps) {
+export function WishlistModal({ open, onClose, onSubmit, language = 'zh' }: WishlistModalProps) {
+  const { t } = useTranslation(language);
   const [title, setTitle] = useState("");
   const [points, setPoints] = useState<number>(10);
   const [type, setType] = useState<"实物奖品" | "特权奖励">("实物奖品");
@@ -20,25 +23,25 @@ export function WishlistModal({ open, onClose, onSubmit }: WishlistModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      showToast({ type: "error", title: "请输入愿望名称" });
+      showToast({ type: "error", title: t.wishlistModal.enterWishName });
       return;
     }
     if (points <= 0) {
-      showToast({ type: "error", title: "积分必须大于0" });
+      showToast({ type: "error", title: t.wishlistModal.pointsMustBePositive });
       return;
     }
 
     setLoading(true);
     try {
       await onSubmit(title.trim(), points, type, imageUrl || undefined);
-      showToast({ type: "success", title: "愿望已提交", description: "等待管理员审核" });
+      showToast({ type: "success", title: t.wishlistModal.wishSubmitted, description: t.wishlistModal.waitingApproval });
       setTitle("");
       setPoints(10);
       setType("实物奖品");
       setImageUrl("");
       onClose();
     } catch (error) {
-      showToast({ type: "error", title: "提交失败", description: (error as Error).message });
+      showToast({ type: "error", title: t.wishlistModal.submitFailed, description: (error as Error).message });
     } finally {
       setLoading(false);
     }
@@ -59,9 +62,9 @@ export function WishlistModal({ open, onClose, onSubmit }: WishlistModalProps) {
     <Modal isOpen={open} onClose={onClose} maxWidth="max-w-[440px]">
         <div className="flex justify-between items-start mb-6">
           <div className="space-y-1">
-            <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">Wishlist Portal</p>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">许下美好愿望</h3>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">告诉银行管理员您想要什么奖励</p>
+            <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">{t.wishlistModal.title}</p>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t.wishlistModal.subtitle}</h3>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t.wishlistModal.description}</p>
           </div>
           <button
             onClick={onClose}
@@ -73,19 +76,19 @@ export function WishlistModal({ open, onClose, onSubmit }: WishlistModalProps) {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-3">
-            <label className="text-[11px] font-black uppercase text-gray-400 dark:text-gray-500 ml-4 tracking-[0.2em]">愿望名称 / Title</label>
+            <label className="text-[11px] font-black uppercase text-gray-400 dark:text-gray-500 ml-4 tracking-[0.2em]">{t.wishlistModal.wishName}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="例如：乐高积木、游乐园门票"
+              placeholder={t.wishlistModal.wishNamePlaceholder}
               className="w-full px-6 py-4 bg-gray-50 dark:bg-white/5 border border-transparent dark:border-white/5 rounded-[24px] font-bold text-sm outline-none focus:ring-2 focus:ring-[#FF4D94] transition-all shadow-inner"
               maxLength={50}
             />
           </div>
 
           <div className="space-y-3">
-            <label className="text-[11px] font-black uppercase text-gray-400 dark:text-gray-500 ml-4 tracking-[0.2em]">所需元气</label>
+            <label className="text-[11px] font-black uppercase text-gray-400 dark:text-gray-500 ml-4 tracking-[0.2em]">{t.wishlistModal.requiredPoints}</label>
             <div className="relative group">
               <input
                 type="number"
@@ -95,16 +98,18 @@ export function WishlistModal({ open, onClose, onSubmit }: WishlistModalProps) {
                 max={10000}
                 className="w-full px-8 py-4 bg-gray-50 dark:bg-white/5 border border-transparent dark:border-white/5 rounded-[24px] font-black text-xl points-font outline-none focus:ring-2 focus:ring-[#FF4D94] transition-all shadow-inner"
               />
-              <span className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-300 uppercase tracking-widest pointer-events-none">元气</span>
+              <span className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-300 uppercase tracking-widest pointer-events-none">
+                {t.app.points}
+              </span>
             </div>
           </div>
 
           <div className="space-y-3">
-            <label className="text-[11px] font-black uppercase text-gray-400 dark:text-gray-500 ml-4 tracking-[0.2em]">奖励类别 / Type</label>
+            <label className="text-[11px] font-black uppercase text-gray-400 dark:text-gray-500 ml-4 tracking-[0.2em]">{t.wishlistModal.rewardCategory}</label>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { id: '实物奖品', label: '实物奖品', icon: '🎁' },
-                { id: '特权奖励', label: '特权奖励', icon: '⭐' },
+                { id: '实物奖品', label: t.wishlistModal.physicalReward, icon: '🎁' },
+                { id: '特权奖励', label: t.wishlistModal.privilegeReward, icon: '⭐' },
               ].map(opt => (
                 <button
                   key={opt.id}
@@ -124,7 +129,7 @@ export function WishlistModal({ open, onClose, onSubmit }: WishlistModalProps) {
           </div>
 
           <div className="space-y-3">
-            <label className="text-[11px] font-black uppercase text-gray-400 dark:text-gray-500 ml-4 tracking-[0.2em]">图片预览 / Photo</label>
+            <label className="text-[11px] font-black uppercase text-gray-400 dark:text-gray-500 ml-4 tracking-[0.2em]">{t.wishlistModal.imagePreview}</label>
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-white/5 border border-transparent dark:border-white/5 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
                 {imageUrl ? (
@@ -135,7 +140,7 @@ export function WishlistModal({ open, onClose, onSubmit }: WishlistModalProps) {
               </div>
               <label className="flex-1 py-4 bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-[20px] text-[10px] font-black uppercase tracking-widest text-center cursor-pointer hover:border-[#FF4D94] transition-all flex items-center justify-center gap-2 text-gray-500">
                 <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                {imageUrl ? "更换图片" : "点击上传图片"}
+                {imageUrl ? t.wishlistModal.changeImage : t.wishlistModal.uploadImage}
               </label>
             </div>
           </div>
@@ -146,7 +151,7 @@ export function WishlistModal({ open, onClose, onSubmit }: WishlistModalProps) {
               onClick={onClose}
               className="btn-base btn-secondary flex-1"
             >
-              取消
+              {t.wishlistModal.cancel}
             </button>
             <button
               type="submit"
@@ -158,7 +163,7 @@ export function WishlistModal({ open, onClose, onSubmit }: WishlistModalProps) {
               ) : (
                 <Icon name="check" size={16} />
               )}
-              {loading ? '提交中...' : '提交我的愿望'}
+              {loading ? t.wishlistModal.submitting : t.wishlistModal.submitWish}
             </button>
           </div>
         </form>

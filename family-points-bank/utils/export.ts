@@ -220,7 +220,7 @@ export function generateHTMLReport(
         </div>
 
         <div class="footer">
-            让家庭更加美好 · <strong>Energy Bank Systems</strong><br>
+            让家庭更加美好 · <strong>Family Bank Systems</strong><br>
             © 2026 王氏家庭委员会版权所有
         </div>
     </div>

@@ -1,5 +1,6 @@
 import { Task, Category } from '../types';
 import { Icon } from './Icon';
+import { Language } from '../i18n/translations';
 
 interface TaskSettingsProps {
   tasks: Task[];
@@ -10,15 +11,29 @@ interface TaskSettingsProps {
   onEdit: (task: Task) => void;
   onBatchDelete: () => void;
   isDeleting: boolean;
+  language?: Language;
 }
 
-const CATEGORY_LABELS: Record<Category, string> = {
-  learning: '学习',
-  chores: '家务',
-  discipline: '自律',
-  penalty: '违规',
-  reward: '奖励',
-};
+// 获取分类标签的函数
+function getCategoryLabel(category: Category, language: Language = 'zh'): string {
+  const labels: Record<Language, Record<Category, string>> = {
+    zh: {
+      learning: '学习',
+      chores: '家务',
+      discipline: '自律',
+      penalty: '违规',
+      reward: '奖励',
+    },
+    en: {
+      learning: 'Learning',
+      chores: 'Chores',
+      discipline: 'Discipline',
+      penalty: 'Penalty',
+      reward: 'Reward',
+    },
+  };
+  return labels[language][category];
+}
 
 const CATEGORY_COLORS: Record<Category, string> = {
   learning: 'bg-blue-100 text-blue-700',
@@ -37,10 +52,16 @@ export function TaskSettings({
   onEdit,
   onBatchDelete,
   isDeleting,
+  language = 'zh',
 }: TaskSettingsProps) {
   const categories: (Category | 'all')[] = ['all', 'learning', 'chores', 'discipline', 'penalty'];
 
   const filteredTasks = filter === 'all' ? tasks : tasks.filter(t => t.category === filter);
+
+  // 翻译文本
+  const allText = language === 'zh' ? '全部' : 'All';
+  const deleteText = language === 'zh' ? `删除 ${selectedIds.size}` : `Delete ${selectedIds.size}`;
+  const totalText = language === 'zh' ? `共 ${filteredTasks.length} 个任务` : `${filteredTasks.length} tasks in total`;
 
   return (
     <div className="space-y-4">
@@ -56,7 +77,7 @@ export function TaskSettings({
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              {cat === 'all' ? '全部' : CATEGORY_LABELS[cat]}
+              {cat === 'all' ? allText : getCategoryLabel(cat, language)}
             </button>
           ))}
         </div>
@@ -68,11 +89,11 @@ export function TaskSettings({
               className="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 disabled:opacity-50"
             >
               <Icon name="delete" size={14} className="inline-block mr-1" />
-              删除 {selectedIds.size}
+              {deleteText}
             </button>
           )}
           <span className="text-xs text-gray-500">
-            共 {filteredTasks.length} 个任务
+            {totalText}
           </span>
         </div>
       </div>
@@ -91,13 +112,13 @@ export function TaskSettings({
             />
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: CATEGORY_COLORS[task.category]?.split(' ')[0] || '#F3F4F6' }}>
               <span className="text-xs font-bold" style={{ color: CATEGORY_COLORS[task.category]?.split(' ')[1] || '#374151' }}>
-                {CATEGORY_LABELS[task.category][0]}
+                {getCategoryLabel(task.category, language)[0]}
               </span>
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className={`text-xs px-2 py-0.5 rounded-full ${CATEGORY_COLORS[task.category]}`}>
-                  {CATEGORY_LABELS[task.category]}
+                  {getCategoryLabel(task.category, language)}
                 </span>
                 <span className="font-semibold text-gray-900 text-sm">{task.title}</span>
               </div>

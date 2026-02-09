@@ -1,4 +1,15 @@
 import { Shield, Lock, Eye, Cookie, UserCheck, Baby, RefreshCw, Mail } from 'lucide-react'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: '隐私政策',
+  description: '元气银行隐私政策 - 了解我们如何收集、使用和保护您的个人信息。我们承诺保护用户隐私和数据安全。',
+  openGraph: {
+    title: '隐私政策 | 元气银行博客',
+    description: '了解我们如何收集、使用和保护您的个人信息',
+    type: 'website',
+  },
+}
 
 export default function PrivacyPage() {
   const sections = [

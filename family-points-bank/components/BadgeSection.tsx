@@ -4,11 +4,13 @@ import { BadgeDisplay } from "./BadgeDisplay";
 import { Icon } from "./Icon";
 import { supabase } from "../supabaseClient";
 import { useToast } from "./Toast";
+import { Language, useTranslation } from "../i18n/translations";
 
 interface BadgeSectionProps {
   profile: Profile;
   familyId: string;
   onBadgeClaimed?: (badges: { id: string; title: string }[]) => void;
+  language?: Language;
 }
 
 interface AvailableBadge {
@@ -23,7 +25,8 @@ interface AvailableBadge {
   earned_at?: string;
 }
 
-export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSectionProps) {
+export function BadgeSection({ profile, familyId, onBadgeClaimed, language = 'zh' }: BadgeSectionProps) {
+  const { t, replace } = useTranslation(language);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [availableBadges, setAvailableBadges] = useState<AvailableBadge[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +113,7 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
       }
     } catch (error) {
       console.error("Failed to load badges:", error);
-      showToast({ type: "error", title: "加载徽章失败" });
+      showToast({ type: "error", title: t.badge.loadFailed });
     } finally {
       setLoading(false);
     }
@@ -121,8 +124,8 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
     if (!isValidUUID(profile.id)) {
       showToast({ 
         type: "error", 
-        title: "无法领取徽章", 
-        description: "请先同步数据到云端" 
+        title: t.badge.claimFailed, 
+        description: t.badge.syncFirst
       });
       return;
     }
@@ -146,8 +149,8 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
       if (count > 0) {
         showToast({
           type: "success",
-          title: "恭喜获得新徽章！",
-          description: `成功获得 ${count} 个新徽章`,
+          title: t.badge.claimSuccess,
+          description: replace(t.badge.claimed, { count }),
         });
         
         // 重新加载徽章
@@ -173,10 +176,10 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
           }
         }
       } else {
-        showToast({ type: "info", title: "暂无可领取的徽章" });
+        showToast({ type: "info", title: t.badge.noClaim });
       }
     } catch (error) {
-      showToast({ type: "error", title: "领取失败", description: (error as Error).message });
+      showToast({ type: "error", title: t.achievements.claimFailed, description: (error as Error).message });
     }
   };
 
@@ -196,7 +199,7 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
               : "text-gray-400 hover:text-[#FF4D94]"
           }`}
         >
-          全部徽章 ({badges.length + availableBadges.length})
+          {t.achievements.badges} ({badges.length + availableBadges.length})
         </button>
         <button
           onClick={() => setActiveTab("available")}
@@ -206,7 +209,7 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
               : "text-gray-400 hover:text-[#FF4D94]"
           }`}
         >
-          可领取 ({availableBadges.filter(b => b.progress >= b.requirement).length})
+          {t.badge.claimable} ({availableBadges.filter(b => b.progress >= b.requirement).length})
         </button>
       </div>
 
@@ -218,10 +221,10 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
               <Icon name="settings" size={40} className="opacity-30 text-gray-400" />
             </div>
             <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              数据未同步
+              {t.badge.dataNotSynced}
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
-              成就徽章功能需要将数据同步到云端。请前往设置页面完成数据同步。
+              {t.badge.syncRequired}
             </p>
           </div>
         ) : loading ? (
@@ -233,7 +236,10 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  已获得 {badges.length} / {badges.length + availableBadges.length} 个徽章
+                  {replace(t.badge.earnedProgress, { 
+                    earned: badges.length, 
+                    total: badges.length + availableBadges.length 
+                  })}
                 </p>
                 <div className="mt-2 w-full max-w-xs h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
                   <div 
@@ -247,7 +253,7 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
                 className="px-5 py-2.5 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-pink-500/30 transition-all flex items-center gap-2"
               >
                 <Icon name="reward" size={16} />
-                领取新徽章
+                {t.badge.claimNewBadges}
               </button>
             </div>
             
@@ -257,7 +263,7 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-1 h-5 bg-gradient-to-b from-pink-500 to-purple-500 rounded-full"></div>
                   <h4 className="text-base font-bold text-gray-900 dark:text-white">
-                    已获得 ({badges.length})
+                    {replace(t.badge.earnedCount, { count: badges.length })}
                   </h4>
                 </div>
                 <BadgeDisplay badges={badges} />
@@ -273,7 +279,9 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
                     <div className="flex items-center gap-2 mb-4">
                       <div className="w-1 h-5 bg-gradient-to-b from-emerald-400 to-teal-500 rounded-full animate-pulse"></div>
                       <h4 className="text-base font-bold text-emerald-600 dark:text-emerald-400">
-                        可以领取 ({availableBadges.filter(b => b.progress >= b.requirement).length})
+                        {replace(t.badge.claimableCount, { 
+                          count: availableBadges.filter(b => b.progress >= b.requirement).length 
+                        })}
                       </h4>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -308,7 +316,7 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
                                 {/* 可领取提示 */}
                                 <div className="w-full px-3 py-1.5 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-lg">
                                   <p className="text-xs font-black text-white">
-                                    ✨ 点击领取
+                                    ✨ {t.badge.clickToClaim}
                                   </p>
                                 </div>
                               </div>
@@ -325,7 +333,9 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
                     <div className="flex items-center gap-2 mb-4">
                       <div className="w-1 h-5 bg-gradient-to-b from-gray-400 to-gray-500 rounded-full"></div>
                       <h4 className="text-base font-bold text-gray-700 dark:text-gray-300">
-                        未达成 ({availableBadges.filter(b => b.progress < b.requirement).length})
+                        {replace(t.badge.locked, { 
+                          count: availableBadges.filter(b => b.progress < b.requirement).length 
+                        })}
                       </h4>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -357,7 +367,7 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
                                 <div className="w-full space-y-2">
                                   <div className="px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 rounded-lg border border-amber-200 dark:border-amber-500/20">
                                     <p className="text-xs font-bold text-amber-700 dark:text-amber-400">
-                                      还需 <span className="font-black">{remaining}</span>
+                                      {replace(t.badge.needMore, { remaining })}
                                     </p>
                                   </div>
                                   <div className="w-full h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
@@ -388,17 +398,17 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
                   <Icon name="reward" size={40} className="opacity-50 text-pink-500" />
                 </div>
                 <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  还没有徽章
+                  {t.badge.noBadgesYet}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mb-6">
-                  完成任务，解锁你的第一个成就徽章！
+                  {t.badge.completeTasksFirst}
                 </p>
                 <button
                   onClick={handleClaimBadges}
                   className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-2xl text-sm font-bold hover:shadow-lg hover:shadow-pink-500/30 transition-all flex items-center gap-2"
                 >
                   <Icon name="reward" size={16} />
-                  领取徽章
+                  {t.achievements.claim}
                 </button>
               </div>
             )}
@@ -411,24 +421,26 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
                   <Icon name="reward" size={40} className="opacity-50 text-emerald-500" />
                 </div>
                 <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  暂无可领取的徽章
+                  {t.badge.noClaimableBadges}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
-                  继续完成任务，解锁更多成就！
+                  {t.badge.keepCompleting}
                 </p>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between mb-6">
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    {availableBadges.filter(b => b.progress >= b.requirement).length} 个徽章可以领取
+                    {replace(t.badge.readyToClaim, { 
+                      count: availableBadges.filter(b => b.progress >= b.requirement).length 
+                    })}
                   </p>
                   <button
                     onClick={handleClaimBadges}
                     className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-emerald-500/30 transition-all flex items-center gap-2"
                   >
                     <Icon name="plus" size={16} />
-                    一键领取
+                    {t.badge.claimAll}
                   </button>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -453,12 +465,12 @@ export function BadgeSection({ profile, familyId, onBadgeClaimed }: BadgeSection
                               </p>
                             </div>
                             <span className="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
-                              可领取
+                              {t.badge.claimable}
                             </span>
                           </div>
                           <div className="mt-3 px-3 py-2 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-xl">
                             <p className="text-xs font-black text-white text-center">
-                              ✨ 已完成！点击领取
+                              ✨ {t.badge.completed}
                             </p>
                           </div>
                         </div>

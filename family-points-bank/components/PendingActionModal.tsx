@@ -1,5 +1,6 @@
 import { Modal } from './Modal';
 import { Icon } from './Icon';
+import { Language, useTranslation } from '../i18n/translations';
 
 interface PendingActionModalProps {
   pendingAction: { title: string; points: number; type: 'earn' | 'penalty' | 'redeem' } | null;
@@ -7,9 +8,12 @@ interface PendingActionModalProps {
   onCancel: () => void;
   onConfirm: () => void;
   loading?: boolean;
+  language?: Language;
 }
 
-export function PendingActionModal({ pendingAction, error, onCancel, onConfirm, loading = false }: PendingActionModalProps) {
+export function PendingActionModal({ pendingAction, error, onCancel, onConfirm, loading = false, language = 'zh' }: PendingActionModalProps) {
+  const { t } = useTranslation(language);
+  
   if (!pendingAction) return null;
 
   const isRedeem = pendingAction.type === 'redeem';
@@ -28,20 +32,20 @@ export function PendingActionModal({ pendingAction, error, onCancel, onConfirm, 
         </div>
 
         <div className="mt-8 text-center space-y-2">
-          <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">操作确认</p>
-          <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">确认执行该事项?</h3>
+          <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">{t.pendingAction.confirmAction}</p>
+          <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t.pendingAction.confirmExecute}</h3>
         </div>
 
         <div className="text-center space-y-2 mb-8">
-          <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">Action Entry</p>
-          <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">确认记录此项</h3>
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">正在为您同步云端账户...</p>
+          <p className="text-xs font-bold text-[#FF4D94] uppercase tracking-[0.4em]">{t.pendingAction.actionEntry}</p>
+          <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{t.pendingAction.confirmRecord}</h3>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t.pendingAction.syncingAccount}</p>
         </div>
 
         <div className="py-6 px-4 bg-gray-50 dark:bg-white/5 rounded-[32px] border border-transparent dark:border-white/5 text-center space-y-3 mb-6 shadow-inner">
           <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">{pendingAction.title}</p>
           <p className={`text-4xl font-black points-font ${isRedeem ? 'text-[#7C4DFF]' : pendingAction.points > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-            {pendingAction.points > 0 ? '+' : ''}{pendingAction.points} 元气
+            {pendingAction.points > 0 ? '+' : ''}{pendingAction.points} {t.app.points}
           </p>
         </div>
 
@@ -57,14 +61,14 @@ export function PendingActionModal({ pendingAction, error, onCancel, onConfirm, 
             disabled={loading}
             className="btn-base btn-secondary flex-1"
           >
-            我再想想
+            {t.pendingAction.thinkAgain}
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
             className="btn-base btn-primary flex-1"
           >
-            {loading ? '同步中...' : '确认录入'}
+            {loading ? t.pendingAction.syncing : t.pendingAction.confirmSubmit}
           </button>
         </div>
     </Modal>
