@@ -3,75 +3,16 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@/contexts/UserContext'
 import { Logo } from '@/components/Logo'
 import { LayoutDashboard, LogOut, ChevronDown, Sparkles, BookOpen, FolderOpen, Tag, Menu, X, Calendar } from 'lucide-react'
 
 export function Header() {
-  const [user, setUser] = useState<{ name: string; avatar_url?: string; role?: string; avatar_color?: string } | null>(null)
+  const { user, logout } = useUser()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const supabase = createClient()
-
-  // 检查用户登录状态
-  useEffect(() => {
-    let mounted = true
-    
-    const checkUser = async () => {
-      try {
-        const { data: { user: authUser } } = await supabase.auth.getUser()
-        
-        if (!mounted || !authUser) return
-        
-        // 一次查询获取所有需要的信息
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('name, avatar_url, avatar_color, role')
-          .eq('id', authUser.id)
-          .maybeSingle()
-
-        if (!mounted) return
-
-        // 设置用户信息
-        if (userProfile) {
-          setUser({
-            name: userProfile.name || authUser.email?.split('@')[0] || '用户',
-            avatar_url: userProfile.avatar_url,
-            role: userProfile.role || 'author',
-            avatar_color: userProfile.avatar_color
-          })
-        } else {
-          // 如果没有 profile，使用基本信息
-          setUser({
-            name: authUser.email?.split('@')[0] || '用户',
-            role: 'author'
-          })
-        }
-      } catch (error) {
-        // Silently fail during SSG/build time when Supabase env vars aren't available
-      }
-    }
-    
-    checkUser()
-    
-    // 监听认证状态变化
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-      if (mounted) {
-        if (session?.user) {
-          checkUser()
-        } else {
-          setUser(null)
-        }
-      }
-    })
-
-    return () => {
-      mounted = false
-      subscription.unsubscribe()
-    }
-  }, []) // 只在组件挂载时执行一次
 
   // 点击外部关闭下拉菜单
   useEffect(() => {
@@ -92,8 +33,7 @@ export function Header() {
 
   // 退出登录
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
+    await logout()
     setIsDropdownOpen(false)
     setIsMobileMenuOpen(false)
     router.push('/')

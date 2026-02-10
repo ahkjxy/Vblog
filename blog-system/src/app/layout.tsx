@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { WebsiteJsonLd, OrganizationJsonLd } from "@/components/JsonLd";
 import { AdsenseScript } from "@/components/ads";
+import { UserProvider } from "@/contexts/UserContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -80,7 +81,11 @@ export default function RootLayout({
         <OrganizationJsonLd />
         <AdsenseScript />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <UserProvider>
+          {children}
+        </UserProvider>
+      </body>
     </html>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@/contexts/UserContext'
 import { LoadingSpinner } from '@/components/ui'
 import { MessageCircle, Send, User, CheckCircle, XCircle, Smile, Reply, CornerDownRight } from 'lucide-react'
 
@@ -61,14 +62,14 @@ function formatAuthorName(profile: any): string {
 }
 
 export function Comments({ postId }: CommentsProps) {
+  const { user } = useUser()
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [content, setContent] = useState('')
   const [authorName, setAuthorName] = useState('')
   const [authorEmail, setAuthorEmail] = useState('')
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; avatar_url?: string } | null>(null)
+  const [currentUserProfile, setCurrentUserProfile] = useState<{ id: string; name: string; avatar_url?: string } | null>(null)
   const [toast, setToast] = useState<{ type: ToastType; message: string } | null>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null)
@@ -76,6 +77,7 @@ export function Comments({ postId }: CommentsProps) {
   const emojiPickerRef = useRef<HTMLDivElement>(null)
   
   const supabase = createClient()
+  const isLoggedIn = !!user
 
   // Toast helper
   const showToast = (type: ToastType, message: string) => {
@@ -100,29 +102,31 @@ export function Comments({ postId }: CommentsProps) {
     }
   }, [showEmojiPicker])
 
-  // 检查用户登录状态
+  // 获取用户 profile 信息
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setIsLoggedIn(true)
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('name, avatar_url')
-          .eq('id', user.id)
-          .single()
-        
-        if (profile) {
-          setCurrentUser({ 
-            id: user.id, 
-            name: profile.name || user.email?.split('@')[0] || '匿名用户',
-            avatar_url: profile.avatar_url 
-          })
-        }
+    const fetchProfile = async () => {
+      if (!user) {
+        setCurrentUserProfile(null)
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, avatar_url')
+        .eq('id', user.id)
+        .single()
+      
+      if (profile) {
+        setCurrentUserProfile({ 
+          id: user.id, 
+          name: profile.name || user.email?.split('@')[0] || '匿名用户',
+          avatar_url: profile.avatar_url 
+        })
       }
     }
-    checkUser()
-  }, [])
+
+    fetchProfile()
+  }, [user, supabase])
 
   // 加载评论
   useEffect(() => {
@@ -540,7 +544,7 @@ export function Comments({ postId }: CommentsProps) {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <p className="text-xs text-gray-500">
                 {isLoggedIn ? (
-                  <span>以 <strong>{currentUser?.name}</strong> 的身份{replyingTo ? '回复' : '评论'}</span>
+                  <span>以 <strong>{currentUserProfile?.name}</strong> 的身份{replyingTo ? '回复' : '评论'}</span>
                 ) : (
                   <span>评论需要审核后才会显示</span>
                 )}

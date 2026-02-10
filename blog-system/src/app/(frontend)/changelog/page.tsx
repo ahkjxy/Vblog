@@ -24,6 +24,42 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '2.8.0',
+    date: '2026-02-10',
+    type: 'improvement',
+    changes: [
+      {
+        category: '性能优化',
+        icon: Zap,
+        items: [
+          '全局用户状态管理：创建 UserContext 统一管理用户信息',
+          '减少重复请求：所有组件共享用户状态，避免重复查询',
+          '优化认证流程：使用 getSession 替代 getUser，减少网络请求',
+          '修复循环请求问题：解决 refresh_token 循环请求导致的速率限制错误',
+          '登录状态快速显示：Header 组件登录状态即时显示，无需等待'
+        ]
+      },
+      {
+        category: '后台功能增强',
+        icon: Settings,
+        items: [
+          '新增快速退出功能：Dashboard 侧边栏增加退出登录按钮',
+          '优化导航布局：返回首页和退出登录分开显示',
+          '改进加载体验：Dashboard 加载时显示友好的加载动画'
+        ]
+      },
+      {
+        category: '代码质量',
+        icon: Code,
+        items: [
+          '修复 TypeScript 类型错误：onAuthStateChange 事件参数类型声明',
+          '统一组件状态管理：Header、CustomerSupport、FamilyBankCTA、Comments 都使用 UserContext',
+          '优化依赖项配置：useEffect 依赖项更准确，避免不必要的重渲染'
+        ]
+      }
+    ]
+  },
+  {
     version: '2.7.0',
     date: '2026-02-10',
     type: 'feature',

@@ -1,23 +1,15 @@
 'use client'
 
 import { ExternalLink, Sparkles, Gift, Heart, MessageCircle, Smartphone } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@/contexts/UserContext'
 
 interface FamilyBankCTAProps {
   variant?: 'default' | 'compact' | 'banner'
 }
 
 export function FamilyBankCTA({ variant = 'default' }: FamilyBankCTAProps) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const supabase = createClient()
-
-  useEffect(() => {
-    // 检查用户登录状态
-    supabase.auth.getUser().then(({ data: { user } }: { data: { user: any } }) => {
-      setIsLoggedIn(!!user)
-    })
-  }, [supabase])
+  const { user } = useUser()
+  const isLoggedIn = !!user
 
   // 根据登录状态决定跳转链接
   const familyBankUrl = 'https://www.familybank.chat/'

@@ -1,51 +1,70 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Logo } from '@/components/Logo'
 import { ToastProvider } from '@/components/ui'
 import { DashboardNav } from '@/components/dashboard/DashboardNav'
-import { LogOut } from 'lucide-react'
+import { LogOut, Home } from 'lucide-react'
+import { useUser } from '@/contexts/UserContext'
+import { createClient } from '@/lib/supabase/client'
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, logout } = useUser()
+  const router = useRouter()
+  const [userProfile, setUserProfile] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
 
-  if (!user) {
-    redirect('/auth/login')
+  useEffect(() => {
+    if (!user) {
+      router.push('/auth/login')
+      return
+    }
+
+    const fetchProfile = async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      setUserProfile(profile)
+      setLoading(false)
+    }
+
+    fetchProfile()
+  }, [user, router, supabase])
+
+  const handleLogout = async () => {
+    await logout()
+    router.push('/')
   }
 
-  // 查询所有可能的表和数据
-  const { data: userProfile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle()
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-purple-50/20 to-pink-50/20">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-purple-600/30 border-t-purple-600 rounded-full animate-spin" />
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    )
+  }
 
-  const { data: familyMember } = await supabase
-    .from('family_members')
-    .select('*')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  // 博客系统的超级管理员判断：必须同时满足 role='admin' 且 family_id 是超管家庭
+  // 博客系统的超级管理员判断
   const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
   const isSuperAdmin = userProfile?.role === 'admin' && userProfile?.family_id === SUPER_ADMIN_FAMILY_ID
 
-  // 调试信息（仅在开发环境）
-  if (process.env.NODE_ENV === 'development') {
-    // Debug info available in development
-  }
-
-  // 使用可能存在的字段 - 优先使用 profile.name（家长名字）
   const userName = userProfile?.name || user.email?.split('@')[0] || '用户'
   const userRole = userProfile?.role || 'author'
   const userAvatar = userProfile?.avatar_url
 
-  // 获取角色显示名称
   const getRoleLabel = () => {
     if (isSuperAdmin) return '超级管理员'
     if (userRole === 'admin') return '家长'
@@ -61,7 +80,6 @@ export default async function DashboardLayout({
     { href: '/dashboard/feedback', icon: 'MessageCircle', label: '反馈留言' },
   ]
 
-  // 只有超级管理员才能看到其他菜单
   if (isSuperAdmin) {
     navItems.push(
       { href: '/dashboard/categories', icon: 'FolderOpen', label: '分类' },
@@ -70,11 +88,6 @@ export default async function DashboardLayout({
       { href: '/dashboard/users', icon: 'Users', label: '用户' },
       { href: '/dashboard/settings', icon: 'Settings', label: '设置' }
     )
-  }
-
-  // 在控制台打印调试信息（仅开发环境）
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    // Debug info available in development
   }
 
   return (
@@ -150,9 +163,16 @@ export default async function DashboardLayout({
                 href="/" 
                 className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all text-sm font-semibold text-gray-700 hover:text-purple-700 border border-transparent hover:border-purple-200"
               >
-                <LogOut className="w-5 h-5" />
+                <Home className="w-5 h-5" />
                 <span>返回首页</span>
               </Link>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 transition-all text-sm font-semibold text-red-600 hover:text-red-700 border border-transparent hover:border-red-200"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>退出登录</span>
+              </button>
             </div>
           </aside>
 

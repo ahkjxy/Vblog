@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { MessageCircle, X, Send, Mail, ExternalLink, Sparkles, HelpCircle, LogIn } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@/contexts/UserContext'
 
 interface Message {
   id: string
@@ -62,6 +63,7 @@ export const openCustomerSupport = () => {
 }
 
 export function CustomerSupport() {
+  const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -73,7 +75,6 @@ export function CustomerSupport() {
   ])
   const [inputValue, setInputValue] = useState('')
   const [showFAQ, setShowFAQ] = useState(true)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
@@ -82,37 +83,29 @@ export function CustomerSupport() {
   const inputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
-  // 检查登录状态
+  const isLoggedIn = !!user
+
+  // 获取用户 profile 信息
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setIsLoggedIn(!!user)
+    const fetchProfile = async () => {
+      if (!user) {
+        setUserProfile(null)
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, family_id')
+        .eq('id', user.id)
+        .maybeSingle()
       
-      if (user) {
-        // 获取用户 profile 信息（profiles 表的 id 就是 auth.users 的 id）
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, family_id')
-          .eq('id', user.id)
-          .maybeSingle()
-        
-        if (profile) {
-          setUserProfile(profile)
-        }
+      if (profile) {
+        setUserProfile(profile)
       }
     }
     
-    checkAuth()
-    
-    // 监听认证状态变化
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      checkAuth()
-    })
-    
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [supabase])
+    fetchProfile()
+  }, [user, supabase])
 
   // 加载历史消息
   useEffect(() => {
