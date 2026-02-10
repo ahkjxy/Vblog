@@ -68,8 +68,8 @@ export function GoogleAdsense({
         data-ad-client={adClient}
         data-ad-slot={adSlot}
         data-ad-format={adFormat}
-        data-ad-layout={adLayout}
-        data-ad-layout-key={adLayoutKey}
+        {...(adLayout && { 'data-ad-layout': adLayout })}
+        {...(adLayoutKey && { 'data-ad-layout-key': adLayoutKey })}
         data-full-width-responsive={fullWidthResponsive ? 'true' : 'false'}
       />
     </div>
@@ -129,7 +129,7 @@ export function BannerAd({ className = '' }: { className?: string }) {
       <div className="text-xs text-gray-400 text-center mb-2">广告</div>
       <GoogleAdsense
         adSlot={adSlot}
-        adFormat="horizontal"
+        adFormat="auto"
         fullWidthResponsive={true}
       />
     </div>
@@ -150,7 +150,6 @@ export function FeedAd({ className = '' }: { className?: string }) {
       <GoogleAdsense
         adSlot={adSlot}
         adFormat="fluid"
-        adLayout="in-feed"
       />
     </div>
   )

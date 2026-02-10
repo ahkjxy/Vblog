@@ -23,6 +23,33 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '2.4.1',
+    date: '2026-02-10',
+    type: 'fix',
+    changes: [
+      {
+        category: 'AdSense 错误修复',
+        items: [
+          '修复 "data-nscript attribute not supported" 错误',
+          '移除 Script 组件的 async 属性，改用 lazyOnload 策略',
+          '修复 "Invalid data-ad-layout value: in-feed" 错误',
+          '优化广告格式配置，移除不支持的布局参数',
+          'BannerAd 改用 adFormat="auto" 提升兼容性',
+          'FeedAd 移除 adLayout 参数，使用纯 fluid 格式',
+          '改进 GoogleAdsense 组件，只在有值时添加 data-ad-layout 属性'
+        ]
+      },
+      {
+        category: '性能优化',
+        items: [
+          'AdSense 脚本使用 lazyOnload 策略，在浏览器空闲时加载',
+          '不阻塞页面加载，提升用户体验',
+          '减少控制台错误，提升开发体验'
+        ]
+      }
+    ]
+  },
+  {
     version: '2.4.0',
     date: '2026-02-10',
     type: 'feature',
