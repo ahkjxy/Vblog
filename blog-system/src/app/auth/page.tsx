@@ -36,6 +36,12 @@ function AuthPageContent() {
 
   const handlePasswordAuth = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!supabase) {
+      showToast('error', '系统初始化失败，请刷新页面重试')
+      return
+    }
+    
     const em = email.trim()
     const pw = password.trim()
     
@@ -127,6 +133,12 @@ function AuthPageContent() {
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!supabase) {
+      showToast('error', '系统初始化失败，请刷新页面重试')
+      return
+    }
+    
     const em = email.trim()
     
     if (!em) {
@@ -159,6 +171,11 @@ function AuthPageContent() {
   }
 
   const handleSendReset = async () => {
+    if (!supabase) {
+      showToast('error', '系统初始化失败，请刷新页面重试')
+      return
+    }
+    
     const em = resetEmail.trim()
     
     if (!em) {
