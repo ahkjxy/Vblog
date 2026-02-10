@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   publisher: '元气银行',
   verification: {
     google: '3UEPzYJSWZBk1GTKL6rnijmHKqYTGJWngxP51zLUGWI',
+    other: {
+      'baidu-site-verification': 'codeva-KPpWcSQ4z0',
+    },
   },
   formatDetection: {
     email: false,
