@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 
 interface UserProfile {
   id: string
@@ -21,9 +21,6 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
-// 获取单例 Supabase 客户端
-const supabase = createClient()
-
 export function UserProvider({ 
   children, 
   initialUser 
@@ -36,6 +33,11 @@ export function UserProvider({
 
   // 获取用户信息
   const fetchUser = async () => {
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession()
       
@@ -85,12 +87,19 @@ export function UserProvider({
 
   // 登出
   const logout = async () => {
-    await supabase.auth.signOut()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
     setUser(null)
   }
 
   // 初始化：只执行一次
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     // 总是获取最新的用户信息
     fetchUser()
 

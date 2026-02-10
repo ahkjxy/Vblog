@@ -1,70 +1,30 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Logo } from '@/components/Logo'
 import { ToastProvider } from '@/components/ui'
 import { DashboardNav } from '@/components/dashboard/DashboardNav'
-import { LogOut, Home } from 'lucide-react'
-import { useUser } from '@/contexts/UserContext'
-import { createClient } from '@/lib/supabase/client'
+import { LogoutButton } from '@/components/dashboard/LogoutButton'
+import { Home } from 'lucide-react'
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { user, loading: userLoading, logout } = useUser()
-  const router = useRouter()
-  const [userProfile, setUserProfile] = useState<any>(null)
-  const [profileLoading, setProfileLoading] = useState(true)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // 检查登录状态
-  useEffect(() => {
-    if (!userLoading && !user) {
-      router.push('/auth/login')
-    }
-  }, [user, userLoading, router])
-
-  // 获取用户 profile（只在有 user 时执行一次）
-  useEffect(() => {
-    if (!user) {
-      setProfileLoading(false)
-      return
-    }
-
-    const fetchProfile = async () => {
-      const supabase = createClient()
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      setUserProfile(profile)
-      setProfileLoading(false)
-    }
-
-    fetchProfile()
-  }, [user?.id]) // 只依赖 user.id，避免重复请求
-
-  const handleLogout = async () => {
-    await logout()
-    router.push('/')
+  if (!user) {
+    redirect('/auth/login')
   }
 
-  // 显示加载状态
-  if (userLoading || profileLoading || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-purple-50/20 to-pink-50/20">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-purple-600/30 border-t-purple-600 rounded-full animate-spin" />
-          <p className="text-gray-600">加载中...</p>
-        </div>
-      </div>
-    )
-  }
+  // 查询用户 profile
+  const { data: userProfile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle()
 
   // 博客系统的超级管理员判断
   const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
@@ -175,13 +135,7 @@ export default function DashboardLayout({
                 <Home className="w-5 h-5" />
                 <span>返回首页</span>
               </Link>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 transition-all text-sm font-semibold text-red-600 hover:text-red-700 border border-transparent hover:border-red-200"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>退出登录</span>
-              </button>
+              <LogoutButton />
             </div>
           </aside>
 
