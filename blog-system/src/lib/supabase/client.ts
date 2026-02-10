@@ -1,6 +1,14 @@
 import { createBrowserClient } from '@supabase/ssr'
 
+// 单例模式：在模块级别创建客户端
+let supabaseInstance: ReturnType<typeof createBrowserClient> | null = null
+
 export function createClient() {
+  // 如果已经存在实例，直接返回
+  if (supabaseInstance) {
+    return supabaseInstance
+  }
+
   // 在构建时如果环境变量不存在，返回一个 mock 客户端
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -9,6 +17,7 @@ export function createClient() {
     // 返回一个 mock 客户端用于构建时
     return {
       auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
         getUser: async () => ({ data: { user: null }, error: null }),
         signOut: async () => ({ error: null }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
@@ -26,7 +35,8 @@ export function createClient() {
     } as any
   }
   
-  return createBrowserClient(
+  // 创建并缓存实例
+  supabaseInstance = createBrowserClient(
     supabaseUrl,
     supabaseAnonKey,
     {
@@ -38,4 +48,6 @@ export function createClient() {
       }
     }
   )
+
+  return supabaseInstance
 }

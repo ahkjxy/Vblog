@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface UserProfile {
@@ -21,6 +21,9 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
+// 获取单例 Supabase 客户端
+const supabase = createClient()
+
 export function UserProvider({ 
   children, 
   initialUser 
@@ -30,14 +33,10 @@ export function UserProvider({
 }) {
   const [user, setUser] = useState<UserProfile | null>(initialUser || null)
   const [loading, setLoading] = useState(!initialUser)
-  
-  // 创建单例 Supabase 客户端
-  const supabase = useMemo(() => createClient(), [])
 
   // 获取用户信息
   const fetchUser = async () => {
     try {
-      // 使用 getSession 而不是 getUser，减少网络请求
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session?.user) {
@@ -90,20 +89,16 @@ export function UserProvider({
     setUser(null)
   }
 
-  // 初始化和监听认证状态变化
+  // 初始化：只执行一次
   useEffect(() => {
-    let mounted = true
-
     // 如果没有初始用户，则获取
-    if (!initialUser && mounted) {
+    if (!initialUser) {
       fetchUser()
     }
 
     // 监听认证状态变化
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
-      if (!mounted) return
-      
-      if (event === 'SIGNED_IN' && session?.user) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string) => {
+      if (event === 'SIGNED_IN') {
         await fetchUser()
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
@@ -111,10 +106,9 @@ export function UserProvider({
     })
 
     return () => {
-      mounted = false
       subscription.unsubscribe()
     }
-  }, [initialUser, supabase])
+  }, []) // 空依赖数组，只执行一次
 
   return (
     <UserContext.Provider value={{ user, loading, refreshUser, logout }}>
