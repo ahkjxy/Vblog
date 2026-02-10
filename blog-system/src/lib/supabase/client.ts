@@ -35,25 +35,63 @@ export function createClient() {
       auth: {
         // 使用与 family-points-bank 相同的 storage key
         storageKey: 'sb-auth-token',
-        storage: isProduction ? {
+        // 生产环境使用 Cookie，本地开发也使用 Cookie（但不跨域）
+        storage: {
           getItem: (key: string) => {
             if (typeof window === 'undefined') return null
-            const value = document.cookie
+            
+            // 优先从 Cookie 读取
+            const cookieValue = document.cookie
               .split('; ')
               .find(row => row.startsWith(`${key}=`))
               ?.split('=')[1]
-            return value || null
+            
+            if (cookieValue) return cookieValue
+            
+            // 如果 Cookie 中没有，尝试从 localStorage 读取（兼容旧数据）
+            try {
+              return localStorage.getItem(key)
+            } catch {
+              return null
+            }
           },
           setItem: (key: string, value: string) => {
             if (typeof window === 'undefined') return
-            // 设置跨子域的 cookie，与 family-points-bank 共享
-            document.cookie = `${key}=${value}; path=/; domain=.familybank.chat; max-age=31536000; SameSite=Lax; Secure`
+            
+            // 设置 Cookie
+            if (isProduction) {
+              // 生产环境：跨子域 Cookie
+              document.cookie = `${key}=${value}; path=/; domain=.familybank.chat; max-age=31536000; SameSite=Lax; Secure`
+            } else {
+              // 本地开发：普通 Cookie
+              document.cookie = `${key}=${value}; path=/; max-age=31536000; SameSite=Lax`
+            }
+            
+            // 同时保存到 localStorage 作为备份
+            try {
+              localStorage.setItem(key, value)
+            } catch {
+              // Ignore localStorage errors
+            }
           },
           removeItem: (key: string) => {
             if (typeof window === 'undefined') return
-            document.cookie = `${key}=; path=/; domain=.familybank.chat; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure`
+            
+            // 删除 Cookie
+            if (isProduction) {
+              document.cookie = `${key}=; path=/; domain=.familybank.chat; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure`
+            } else {
+              document.cookie = `${key}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`
+            }
+            
+            // 同时删除 localStorage
+            try {
+              localStorage.removeItem(key)
+            } catch {
+              // Ignore localStorage errors
+            }
           },
-        } : undefined, // 本地开发使用默认 localStorage
+        },
       },
     }
   )
