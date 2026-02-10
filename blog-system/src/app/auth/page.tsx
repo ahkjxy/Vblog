@@ -55,8 +55,9 @@ function AuthPageContent() {
 
       if (!signInError && signInData?.session) {
         showToast('success', '登录成功，正在进入...')
+        // 等待一下让 auth state change 事件触发
+        await new Promise(resolve => setTimeout(resolve, 500))
         router.push('/dashboard')
-        router.refresh()
         return
       }
 
@@ -108,8 +109,9 @@ function AuthPageContent() {
         if (signUpData?.session) {
           // 自动登录成功
           showToast('success', '注册并登录成功，欢迎加入元气银行博客!')
+          // 等待一下让 auth state change 事件触发
+          await new Promise(resolve => setTimeout(resolve, 500))
           router.push('/dashboard')
-          router.refresh()
         } else if (signUpData?.user) {
           // 注册成功但需要验证邮件
           showToast('info', '注册成功！请前往邮箱验证链接以完成激活')
