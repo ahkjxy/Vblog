@@ -91,10 +91,8 @@ export function UserProvider({
 
   // 初始化：只执行一次
   useEffect(() => {
-    // 如果没有初始用户，则获取
-    if (!initialUser) {
-      fetchUser()
-    }
+    // 总是获取最新的用户信息
+    fetchUser()
 
     // 监听认证状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string) => {
@@ -102,12 +100,14 @@ export function UserProvider({
         await fetchUser()
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
+        setLoading(false)
       }
     })
 
     return () => {
       subscription.unsubscribe()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // 空依赖数组，只执行一次
 
   return (
