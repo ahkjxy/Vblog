@@ -24,6 +24,42 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '2.8.2',
+    date: '2026-02-10',
+    type: 'fix',
+    changes: [
+      {
+        category: '认证系统重构',
+        icon: Shield,
+        items: [
+          '修复客户端和服务端 session 不同步问题：统一使用 @supabase/ssr',
+          '解决登录后 307 重定向循环：Dashboard 恢复为服务端组件',
+          '优化 Supabase 客户端配置：使用单例模式，确保客户端和服务端共享 session',
+          '修复登录后无法进入后台的问题：正确处理 cookie 同步'
+        ]
+      },
+      {
+        category: 'Dashboard 布局优化',
+        icon: Layout,
+        items: [
+          '重新设计后台布局：用户信息和退出按钮移至右上角',
+          '优化侧边栏结构：使用 Flexbox 布局，避免内容重叠',
+          '改进导航体验：侧边栏导航区域可滚动，底部快捷链接固定',
+          '精简侧边栏内容：移除冗余的用户信息卡片，界面更简洁'
+        ]
+      },
+      {
+        category: '性能改进',
+        icon: Zap,
+        items: [
+          '彻底解决循环请求问题：客户端和服务端使用统一的认证机制',
+          '减少不必要的重定向：服务端组件直接检查认证状态',
+          '优化页面加载速度：移除客户端认证检查的延迟'
+        ]
+      }
+    ]
+  },
+  {
     version: '2.8.1',
     date: '2026-02-10',
     type: 'fix',
