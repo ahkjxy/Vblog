@@ -74,6 +74,8 @@ export default function CategoriesPage() {
 
   // 检查 slug 是否重复
   const checkSlugUnique = async (slug: string, excludeId?: string): Promise<boolean> => {
+    if (!supabase) return true
+    
     try {
       let query = supabase
         .from('categories')
@@ -134,6 +136,8 @@ export default function CategoriesPage() {
 
   // 打开删除对话框
   const openDeleteDialog = async (category: Category) => {
+    if (!supabase) return
+    
     setSelectedCategory(category)
     
     // 检查是否有关联的文章
