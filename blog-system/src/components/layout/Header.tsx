@@ -71,7 +71,7 @@ export function Header() {
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
           >
             <BookOpen className="w-4 h-4" />
-            <span>文档</span>
+            <span>社区讨论</span>
           </Link>
           <Link 
             href="/categories" 
@@ -234,7 +234,7 @@ export function Header() {
               className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
             >
               <BookOpen className="w-5 h-5" />
-              <span>文档</span>
+              <span>社区讨论</span>
             </Link>
             <Link 
               href="/categories"
