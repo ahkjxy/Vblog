@@ -175,6 +175,8 @@ export default function MediaPage() {
 
   // 获取文件 URL
   const getFileUrl = (file: MediaFile, userId: string) => {
+    if (!supabase) return ''
+    
     const { data } = supabase.storage
       .from('media')
       .getPublicUrl(`${userId}/${file.name}`)
