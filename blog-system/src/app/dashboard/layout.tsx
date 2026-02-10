@@ -146,7 +146,7 @@ export default async function DashboardLayout({
             {/* Bottom Actions */}
             <div className="absolute bottom-6 left-5 right-5 space-y-2">
               <a 
-                href="https://blog.familybank.chat/"
+                href="https://www.familybank.chat/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white transition-all text-sm font-semibold hover:shadow-lg hover:scale-105"

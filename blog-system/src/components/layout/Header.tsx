@@ -155,7 +155,7 @@ export function Header() {
           <div className="w-px h-6 bg-gray-200 mx-2"></div>
           
           <a 
-            href="https://blog.familybank.chat" 
+            href="https://www.familybank.chat" 
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
@@ -227,7 +227,7 @@ export function Header() {
                     </Link>
                     
                     <a
-                      href="https://blog.familybank.chat/"
+                      href="https://www.familybank.chat/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors"
@@ -321,7 +321,7 @@ export function Header() {
             <div className="h-px bg-gray-200 my-2"></div>
             
             <a 
-              href="https://blog.familybank.chat" 
+              href="https://www.familybank.chat" 
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-xl transition-all"

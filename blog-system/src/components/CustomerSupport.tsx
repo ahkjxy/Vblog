@@ -32,7 +32,7 @@ interface FeedbackReply {
 const FAQ_ITEMS = [
   {
     question: '如何开始使用元气银行？',
-    answer: '访问 blog.familybank.chat 即可免费体验，无需注册。您可以创建家庭、添加成员、设置任务和奖励。'
+    answer: '访问 www.familybank.chat 即可免费体验，无需注册。您可以创建家庭、添加成员、设置任务和奖励。'
   },
   {
     question: '元气银行和博客系统是什么关系？',
@@ -461,7 +461,7 @@ export function CustomerSupport() {
                     <span>📧 ahkjxy@qq.com</span>
                   </a>
                   <a
-                    href="https://blog.familybank.chat"
+                    href="https://www.familybank.chat"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-purple-600 hover:text-pink-600 transition-colors"

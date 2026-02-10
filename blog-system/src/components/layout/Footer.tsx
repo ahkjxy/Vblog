@@ -31,7 +31,7 @@ export function Footer() {
               家庭积分管理系统，让激励变得简单高效。通过游戏化的方式帮助家庭成员养成良好习惯，让孩子在快乐中成长。
             </p>
             <a
-              href="https://blog.familybank.chat"
+              href="https://www.familybank.chat"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold text-sm hover:shadow-lg hover:scale-105 transition-all"
