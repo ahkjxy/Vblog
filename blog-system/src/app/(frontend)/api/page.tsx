@@ -188,7 +188,9 @@ export default function APIPage() {
   .channel('posts')
   .on('postgres_changes', 
     { event: '*', schema: 'public', table: 'posts' },
-    (payload) => console.log(payload)
+    (payload) => {
+      // Handle real-time updates
+    }
   )
   .subscribe()`
                 },

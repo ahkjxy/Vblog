@@ -13,20 +13,14 @@ export default async function PostsPage() {
   // 获取当前用户信息
   const { data: { user } } = await supabase.auth.getUser()
   
-  console.log('Current user:', user?.id)
-  
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, family_id')
     .eq('id', user?.id)
     .maybeSingle()
 
-  console.log('User profile:', profile)
-
   const isSuperAdmin = profile?.role === 'admin' && 
     profile?.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
-
-  console.log('Is super admin:', isSuperAdmin)
 
   // 构建查询，非超级管理员只能看到自己的文章
   let postsQuery = supabase
@@ -43,8 +37,6 @@ export default async function PostsPage() {
   }
   
   const { data: posts, error } = await postsQuery
-
-  console.log('Posts query result:', { count: posts?.length, error })
 
   // 检查是否有 review_status 字段
   const hasReviewStatus = posts && posts.length > 0 && 'review_status' in posts[0]

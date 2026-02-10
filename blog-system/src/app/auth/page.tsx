@@ -53,8 +53,6 @@ function AuthPageContent() {
         password: pw,
       })
 
-      console.log('登录尝试:', { signInData, signInError })
-
       if (!signInError && signInData?.session) {
         showToast('success', '登录成功，正在进入...')
         router.push('/dashboard')
@@ -70,7 +68,6 @@ function AuthPageContent() {
       }
 
       // 2. 如果是凭证错误，尝试注册（可能是新用户）
-      console.log('尝试注册新用户...')
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: em,
         password: pw,
@@ -81,8 +78,6 @@ function AuthPageContent() {
           }
         }
       })
-
-      console.log('注册尝试:', { signUpData, signUpError })
 
       if (signUpError) {
         // 注册失败
@@ -109,7 +104,6 @@ function AuthPageContent() {
         }
       } else {
         // 注册成功
-        console.log('注册成功:', signUpData)
         
         if (signUpData?.session) {
           // 自动登录成功

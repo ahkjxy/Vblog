@@ -1,4 +1,4 @@
-import { Calendar, Sparkles, Bug, Zap, Shield, Palette, Code } from 'lucide-react'
+import { Calendar, Sparkles, Bug, Zap, Shield, Palette, Code, Layout, Users, Link2, CheckCircle, MessageSquare, FileText, Settings, Globe, Star } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -17,34 +17,155 @@ interface ChangelogEntry {
   type: 'feature' | 'fix' | 'improvement' | 'security'
   changes: {
     category: string
+    icon?: any
     items: string[]
   }[]
 }
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '2.6.0',
+    date: '2026-02-10',
+    type: 'improvement',
+    changes: [
+      {
+        category: 'UI 全面优化',
+        icon: Palette,
+        items: [
+          '首页 Hero 区域全新设计：深度渐变背景、光晕效果、图标化统计卡片',
+          '精选文章板块：自动展示浏览量最高的文章，带排名徽章和精选标识',
+          '讨论板块优化：渐变图标、更大的分类标识、精美的统计框',
+          '侧边栏重构：热门主题和最新主题带渐变图标背景',
+          '下载卡片升级：紫粉渐变背景、装饰圆圈、悬停缩放效果',
+          '快速链接优化：每个链接带图标背景和悬停效果',
+          '统一设计语言：所有图标都有渐变背景，圆角统一为 xl'
+        ]
+      },
+      {
+        category: '精选文章功能',
+        icon: Star,
+        items: [
+          '自动展示浏览量最高的 3 篇文章',
+          '精美的卡片设计：排名徽章（金银铜色）、精选标识',
+          '显示作者信息、发布时间、浏览量、评论数',
+          '悬停效果：边框变色、阴影增强、箭头图标变色',
+          '完全自动化，无需手动设置'
+        ]
+      },
+      {
+        category: '代码优化',
+        icon: Code,
+        items: [
+          '移除所有 console.log 调试语句',
+          '优化错误处理逻辑',
+          '改进代码可读性和维护性',
+          '减少不必要的日志输出'
+        ]
+      },
+      {
+        category: '视觉设计',
+        items: [
+          '配色方案：紫色、粉色、橙色、蓝色、绿色渐变',
+          '图标使用：Lucide React 图标库，统一风格',
+          '动画效果：悬停缩放、颜色过渡、阴影变化',
+          '响应式设计：移动端自适应布局'
+        ]
+      }
+    ]
+  },
+  {
+    version: '2.5.0',
+    date: '2026-02-10',
+    type: 'feature',
+    changes: [
+      {
+        category: '首页重构',
+        icon: Layout,
+        items: [
+          '完全重构首页设计，更简洁专业的布局',
+          '简化 Hero 区域，移除复杂装饰，保留核心功能',
+          '优化两栏布局：左侧讨论板块（2/3）+ 右侧热门/最新主题（1/3）',
+          '精简功能介绍，移除冗余内容',
+          '统一视觉风格：圆角、内边距、间距保持一致',
+          '优化下载应用卡片，合并到侧边栏',
+          '改进信息层次结构，提升用户体验'
+        ]
+      },
+      {
+        category: '论坛风格改造',
+        icon: MessageSquare,
+        items: [
+          '首页按分类展示论坛板块，显示主题数和最新帖子',
+          '文章列表页改为论坛主题列表风格',
+          '分类页改为论坛板块主题列表',
+          '使用灰色背景 + 白色卡片的论坛风格',
+          '列表式布局：左侧头像 + 中间内容 + 右侧统计',
+          '后台管理界面保持不变'
+        ]
+      },
+      {
+        category: '分页功能',
+        icon: FileText,
+        items: [
+          'Blog 列表页添加分页功能（每页 20 篇）',
+          '分类页面添加分页功能（每页 20 篇）',
+          '智能页码显示逻辑（最多显示 7 个页码）',
+          '优化数据库查询性能',
+          '显示总主题数和当前页码'
+        ]
+      },
+      {
+        category: '登录体验优化',
+        icon: Users,
+        items: [
+          'Blog 系统和家庭积分系统实现登录状态同步',
+          '优化认证机制，提升用户体验',
+          '一个系统登录后，另一个系统自动保持登录状态',
+          '简化登录流程，减少重复操作'
+        ]
+      },
+      {
+        category: 'UI 优化',
+        icon: Palette,
+        items: [
+          '分类列表页修复文章数量显示错误（之前都显示 1）',
+          '分类详情页文章列表添加间隙（修复 item 粘连问题）',
+          '优化首页功能介绍区块，添加图标和专业设计',
+          '改进下载按钮文案："下载 APK" 改为 "安卓应用"',
+          '统一所有页面的视觉风格和间距'
+        ]
+      },
+      {
+        category: '导航优化',
+        icon: Link2,
+        items: [
+          '优化系统间跳转体验',
+          'Hero 区域添加下载按钮，方便快速访问',
+          '优化快速链接布局和样式'
+        ]
+      }
+    ]
+  },
+  {
     version: '2.4.1',
     date: '2026-02-10',
     type: 'fix',
     changes: [
       {
-        category: 'AdSense 错误修复',
+        category: '广告显示优化',
+        icon: Bug,
         items: [
-          '修复 "data-nscript attribute not supported" 错误',
-          '移除 Script 组件的 async 属性，改用 lazyOnload 策略',
-          '修复 "Invalid data-ad-layout value: in-feed" 错误',
-          '优化广告格式配置，移除不支持的布局参数',
-          'BannerAd 改用 adFormat="auto" 提升兼容性',
-          'FeedAd 移除 adLayout 参数，使用纯 fluid 格式',
-          '改进 GoogleAdsense 组件，只在有值时添加 data-ad-layout 属性'
+          '修复广告加载错误，提升显示稳定性',
+          '优化广告格式配置，提升兼容性',
+          '改进广告组件，确保正确显示'
         ]
       },
       {
         category: '性能优化',
         items: [
-          'AdSense 脚本使用 lazyOnload 策略，在浏览器空闲时加载',
+          '优化广告加载策略，在浏览器空闲时加载',
           '不阻塞页面加载，提升用户体验',
-          '减少控制台错误，提升开发体验'
+          '减少页面错误，提升浏览体验'
         ]
       }
     ]
@@ -56,14 +177,12 @@ const changelog: ChangelogEntry[] = [
     changes: [
       {
         category: 'Google AdSense 集成',
+        icon: Globe,
         items: [
-          '集成 Google AdSense 广告系统，支持多种广告格式',
-          '首页添加横幅广告（英雄区域下方、最新文章列表下方）',
-          '文章列表页添加横幅广告和信息流广告（每4篇插入）',
-          '文章详情页添加文章内广告和侧边栏广告',
-          '创建可复用的广告组件：GoogleAdsense、InArticleAd、SidebarAd、BannerAd、FeedAd',
-          '开发环境显示广告占位符，生产环境显示真实广告',
-          '完善 AdSense 配置文档和使用指南'
+          '集成 Google AdSense 广告系统',
+          '首页、文章列表页、文章详情页添加广告位',
+          '支持多种广告格式，优化显示效果',
+          '广告不影响阅读体验，布局合理'
         ]
       },
       {
@@ -77,21 +196,21 @@ const changelog: ChangelogEntry[] = [
         ]
       },
       {
-        category: '域名更新',
+        category: '链接优化',
+        icon: Link2,
         items: [
-          '将所有下载链接从 www.familybank.chat 更新为 blog.familybank.chat',
-          '更新 9 个文件中的域名引用',
-          '配置 Next.js 和 Vercel 支持 APK 文件下载',
-          '复制 APK 文件到博客系统 public 目录'
+          '优化系统间跳转链接',
+          '更新下载链接地址',
+          '改进文件下载体验'
         ]
       },
       {
         category: '问题修复',
         items: [
-          '修复文章详情页 JSX 结构错误（缺少闭合标签）',
-          '修复关于页面重复的 from 导入语句',
+          '修复文章详情页显示错误',
+          '修复页面加载问题',
           '修复首页最新评论显示在一行的问题',
-          '优化评论内容使用单行省略显示',
+          '优化评论内容显示，使用单行省略',
           '统一页面容器宽度，保持视觉一致性'
         ]
       }
@@ -104,15 +223,14 @@ const changelog: ChangelogEntry[] = [
     changes: [
       {
         category: '反馈管理优化',
+        icon: MessageSquare,
         items: [
-          '反馈管理中限制回复功能仅超级管理员可用，普通家长只能查看',
-          '优化反馈列表显示，只显示提交人姓名信息',
-          '新增家庭ID显示功能，超级管理员可查看完整的家庭UUID',
-          '博客系统反馈管理添加分页功能（每页10条）',
-          '家庭积分银行反馈管理添加分页功能（每页5条）',
-          '优化反馈弹窗布局，增大弹窗宽度至max-w-6xl',
-          '家庭ID单独一行显示，使用等宽字体，支持自动换行',
-          '两个系统的反馈管理界面保持一致的显示风格'
+          '优化反馈管理功能',
+          '改进反馈列表显示',
+          '新增管理员专用功能',
+          '反馈管理添加分页功能，方便查看',
+          '优化反馈弹窗布局，提升可读性',
+          '统一界面风格，提升一致性'
         ]
       },
       {
@@ -132,14 +250,14 @@ const changelog: ChangelogEntry[] = [
     changes: [
       {
         category: 'SEO 优化',
+        icon: Globe,
         items: [
-          '为所有页面添加完整的 Meta 标签和 Open Graph 数据',
-          '实现动态 SEO 元数据生成，文章页面自动生成标题和描述',
-          '添加 JSON-LD 结构化数据，提升搜索引擎理解',
-          '创建 sitemap.xml 自动生成功能，包含所有文章和页面',
-          '优化 robots.txt 配置，控制搜索引擎爬取范围',
-          '添加 canonical 链接，避免重复内容问题',
-          '优化页面标题模板，提升搜索结果展示效果'
+          '为所有页面添加完整的 Meta 标签',
+          '实现动态 SEO 元数据生成',
+          '添加结构化数据，提升搜索引擎理解',
+          '创建 sitemap.xml 自动生成功能',
+          '优化 robots.txt 配置',
+          '优化页面标题模板'
         ]
       },
       {
@@ -215,10 +333,11 @@ const changelog: ChangelogEntry[] = [
       },
       {
         category: '安全性',
+        icon: Shield,
         items: [
-          '加强 RLS 策略，提升数据安全性',
-          '实现 CSRF 保护机制',
-          '优化密码重置流程，提升账户安全'
+          '加强数据访问控制',
+          '优化认证流程',
+          '改进账户安全机制'
         ]
       }
     ]
@@ -373,22 +492,28 @@ export default function ChangelogPage() {
 
                       {/* Changes */}
                       <div className="p-6 space-y-6">
-                        {entry.changes.map((change, changeIndex) => (
-                          <div key={changeIndex}>
-                            <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                              <Code className="w-5 h-5 text-purple-600" />
-                              {change.category}
-                            </h3>
-                            <ul className="space-y-2">
-                              {change.items.map((item, itemIndex) => (
-                                <li key={itemIndex} className="flex items-start gap-3 text-gray-600">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 mt-2 flex-shrink-0"></span>
-                                  <span className="leading-relaxed">{item}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
+                        {entry.changes.map((change, changeIndex) => {
+                          const CategoryIcon = change.icon || Code
+                          
+                          return (
+                            <div key={changeIndex}>
+                              <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                                  <CategoryIcon className="w-4 h-4 text-purple-600" />
+                                </div>
+                                {change.category}
+                              </h3>
+                              <ul className="space-y-2">
+                                {change.items.map((item, itemIndex) => (
+                                  <li key={itemIndex} className="flex items-start gap-3 text-gray-600">
+                                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="leading-relaxed">{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>

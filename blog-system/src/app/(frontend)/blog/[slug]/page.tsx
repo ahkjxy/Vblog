@@ -15,9 +15,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params
   const supabase = await createClient()
   
-  console.log('=== Metadata Generation Debug ===')
-  console.log('Slug:', slug)
-  
   let post = null;
   try {
     const { data, error } = await supabase
@@ -28,8 +25,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       .eq('review_status', 'approved')
       .maybeSingle()
     
-    console.log('Metadata query result:', { found: !!data, error, data })
-    
     if (error && error.code === '42703') {
       const { data: fallbackData } = await supabase
         .from('posts')
@@ -37,24 +32,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         .eq('slug', slug)
         .eq('status', 'published')
         .maybeSingle()
-      console.log('Metadata fallback result:', { found: !!fallbackData, data: fallbackData })
       post = fallbackData
     } else if (!error) {
       post = data
     }
   } catch (err) {
-    console.error('Metadata query error:', err)
     const { data: fallbackData } = await supabase
       .from('posts')
       .select('title, seo_title, seo_description, excerpt, status, review_status, published_at, author_id, profiles!posts_author_id_fkey(name)')
       .eq('slug', slug)
       .eq('status', 'published')
       .maybeSingle()
-    console.log('Metadata exception fallback:', { found: !!fallbackData, data: fallbackData })
     post = fallbackData
   }
-
-  console.log('=== End Metadata Debug ===')
 
   if (!post) {
     return {
@@ -105,28 +95,16 @@ export default async function BlogPostPage({ params }: PageProps) {
     .eq('slug', slug)
     .maybeSingle()
   
-  console.log('Step 1 - Post exists check:', {
-    found: !!checkPost,
-    post: checkPost,
-    error: checkError
-  })
-  
   // 步骤 2: 查询已发布的文章（不检查 review_status）
-  const { data: publishedCheck, error: publishedError } = await supabase
+  const { data: publishedCheck } = await supabase
     .from('posts')
     .select('id, title, status, review_status')
     .eq('slug', slug)
     .eq('status', 'published')
     .maybeSingle()
   
-  console.log('Step 2 - Published check:', {
-    found: !!publishedCheck,
-    post: publishedCheck,
-    error: publishedError
-  })
-  
   // 步骤 3: 查询已发布且审核通过的文章
-  const { data: approvedCheck, error: approvedError } = await supabase
+  const { data: approvedCheck } = await supabase
     .from('posts')
     .select('id, title, status, review_status')
     .eq('slug', slug)
@@ -134,14 +112,7 @@ export default async function BlogPostPage({ params }: PageProps) {
     .eq('review_status', 'approved')
     .maybeSingle()
   
-  console.log('Step 3 - Approved check:', {
-    found: !!approvedCheck,
-    post: approvedCheck,
-    error: approvedError
-  })
-  
   let post = null;
-  let queryError = null;
   
   try {
     // 尝试完整查询（带 review_status）
@@ -159,18 +130,9 @@ export default async function BlogPostPage({ params }: PageProps) {
       .eq('review_status', 'approved')
       .maybeSingle()
     
-    queryError = error
-    console.log('Step 4 - Full query with review_status:', {
-      found: !!data,
-      error: error,
-      errorCode: error?.code,
-      errorMessage: error?.message
-    })
-    
     if (error && error.code === '42703') {
       // review_status 字段不存在
-      console.log('Step 5 - Fallback: review_status field does not exist')
-      const { data: fallbackData, error: fallbackError } = await supabase
+      const { data: fallbackData } = await supabase
         .from('posts')
         .select(`
           *,
@@ -182,18 +144,13 @@ export default async function BlogPostPage({ params }: PageProps) {
         .eq('status', 'published')
         .maybeSingle()
       
-      console.log('Step 5 - Fallback result:', {
-        found: !!fallbackData,
-        error: fallbackError
-      })
       post = fallbackData
     } else if (!error) {
       post = data
     }
   } catch (err) {
-    console.error('Step 6 - Exception caught:', err)
     // 出错时回退到不检查 review_status
-    const { data: fallbackData, error: fallbackError } = await supabase
+    const { data: fallbackData } = await supabase
       .from('posts')
       .select(`
         *,
@@ -205,30 +162,10 @@ export default async function BlogPostPage({ params }: PageProps) {
       .eq('status', 'published')
       .maybeSingle()
     
-    console.log('Step 6 - Exception fallback result:', {
-      found: !!fallbackData,
-      error: fallbackError
-    })
     post = fallbackData
   }
 
-  console.log('Final result:', {
-    postFound: !!post,
-    postId: post?.id,
-    postTitle: post?.title
-  })
-  console.log('=== End Debug ===')
-
   if (!post) {
-    console.error('❌ Post not found - returning 404')
-    console.error('Debug summary:', {
-      slug,
-      existsInDB: !!checkPost,
-      isPublished: !!publishedCheck,
-      isApproved: !!approvedCheck,
-      checkPostData: checkPost,
-      queryError: queryError
-    })
     notFound()
   }
 

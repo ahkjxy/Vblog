@@ -64,7 +64,6 @@ export function Header() {
         }
       } catch (error) {
         // Silently fail during SSG/build time when Supabase env vars aren't available
-        console.log('Header: Supabase not available during build')
       }
     }
     checkUser()

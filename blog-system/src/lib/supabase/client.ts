@@ -31,45 +31,29 @@ export function createClient() {
   return createBrowserClient(
     supabaseUrl,
     supabaseAnonKey,
-    isProduction ? {
-      cookies: {
-        get(name: string) {
-          if (typeof document === 'undefined') return undefined
-          const value = document.cookie
-            .split('; ')
-            .find(row => row.startsWith(`${name}=`))
-            ?.split('=')[1]
-          return value
-        },
-        set(name: string, value: string, options: any) {
-          if (typeof document === 'undefined') return
-          const maxAge = options?.maxAge ? `max-age=${options.maxAge}; ` : ''
-          document.cookie = `${name}=${value}; path=/; domain=.familybank.chat; ${maxAge}SameSite=Lax; Secure`
-        },
-        remove(name: string, options: any) {
-          if (typeof document === 'undefined') return
-          document.cookie = `${name}=; path=/; domain=.familybank.chat; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure`
-        },
-      },
-    } : {
-      cookies: {
-        get(name: string) {
-          if (typeof document === 'undefined') return undefined
-          const value = document.cookie
-            .split('; ')
-            .find(row => row.startsWith(`${name}=`))
-            ?.split('=')[1]
-          return value
-        },
-        set(name: string, value: string, options: any) {
-          if (typeof document === 'undefined') return
-          const maxAge = options?.maxAge ? `max-age=${options.maxAge}; ` : ''
-          document.cookie = `${name}=${value}; path=/; ${maxAge}SameSite=Lax`
-        },
-        remove(name: string, options: any) {
-          if (typeof document === 'undefined') return
-          document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`
-        },
+    {
+      auth: {
+        // 使用与 family-points-bank 相同的 storage key
+        storageKey: 'sb-auth-token',
+        storage: isProduction ? {
+          getItem: (key: string) => {
+            if (typeof window === 'undefined') return null
+            const value = document.cookie
+              .split('; ')
+              .find(row => row.startsWith(`${key}=`))
+              ?.split('=')[1]
+            return value || null
+          },
+          setItem: (key: string, value: string) => {
+            if (typeof window === 'undefined') return
+            // 设置跨子域的 cookie，与 family-points-bank 共享
+            document.cookie = `${key}=${value}; path=/; domain=.familybank.chat; max-age=31536000; SameSite=Lax; Secure`
+          },
+          removeItem: (key: string) => {
+            if (typeof window === 'undefined') return
+            document.cookie = `${key}=; path=/; domain=.familybank.chat; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure`
+          },
+        } : undefined, // 本地开发使用默认 localStorage
       },
     }
   )

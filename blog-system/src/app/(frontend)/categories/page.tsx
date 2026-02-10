@@ -5,10 +5,38 @@ import { FolderOpen, ArrowRight } from 'lucide-react'
 export default async function CategoriesPage() {
   const supabase = await createClient()
   
+  // 获取所有分类
   const { data: categories } = await supabase
     .from('categories')
-    .select('*, post_categories(count)')
+    .select('*')
     .order('name', { ascending: true })
+  
+  // 为每个分类获取文章数量
+  const categoriesWithCount = await Promise.all(
+    (categories || []).map(async (category) => {
+      // 获取该分类下的文章ID
+      const { data: postCategories } = await supabase
+        .from('post_categories')
+        .select('post_id')
+        .eq('category_id', category.id)
+      
+      const postIds = postCategories?.map(pc => pc.post_id) || []
+      
+      // 统计已发布且审核通过的文章数量
+      if (postIds.length === 0) {
+        return { ...category, postCount: 0 }
+      }
+      
+      const { count } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .in('id', postIds)
+        .eq('status', 'published')
+        .eq('review_status', 'approved')
+      
+      return { ...category, postCount: count || 0 }
+    })
+  )
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -33,9 +61,9 @@ export default async function CategoriesPage() {
       {/* Categories Grid */}
       <div className="container mx-auto px-6 py-20">
         <div className="max-w-6xl mx-auto">
-          {categories && categories.length > 0 ? (
+          {categoriesWithCount && categoriesWithCount.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {categories.map((category, index) => {
+              {categoriesWithCount.map((category, index) => {
                 const gradients = [
                   { from: 'from-purple-500', to: 'to-pink-500', bg: 'from-purple-100 to-pink-100' },
                   { from: 'from-pink-500', to: 'to-rose-500', bg: 'from-pink-100 to-rose-100' },
@@ -64,7 +92,7 @@ export default async function CategoriesPage() {
                       )}
                       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                         <span className="text-sm font-semibold text-gray-500">
-                          {category.post_categories?.length || 0} 篇文章
+                          {category.postCount} 篇文章
                         </span>
                         <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
                       </div>

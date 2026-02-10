@@ -35,14 +35,10 @@ export default async function DashboardLayout({
   const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
   const isSuperAdmin = userProfile?.role === 'admin' && userProfile?.family_id === SUPER_ADMIN_FAMILY_ID
 
-  // 调试信息
-  console.log('=== Dashboard Layout Debug ===')
-  console.log('User ID:', user.id)
-  console.log('User Email:', user.email)
-  console.log('Profile Role:', userProfile?.role)
-  console.log('Profile Family ID:', userProfile?.family_id)
-  console.log('Is Super Admin:', isSuperAdmin)
-  console.log('==============================')
+  // 调试信息（仅在开发环境）
+  if (process.env.NODE_ENV === 'development') {
+    // Debug info available in development
+  }
 
   // 使用可能存在的字段 - 优先使用 profile.name（家长名字）
   const userName = userProfile?.name || user.email?.split('@')[0] || '用户'
@@ -76,15 +72,9 @@ export default async function DashboardLayout({
     )
   }
 
-  // 在控制台打印调试信息
-  if (typeof window !== 'undefined') {
-    console.log('=== Dashboard Debug Info ===')
-    console.log('User ID:', user.id)
-    console.log('User Email:', user.email)
-    console.log('User Profile:', userProfile)
-    console.log('Is Super Admin:', isSuperAdmin)
-    console.log('User Role:', userRole)
-    console.log('===========================')
+  // 在控制台打印调试信息（仅开发环境）
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    // Debug info available in development
   }
 
   return (
