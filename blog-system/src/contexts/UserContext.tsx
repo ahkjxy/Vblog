@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface UserProfile {
@@ -30,7 +30,9 @@ export function UserProvider({
 }) {
   const [user, setUser] = useState<UserProfile | null>(initialUser || null)
   const [loading, setLoading] = useState(!initialUser)
-  const supabase = createClient()
+  
+  // 创建单例 Supabase 客户端
+  const supabase = useMemo(() => createClient(), [])
 
   // 获取用户信息
   const fetchUser = async () => {
@@ -90,13 +92,17 @@ export function UserProvider({
 
   // 初始化和监听认证状态变化
   useEffect(() => {
+    let mounted = true
+
     // 如果没有初始用户，则获取
-    if (!initialUser) {
+    if (!initialUser && mounted) {
       fetchUser()
     }
 
     // 监听认证状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
+      if (!mounted) return
+      
       if (event === 'SIGNED_IN' && session?.user) {
         await fetchUser()
       } else if (event === 'SIGNED_OUT') {
@@ -105,9 +111,10 @@ export function UserProvider({
     })
 
     return () => {
+      mounted = false
       subscription.unsubscribe()
     }
-  }, [initialUser])
+  }, [initialUser, supabase])
 
   return (
     <UserContext.Provider value={{ user, loading, refreshUser, logout }}>

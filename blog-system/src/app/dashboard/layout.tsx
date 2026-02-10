@@ -15,19 +15,27 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user, logout } = useUser()
+  const { user, loading: userLoading, logout } = useUser()
   const router = useRouter()
   const [userProfile, setUserProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const [profileLoading, setProfileLoading] = useState(true)
 
+  // 检查登录状态
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.push('/auth/login')
+    }
+  }, [user, userLoading, router])
+
+  // 获取用户 profile（只在有 user 时执行一次）
   useEffect(() => {
     if (!user) {
-      router.push('/auth/login')
+      setProfileLoading(false)
       return
     }
 
     const fetchProfile = async () => {
+      const supabase = createClient()
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -35,18 +43,19 @@ export default function DashboardLayout({
         .maybeSingle()
 
       setUserProfile(profile)
-      setLoading(false)
+      setProfileLoading(false)
     }
 
     fetchProfile()
-  }, [user, router, supabase])
+  }, [user?.id]) // 只依赖 user.id，避免重复请求
 
   const handleLogout = async () => {
     await logout()
     router.push('/')
   }
 
-  if (loading || !user) {
+  // 显示加载状态
+  if (userLoading || profileLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-purple-50/20 to-pink-50/20">
         <div className="flex flex-col items-center gap-4">
