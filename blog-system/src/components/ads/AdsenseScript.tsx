@@ -1,5 +1,3 @@
-import Script from 'next/script'
-
 /**
  * Google AdSense 脚本组件
  * 在根布局中引入此组件以加载 AdSense 脚本
@@ -13,10 +11,16 @@ export function AdsenseScript() {
   }
 
   return (
-    <Script
-      src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adClient}`}
-      strategy="lazyOnload"
-      crossOrigin="anonymous"
-    />
+    <>
+      <link
+        rel="preconnect"
+        href="https://pagead2.googlesyndication.com"
+      />
+      <script
+        async
+        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adClient}`}
+        crossOrigin="anonymous"
+      />
+    </>
   )
 }
