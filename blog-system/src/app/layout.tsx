@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   authors: [{ name: '元气银行团队' }],
   creator: '元气银行',
   publisher: '元气银行',
+  verification: {
+    google: '3UEPzYJSWZBk1GTKL6rnijmHKqYTGJWngxP51zLUGWI',
+  },
   formatDetection: {
     email: false,
     address: false,
