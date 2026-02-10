@@ -155,6 +155,7 @@ export default function AuthTestPage() {
             </div>
 
             {/* 测试说明 */}
+            {/* eslint-disable react/no-unescaped-entities */}
             <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <h3 className="font-bold text-gray-900 mb-2">📝 测试步骤：</h3>
               <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
@@ -169,6 +170,7 @@ export default function AuthTestPage() {
                 <strong>注意：</strong>本地开发环境（localhost）无法测试跨域 Cookie，请在生产环境测试。
               </p>
             </div>
+            {/* eslint-enable react/no-unescaped-entities */}
           </div>
         </div>
       </div>
