@@ -42,7 +42,10 @@ export default function PostsPage() {
 
   // 加载文章列表
   const loadPosts = async () => {
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     try {
       const { data: { user } } = await supabase.auth.getUser()

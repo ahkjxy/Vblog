@@ -135,7 +135,10 @@ export function Comments({ postId }: CommentsProps) {
   }, [postId])
 
   const loadComments = async () => {
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     try {
       const { data, error } = await supabase

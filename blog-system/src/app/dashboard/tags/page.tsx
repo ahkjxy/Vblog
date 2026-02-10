@@ -37,7 +37,10 @@ export default function TagsPage() {
 
   // 加载标签列表
   const loadTags = async () => {
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     try {
       const { data, error } = await supabase

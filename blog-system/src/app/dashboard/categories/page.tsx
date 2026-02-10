@@ -40,7 +40,10 @@ export default function CategoriesPage() {
 
   // 加载分类列表
   const loadCategories = async () => {
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     try {
       const { data, error } = await supabase

@@ -41,7 +41,10 @@ export default function UsersPage() {
 
   // 加载用户列表
   const loadUsers = async () => {
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser()

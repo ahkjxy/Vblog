@@ -64,7 +64,10 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   }, [filter, currentPage])
 
   const loadFeedbackList = async () => {
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     setLoading(true)
     try {
@@ -119,7 +122,10 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   }
 
   const loadFeedbackDetail = async (feedback: FeedbackMessage) => {
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     setSelectedFeedback(feedback)
     setLoading(true)

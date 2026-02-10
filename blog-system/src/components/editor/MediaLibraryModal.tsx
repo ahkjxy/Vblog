@@ -29,7 +29,10 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect }: MediaLibraryMod
   }, [isOpen])
 
   const loadFiles = async () => {
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     setLoading(true)
     try {

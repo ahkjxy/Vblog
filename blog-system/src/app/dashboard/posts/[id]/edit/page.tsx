@@ -66,7 +66,10 @@ export default function EditPostPage({ params }: PageProps) {
   }
 
   const loadPost = async (postId: string) => {
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     try {
       const { data: post, error: fetchError } = await supabase

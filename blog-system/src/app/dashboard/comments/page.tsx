@@ -69,7 +69,10 @@ export default function CommentsPage() {
 
   // 加载评论列表
   const loadComments = async () => {
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     try {
       // 构建查询

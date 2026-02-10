@@ -41,7 +41,10 @@ export default function ReviewPostPage() {
   }, [postId])
 
   const loadPost = async () => {
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     try {
       // 检查当前用户是否是超级管理员

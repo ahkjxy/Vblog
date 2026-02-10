@@ -46,7 +46,10 @@ export default function MediaPage() {
 
   // 加载媒体文件
   const loadFiles = async () => {
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     try {
       const { data: { user } } = await supabase.auth.getUser()
