@@ -23,6 +23,54 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '2.4.0',
+    date: '2026-02-10',
+    type: 'feature',
+    changes: [
+      {
+        category: 'Google AdSense 集成',
+        items: [
+          '集成 Google AdSense 广告系统，支持多种广告格式',
+          '首页添加横幅广告（英雄区域下方、最新文章列表下方）',
+          '文章列表页添加横幅广告和信息流广告（每4篇插入）',
+          '文章详情页添加文章内广告和侧边栏广告',
+          '创建可复用的广告组件：GoogleAdsense、InArticleAd、SidebarAd、BannerAd、FeedAd',
+          '开发环境显示广告占位符，生产环境显示真实广告',
+          '完善 AdSense 配置文档和使用指南'
+        ]
+      },
+      {
+        category: '公益平台说明',
+        items: [
+          '创建 PublicWelfareNotice 组件，提供3种展示样式',
+          '在首页、关于页、联系页、页脚添加公益说明',
+          '移除所有"专业版"、"付费"等收费相关文字',
+          '强调平台完全免费，所有功能无限制',
+          '说明广告用途：维持运营，不影响用户体验'
+        ]
+      },
+      {
+        category: '域名更新',
+        items: [
+          '将所有下载链接从 www.familybank.chat 更新为 blog.familybank.chat',
+          '更新 9 个文件中的域名引用',
+          '配置 Next.js 和 Vercel 支持 APK 文件下载',
+          '复制 APK 文件到博客系统 public 目录'
+        ]
+      },
+      {
+        category: '问题修复',
+        items: [
+          '修复文章详情页 JSX 结构错误（缺少闭合标签）',
+          '修复关于页面重复的 from 导入语句',
+          '修复首页最新评论显示在一行的问题',
+          '优化评论内容使用单行省略显示',
+          '统一页面容器宽度，保持视觉一致性'
+        ]
+      }
+    ]
+  },
+  {
     version: '2.3.0',
     date: '2026-02-09',
     type: 'improvement',
@@ -266,7 +314,7 @@ export default function ChangelogPage() {
             <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-200 via-pink-200 to-transparent hidden md:block"></div>
 
             <div className="space-y-12">
-              {changelog.map((entry, index) => {
+              {changelog.map((entry) => {
                 const config = typeConfig[entry.type]
                 const Icon = config.icon
                 
