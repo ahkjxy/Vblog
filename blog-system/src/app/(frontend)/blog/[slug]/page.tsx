@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { MarkdownContent } from '@/components/MarkdownContent'
 import { Comments } from '@/components/Comments'
+import { InArticleAd, SidebarAd } from '@/components/ads'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -239,9 +240,12 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-white">
-      <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <header className="py-12 sm:py-16 border-b border-gray-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* 主内容区 - 占 8 列 */}
+          <article className="lg:col-span-8">
+            {/* Header */}
+            <header className="py-12 sm:py-16 border-b border-gray-100">
           {/* Categories */}
           {post.post_categories && post.post_categories.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
@@ -294,6 +298,9 @@ export default async function BlogPostPage({ params }: PageProps) {
           <div className="article-content">
             {renderPostContent(post.content)}
           </div>
+          
+          {/* 文章内广告 - 内容后 */}
+          <InArticleAd className="my-12" />
         </div>
 
         {/* Tags */}
@@ -352,6 +359,24 @@ export default async function BlogPostPage({ params }: PageProps) {
           </Link>
         </div>
       </article>
+
+      {/* 侧边栏 - 占 4 列 */}
+      <aside className="lg:col-span-4">
+        <div className="sticky top-24 space-y-6">
+          {/* 侧边栏广告 */}
+          <SidebarAd />
+          
+          {/* 其他侧边栏内容可以在这里添加 */}
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100">
+            <h3 className="font-bold text-gray-900 mb-3">💡 提示</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              喜欢这篇文章？欢迎在下方留言分享你的想法！
+            </p>
+          </div>
+        </div>
+      </aside>
+        </div>
+      </div>
     </div>
   )
 }

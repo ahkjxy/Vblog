@@ -1,6 +1,7 @@
 import { Zap, Target, Heart, Users, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { PublicWelfareNotice } from '@/components/PublicWelfareNotice'
 
 export const metadata: Metadata = {
   title: '关于我们',
@@ -35,6 +36,9 @@ export default function AboutPage() {
 
       <div className="container mx-auto px-6 py-20">
         <div className="max-w-6xl mx-auto space-y-20">
+          {/* Public Welfare Notice */}
+          <PublicWelfareNotice />
+
           {/* Mission */}
           <div className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-purple-600 rounded-3xl p-12 md:p-16 text-white shadow-2xl">
             <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>

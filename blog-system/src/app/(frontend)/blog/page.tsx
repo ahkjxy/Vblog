@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { formatDate, formatAuthorName } from '@/lib/utils'
 import { Calendar, Eye, User, ArrowRight } from 'lucide-react'
 import { FamilyBankCTA } from '@/components/FamilyBankCTA'
+import { BannerAd, FeedAd } from '@/components/ads'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -130,6 +131,9 @@ export default async function BlogListPage() {
       {/* Posts List */}
       <div className="container mx-auto px-6 py-20">
         <div className="max-w-6xl mx-auto">
+          {/* 横幅广告 - 文章列表顶部 */}
+          <BannerAd className="mb-12" />
+          
           {posts && posts.length > 0 ? (
             <div className="space-y-6">
               {posts.map((post, index) => {
@@ -142,7 +146,8 @@ export default async function BlogListPage() {
                 const gradient = gradients[index % gradients.length]
                 
                 return (
-                  <article key={post.id} className="group bg-white rounded-2xl p-8 hover:shadow-2xl transition-all border border-gray-100 hover:border-purple-200">
+                  <div key={post.id}>
+                    <article className="group bg-white rounded-2xl p-8 hover:shadow-2xl transition-all border border-gray-100 hover:border-purple-200">
                     {/* Color accent bar */}
                     <div className={`h-1 w-20 rounded-full bg-gradient-to-r ${gradient.from} ${gradient.to} mb-6`}></div>
                     
@@ -188,6 +193,12 @@ export default async function BlogListPage() {
                       </Link>
                     </div>
                   </article>
+                  
+                  {/* 每隔 4 篇文章插入信息流广告 */}
+                  {(index + 1) % 4 === 0 && index < posts.length - 1 && (
+                    <FeedAd className="my-8" />
+                  )}
+                </div>
                 )
               })}
             </div>

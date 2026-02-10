@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { formatDate, formatAuthorName } from '@/lib/utils'
 import { ArrowRight, Eye, FolderOpen, Tag, MessageCircle, BookOpen, FileText } from 'lucide-react'
 import { FamilyBankCTA } from '@/components/FamilyBankCTA'
+import { PublicWelfareNotice } from '@/components/PublicWelfareNotice'
+import { BannerAd } from '@/components/ads'
 import type { Metadata } from 'next'
 
 // 禁用静态生成，每次请求都重新获取数据
@@ -337,6 +339,9 @@ export default async function HomePage() {
       {/* Posts Grid */}
       <section className="container mx-auto px-4 sm:px-6 py-12 sm:py-20 bg-gradient-to-b from-transparent to-purple-50/30">
         <div className="max-w-6xl mx-auto">
+          {/* 横幅广告 - 测试位置 */}
+          <BannerAd className="mb-12" />
+          
           <div className="flex items-center justify-between mb-8 sm:mb-12">
             <div>
               <h2 className="text-2xl sm:text-4xl font-bold mb-2 sm:mb-3 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">最新文章</h2>
@@ -464,6 +469,9 @@ export default async function HomePage() {
       {/* Categories & Tags Section */}
       <section className="container mx-auto px-6 py-20 bg-gradient-to-b from-purple-50/30 to-white">
         <div className="max-w-6xl mx-auto">
+          {/* 横幅广告 - 在分类标签之前 */}
+          <BannerAd className="mb-12" />
+          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Categories */}
             <div>
@@ -571,18 +579,20 @@ export default async function HomePage() {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 truncate">{comment.displayName}</div>
+                        <div className="font-semibold text-gray-900 text-sm truncate">{comment.displayName}</div>
                         <div className="text-xs text-gray-500">{formatDate(comment.created_at)}</div>
                       </div>
                     </div>
-                    <p className="text-gray-700 text-sm mb-4 line-clamp-3 leading-relaxed">{comment.content}</p>
+                    <p className="text-gray-700 text-sm mb-4 leading-relaxed truncate">
+                      {comment.content}
+                    </p>
                     {comment.posts && (
                       <Link 
                         href={`/blog/${comment.posts.slug}`}
-                        className="inline-flex items-center gap-2 text-xs font-medium text-purple-600 hover:text-pink-600 transition-colors group"
+                        className="flex items-center gap-2 text-xs font-medium text-purple-600 hover:text-pink-600 transition-colors group"
                       >
-                        <BookOpen className="w-3.5 h-3.5" />
-                        <span className="truncate">{comment.posts.title}</span>
+                        <BookOpen className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate flex-1 min-w-0">{comment.posts.title}</span>
                         <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                       </Link>
                     )}
@@ -593,6 +603,13 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Public Welfare Notice */}
+      <section className="container mx-auto px-4 sm:px-6 py-12 bg-gradient-to-b from-white to-purple-50/30">
+        <div className="max-w-6xl mx-auto">
+          <PublicWelfareNotice />
+        </div>
+      </section>
     </div>
   )
 }

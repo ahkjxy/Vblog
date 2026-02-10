@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Heart, Github, Twitter, Mail, Sparkles, ExternalLink } from 'lucide-react'
+import { PublicWelfareNotice } from '@/components/PublicWelfareNotice'
 
 export function Footer() {
   return (
@@ -9,6 +10,11 @@ export function Footer() {
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-pink-200/20 to-purple-200/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
       
       <div className="relative container mx-auto px-6 py-16">
+        {/* Public Welfare Notice */}
+        <div className="mb-12">
+          <PublicWelfareNotice variant="footer" />
+        </div>
+
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-12 mb-12">
           {/* Brand Section */}

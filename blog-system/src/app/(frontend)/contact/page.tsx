@@ -113,11 +113,18 @@ export default function ContactPage() {
               <div className="border-l-4 border-pink-600 pl-6">
                 <h3 className="text-xl font-bold mb-3 text-gray-900">元气银行是免费的吗？</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  是的，我们提供免费版本供家庭使用。如需更多高级功能，可以升级到专业版。
+                  是的，元气银行是一个<strong className="text-pink-600">完全免费的公益平台</strong>。所有功能都可以免费使用，没有任何付费限制。我们的目标是让每个家庭都能享受到优质的家庭教育管理工具。
                 </p>
               </div>
               
               <div className="border-l-4 border-indigo-600 pl-6">
+                <h3 className="text-xl font-bold mb-3 text-gray-900">为什么网站上有广告？</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  为了维持平台的持续运营和发展，我们会展示少量广告。所有广告都经过严格筛选，确保不影响您的使用体验。广告收入将用于服务器维护和功能改进。
+                </p>
+              </div>
+              
+              <div className="border-l-4 border-purple-600 pl-6">
                 <h3 className="text-xl font-bold mb-3 text-gray-900">数据安全吗？</h3>
                 <p className="text-gray-600 leading-relaxed">
                   我们使用 Supabase 云服务，采用企业级加密和安全措施，确保您的数据安全。
@@ -127,7 +134,7 @@ export default function ContactPage() {
               <div className="border-l-4 border-fuchsia-600 pl-6">
                 <h3 className="text-xl font-bold mb-3 text-gray-900">支持多少个家庭成员？</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  免费版支持最多 6 个家庭成员，专业版支持无限成员。
+                  没有限制！您可以添加任意数量的家庭成员，所有功能都完全免费开放。
                 </p>
               </div>
             </div>

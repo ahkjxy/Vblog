@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { WebsiteJsonLd, OrganizationJsonLd } from "@/components/JsonLd";
+import { AdsenseScript } from "@/components/ads";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -74,6 +75,7 @@ export default function RootLayout({
       <head>
         <WebsiteJsonLd />
         <OrganizationJsonLd />
+        <AdsenseScript />
       </head>
       <body className={inter.className}>{children}</body>
     </html>
