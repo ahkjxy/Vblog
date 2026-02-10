@@ -24,6 +24,40 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '2.8.1',
+    date: '2026-02-10',
+    type: 'fix',
+    changes: [
+      {
+        category: '关键问题修复',
+        icon: Bug,
+        items: [
+          '修复登录后循环请求问题：解决 Dashboard 加载时的 429 错误',
+          '优化 Supabase 客户端管理：使用单例模式避免重复创建客户端实例',
+          '改进状态管理：分离用户加载和 Profile 加载状态，避免重复请求',
+          '防止内存泄漏：添加 mounted 标志防止组件卸载后的状态更新'
+        ]
+      },
+      {
+        category: 'SEO 优化',
+        icon: Globe,
+        items: [
+          '完善 sitemap.xml：添加所有分类和标签页面',
+          '新增静态页面：contact、docs、api 等页面加入站点地图',
+          '动态内容索引：自动包含所有已发布文章、分类和标签'
+        ]
+      },
+      {
+        category: '用户体验',
+        icon: Sparkles,
+        items: [
+          '导航文案优化：将"文档"改为"社区讨论"，更符合实际用途',
+          '加载体验改进：Dashboard 加载状态更流畅，减少闪烁'
+        ]
+      }
+    ]
+  },
+  {
     version: '2.8.0',
     date: '2026-02-10',
     type: 'improvement',
