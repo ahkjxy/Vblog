@@ -17,57 +17,61 @@ export function Header() {
 
   // 检查用户登录状态
   useEffect(() => {
+    let mounted = true
+    
     const checkUser = async () => {
       try {
         const { data: { user: authUser } } = await supabase.auth.getUser()
-        if (authUser) {
-          // 1. 获取 family_members 记录
-          const { data: familyMember } = await supabase
-            .from('family_members')
-            .select('family_id')
-            .eq('user_id', authUser.id)
-            .maybeSingle()
+        
+        if (!mounted || !authUser) return
+        
+        // 一次查询获取所有需要的信息
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('name, avatar_url, avatar_color, role')
+          .eq('id', authUser.id)
+          .maybeSingle()
 
-          // 2. 如果在家庭中，获取家长的 profile
-          let adminProfile = null
-          if (familyMember?.family_id) {
-            const { data: adminData } = await supabase
-              .from('profiles')
-              .select('name, avatar_url, avatar_color, role')
-              .eq('family_id', familyMember.family_id)
-              .eq('role', 'admin')
-              .limit(1)
-              .maybeSingle()
-            
-            adminProfile = adminData
-          }
+        if (!mounted) return
 
-          // 3. 获取用户自己的 profile（如果有）
-          const { data: userProfile } = await supabase
-            .from('profiles')
-            .select('name, avatar_url, avatar_color, role')
-            .eq('id', authUser.id)
-            .maybeSingle()
-
-          // 4. 设置用户信息（优先显示家长名字）
-          const displayName = adminProfile?.name || userProfile?.name || authUser.email?.split('@')[0] || '用户'
-          const displayAvatar = adminProfile?.avatar_url || userProfile?.avatar_url
-          const displayRole = userProfile?.role || 'author'
-          const avatarColor = adminProfile?.avatar_color || userProfile?.avatar_color
-
+        // 设置用户信息
+        if (userProfile) {
           setUser({
-            name: displayName,
-            avatar_url: displayAvatar,
-            role: displayRole,
-            avatar_color: avatarColor
+            name: userProfile.name || authUser.email?.split('@')[0] || '用户',
+            avatar_url: userProfile.avatar_url,
+            role: userProfile.role || 'author',
+            avatar_color: userProfile.avatar_color
+          })
+        } else {
+          // 如果没有 profile，使用基本信息
+          setUser({
+            name: authUser.email?.split('@')[0] || '用户',
+            role: 'author'
           })
         }
       } catch (error) {
         // Silently fail during SSG/build time when Supabase env vars aren't available
       }
     }
+    
     checkUser()
-  }, [])
+    
+    // 监听认证状态变化
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+      if (mounted) {
+        if (session?.user) {
+          checkUser()
+        } else {
+          setUser(null)
+        }
+      }
+    })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, []) // 只在组件挂载时执行一次
 
   // 点击外部关闭下拉菜单
   useEffect(() => {
