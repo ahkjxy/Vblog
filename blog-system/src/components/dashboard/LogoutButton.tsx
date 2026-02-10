@@ -18,10 +18,11 @@ export function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 transition-all text-sm font-semibold text-red-600 hover:text-red-700 border border-transparent hover:border-red-200"
+      className="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-red-50 transition-all text-sm font-semibold text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300"
+      title="退出登录"
     >
-      <LogOut className="w-5 h-5" />
-      <span>退出登录</span>
+      <LogOut className="w-4 h-4" />
+      <span>退出</span>
     </button>
   )
 }

@@ -62,6 +62,41 @@ export default async function DashboardLayout({
   return (
     <ToastProvider>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/20 to-pink-50/20">
+        {/* Top Bar - Desktop */}
+        <div className="hidden lg:block fixed top-0 right-0 left-72 bg-white/80 backdrop-blur-xl border-b border-purple-100 z-40 shadow-sm">
+          <div className="flex items-center justify-between px-8 py-4">
+            <div className="text-sm text-gray-500">
+              欢迎回来，{userName}
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100">
+                {userAvatar ? (
+                  <img 
+                    src={userAvatar} 
+                    alt={userName}
+                    className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-sm border-2 border-white">
+                    <span className="text-white text-sm font-bold">
+                      {userName.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col">
+                  <div className="text-sm font-bold text-gray-900">{userName}</div>
+                  <div className={`text-xs font-medium ${
+                    isSuperAdmin ? 'text-purple-600' : 'text-gray-500'
+                  }`}>
+                    {getRoleLabel()}
+                  </div>
+                </div>
+              </div>
+              <LogoutButton />
+            </div>
+          </div>
+        </div>
+
         <div className="flex">
           {/* Sidebar - Hidden on mobile, shown on desktop */}
           <aside className="hidden lg:flex lg:flex-col w-72 bg-white/80 backdrop-blur-xl border-r border-purple-100 min-h-screen fixed left-0 top-0 shadow-xl">
@@ -81,37 +116,8 @@ export default async function DashboardLayout({
               </Link>
             </div>
 
-            {/* User Profile & Navigation - Scrollable */}
+            {/* Navigation - Scrollable */}
             <div className="flex-1 overflow-y-auto p-5">
-              <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 shadow-sm mb-6">
-                {userAvatar ? (
-                  <img 
-                    src={userAvatar} 
-                    alt={userName}
-                    className="w-12 h-12 rounded-full border-2 border-white shadow-md"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md border-2 border-white">
-                    <span className="text-white font-bold">
-                      {userName.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm truncate text-gray-900">{userName}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${
-                      isSuperAdmin 
-                        ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200' 
-                        : 'bg-white text-purple-700 border-purple-200'
-                    }`}>
-                      {getRoleLabel()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Navigation */}
               <DashboardNav items={navItems} />
             </div>
 
@@ -126,7 +132,7 @@ export default async function DashboardLayout({
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
-                <span>进入家庭积分系统</span>
+                <span>家庭积分系统</span>
               </a>
               <Link 
                 href="/" 
@@ -135,7 +141,6 @@ export default async function DashboardLayout({
                 <Home className="w-5 h-5" />
                 <span>返回首页</span>
               </Link>
-              <LogoutButton />
             </div>
           </aside>
 
@@ -179,7 +184,7 @@ export default async function DashboardLayout({
           </div>
 
           {/* Main content */}
-          <main className="flex-1 lg:ml-72 p-4 sm:p-6 lg:p-8 pt-32 lg:pt-8">
+          <main className="flex-1 lg:ml-72 lg:mt-[73px] p-4 sm:p-6 lg:p-8 pt-32 lg:pt-8">
             <div className="max-w-7xl mx-auto">
               {children}
             </div>
