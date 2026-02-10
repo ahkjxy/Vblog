@@ -3,8 +3,13 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 let supabaseInstance: SupabaseClient | null = null
 
-// 获取或创建 Supabase 客户端实例
-function getSupabaseClient(): SupabaseClient {
+// 创建 Supabase 客户端实例（单例模式）
+export function createClient(): SupabaseClient {
+  // 只能在浏览器环境中调用
+  if (typeof window === 'undefined') {
+    throw new Error('createClient can only be called in browser environment')
+  }
+
   // 如果已经创建过实例，直接返回
   if (supabaseInstance) {
     return supabaseInstance
@@ -19,12 +24,4 @@ function getSupabaseClient(): SupabaseClient {
 
   supabaseInstance = createBrowserClient(supabaseUrl, supabaseAnonKey)
   return supabaseInstance
-}
-
-// 导出单例客户端 - 只在客户端环境中初始化
-export const supabase = typeof window !== 'undefined' ? getSupabaseClient() : null
-
-// 为了兼容现有代码，保留 createClient 函数
-export function createClient(): SupabaseClient {
-  return getSupabaseClient()
 }

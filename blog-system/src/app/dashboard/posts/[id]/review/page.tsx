@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, XCircle, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { MarkdownContent } from '@/components/MarkdownContent'

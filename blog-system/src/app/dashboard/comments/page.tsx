@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { MessageSquare, CheckCircle, XCircle, Trash2, Filter } from 'lucide-react'
 import { ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -47,8 +47,7 @@ export default function CommentsPage() {
   // 检查当前用户权限
   useEffect(() => {
     const checkUser = async () => {
-      if (!supabase) return
-      
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setCurrentUserId(user.id)
@@ -69,12 +68,8 @@ export default function CommentsPage() {
 
   // 加载评论列表
   const loadComments = async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-    
     try {
+      const supabase = createClient()
       // 构建查询
       let query = supabase
         .from('comments')
@@ -119,9 +114,8 @@ export default function CommentsPage() {
 
   // 批准评论
   const handleApprove = async (commentId: string) => {
-    if (!supabase) return
-    
     try {
+      const supabase = createClient()
       const { error } = await supabase
         .from('comments')
         .update({ status: 'approved' })
@@ -139,9 +133,8 @@ export default function CommentsPage() {
 
   // 拒绝评论
   const handleReject = async (commentId: string) => {
-    if (!supabase) return
-    
     try {
+      const supabase = createClient()
       const { error } = await supabase
         .from('comments')
         .update({ status: 'rejected' })
@@ -159,11 +152,10 @@ export default function CommentsPage() {
 
   // 删除评论
   const handleDelete = async () => {
-    if (!supabase) return
-    
     if (!commentToDelete) return
 
     try {
+      const supabase = createClient()
       const { error } = await supabase
         .from('comments')
         .delete()
@@ -182,11 +174,10 @@ export default function CommentsPage() {
 
   // 批量批准
   const handleBulkApprove = async () => {
-    if (!supabase) return
-    
     if (selectedComments.size === 0) return
 
     try {
+      const supabase = createClient()
       const { error } = await supabase
         .from('comments')
         .update({ status: 'approved' })
@@ -205,11 +196,10 @@ export default function CommentsPage() {
 
   // 批量拒绝
   const handleBulkReject = async () => {
-    if (!supabase) return
-    
     if (selectedComments.size === 0) return
 
     try {
+      const supabase = createClient()
       const { error } = await supabase
         .from('comments')
         .update({ status: 'rejected' })
@@ -228,13 +218,12 @@ export default function CommentsPage() {
 
   // 批量删除
   const handleBulkDelete = async () => {
-    if (!supabase) return
-    
     if (selectedComments.size === 0) return
 
     setIsBulkDeleting(true)
 
     try {
+      const supabase = createClient()
       const { error } = await supabase
         .from('comments')
         .delete()

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { MarkdownEditor } from '@/components/editor/MarkdownEditor'
 import { generateSlug } from '@/lib/utils'
 import { Sparkles } from 'lucide-react'

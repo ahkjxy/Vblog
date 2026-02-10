@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/contexts/UserContext'
 import { LoadingSpinner } from '@/components/ui'
 import { MessageCircle, Send, User, CheckCircle, XCircle, Smile, Reply, CornerDownRight } from 'lucide-react'

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { Image as ImageIcon, Upload, Search, Copy, Trash2, Eye } from 'lucide-react'
 import { Modal, ModalBody, ModalFooter, ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -36,8 +36,7 @@ export default function MediaPage() {
   // 获取用户 ID
   useEffect(() => {
     const getUserId = async () => {
-      if (!supabase) return
-      
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) setUserId(user.id)
     }
@@ -46,12 +45,8 @@ export default function MediaPage() {
 
   // 加载媒体文件
   const loadFiles = async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-    
     try {
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
@@ -115,10 +110,9 @@ export default function MediaPage() {
 
   // 上传文件
   const handleUpload = async (filesToUpload: FileList | null) => {
-    if (!supabase) return
-    
     if (!filesToUpload || filesToUpload.length === 0) return
 
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       showError('请先登录')
@@ -178,8 +172,7 @@ export default function MediaPage() {
 
   // 获取文件 URL
   const getFileUrl = (file: MediaFile, userId: string) => {
-    if (!supabase) return ''
-    
+    const supabase = createClient()
     const { data } = supabase.storage
       .from('media')
       .getPublicUrl(`${userId}/${file.name}`)
@@ -188,8 +181,7 @@ export default function MediaPage() {
 
   // 复制 URL
   const handleCopyUrl = async (file: MediaFile) => {
-    if (!supabase) return
-    
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     
@@ -204,11 +196,10 @@ export default function MediaPage() {
 
   // 删除文件
   const handleDelete = async () => {
-    if (!supabase) return
-    
     if (!fileToDelete || !userId) return
 
     try {
+      const supabase = createClient()
       const { error } = await supabase.storage
         .from('media')
         .remove([`${userId}/${fileToDelete.name}`])
@@ -226,11 +217,10 @@ export default function MediaPage() {
 
   // 批量删除
   const handleBulkDelete = async () => {
-    if (!supabase) return
-    
     if (selectedFiles.size === 0 || !userId) return
 
     try {
+      const supabase = createClient()
       const filesToDelete = Array.from(selectedFiles).map(name => `${userId}/${name}`)
       const { error } = await supabase.storage
         .from('media')

@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Plus, Search, Trash2, Eye, Edit, CheckCircle, XCircle, Clock } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
-import { useRouter } from 'next/navigation'
 
 interface Post {
   id: string
@@ -37,17 +36,12 @@ export default function PostsPage() {
   const [deletePostId, setDeletePostId] = useState<string | null>(null)
   
   const postsPerPage = 20
-  const router = useRouter()
   const { success, error: showError } = useToast()
 
   // 加载文章列表
   const loadPosts = async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-    
     try {
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         setLoading(false)
@@ -139,11 +133,10 @@ export default function PostsPage() {
 
   // 删除文章
   const handleDelete = async () => {
-    if (!supabase) return
-    
     if (!deletePostId) return
 
     try {
+      const supabase = createClient()
       const { error } = await supabase
         .from('posts')
         .delete()

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { Plus, Edit2, Trash2, Tag as TagIcon } from 'lucide-react'
 import { Modal, ModalBody, ModalFooter, ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -37,12 +37,8 @@ export default function TagsPage() {
 
   // 加载标签列表
   const loadTags = async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-    
     try {
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('tags')
         .select('*')
@@ -74,9 +70,8 @@ export default function TagsPage() {
 
   // 检查 slug 是否重复
   const checkSlugUnique = async (slug: string, excludeId?: string): Promise<boolean> => {
-    if (!supabase) return true
-    
     try {
+      const supabase = createClient()
       let query = supabase
         .from('tags')
         .select('id')
@@ -135,11 +130,10 @@ export default function TagsPage() {
 
   // 打开删除对话框
   const openDeleteDialog = async (tag: Tag) => {
-    if (!supabase) return
-    
     setSelectedTag(tag)
     
     // 检查是否有关联的文章
+    const supabase = createClient()
     const { count } = await supabase
       .from('post_tags')
       .select('*', { count: 'exact', head: true })
@@ -156,8 +150,6 @@ export default function TagsPage() {
 
   // 创建标签
   const handleCreate = async () => {
-    if (!supabase) return
-    
     if (!formData.name.trim()) {
       showError('请输入标签名称')
       return
@@ -179,6 +171,7 @@ export default function TagsPage() {
         return
       }
 
+      const supabase = createClient()
       const { error } = await supabase.from('tags').insert({
         name: formData.name.trim(),
         slug: formData.slug.trim(),
@@ -199,8 +192,6 @@ export default function TagsPage() {
 
   // 更新标签
   const handleUpdate = async () => {
-    if (!supabase) return
-    
     if (!selectedTag || !formData.name.trim() || !formData.slug.trim()) {
       showError('请填写必填字段')
       return
@@ -217,6 +208,7 @@ export default function TagsPage() {
         return
       }
 
+      const supabase = createClient()
       const { error } = await supabase
         .from('tags')
         .update({
@@ -240,11 +232,10 @@ export default function TagsPage() {
 
   // 删除标签
   const handleDelete = async () => {
-    if (!supabase) return
-    
     if (!selectedTag) return
 
     try {
+      const supabase = createClient()
       const { error } = await supabase
         .from('tags')
         .delete()

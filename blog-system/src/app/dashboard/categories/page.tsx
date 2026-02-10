@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { Plus, Edit2, Trash2, FolderOpen } from 'lucide-react'
 import { Modal, ModalBody, ModalFooter, ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -40,12 +40,8 @@ export default function CategoriesPage() {
 
   // 加载分类列表
   const loadCategories = async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-    
     try {
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('categories')
         .select('*')
@@ -77,9 +73,8 @@ export default function CategoriesPage() {
 
   // 检查 slug 是否重复
   const checkSlugUnique = async (slug: string, excludeId?: string): Promise<boolean> => {
-    if (!supabase) return true
-    
     try {
+      const supabase = createClient()
       let query = supabase
         .from('categories')
         .select('id')
@@ -139,11 +134,10 @@ export default function CategoriesPage() {
 
   // 打开删除对话框
   const openDeleteDialog = async (category: Category) => {
-    if (!supabase) return
-    
     setSelectedCategory(category)
     
     // 检查是否有关联的文章
+    const supabase = createClient()
     const { count } = await supabase
       .from('post_categories')
       .select('*', { count: 'exact', head: true })
@@ -160,8 +154,6 @@ export default function CategoriesPage() {
 
   // 创建分类
   const handleCreate = async () => {
-    if (!supabase) return
-    
     if (!formData.name.trim()) {
       showError('请输入分类名称')
       return
@@ -183,6 +175,7 @@ export default function CategoriesPage() {
         return
       }
 
+      const supabase = createClient()
       const { error } = await supabase.from('categories').insert({
         name: formData.name.trim(),
         slug: formData.slug.trim(),
@@ -204,8 +197,6 @@ export default function CategoriesPage() {
 
   // 更新分类
   const handleUpdate = async () => {
-    if (!supabase) return
-    
     if (!selectedCategory || !formData.name.trim() || !formData.slug.trim()) {
       showError('请填写必填字段')
       return
@@ -222,6 +213,7 @@ export default function CategoriesPage() {
         return
       }
 
+      const supabase = createClient()
       const { error } = await supabase
         .from('categories')
         .update({
@@ -246,11 +238,10 @@ export default function CategoriesPage() {
 
   // 删除分类
   const handleDelete = async () => {
-    if (!supabase) return
-    
     if (!selectedCategory) return
 
     try {
+      const supabase = createClient()
       const { error } = await supabase
         .from('categories')
         .delete()
