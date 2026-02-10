@@ -1,7 +1,7 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 // 单例模式：在模块级别创建客户端
-let supabaseInstance: ReturnType<typeof createBrowserClient> | null = null
+let supabaseInstance: ReturnType<typeof createSupabaseClient> | null = null
 
 export function createClient() {
   // 如果已经存在实例，直接返回
@@ -35,16 +35,16 @@ export function createClient() {
     } as any
   }
   
-  // 创建并缓存实例
-  supabaseInstance = createBrowserClient(
+  // 创建并缓存实例 - 使用标准客户端
+  supabaseInstance = createSupabaseClient(
     supabaseUrl,
     supabaseAnonKey,
     {
       auth: {
         persistSession: true,
-        autoRefreshToken: true,
+        autoRefreshToken: false, // 禁用自动刷新
         detectSessionInUrl: true,
-        flowType: 'pkce'
+        storageKey: 'sb-auth-token',
       }
     }
   )
