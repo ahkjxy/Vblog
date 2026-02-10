@@ -40,6 +40,8 @@ export default function CategoriesPage() {
 
   // 加载分类列表
   const loadCategories = async () => {
+    if (!supabase) return
+    
     try {
       const { data, error } = await supabase
         .from('categories')
@@ -151,6 +153,8 @@ export default function CategoriesPage() {
 
   // 创建分类
   const handleCreate = async () => {
+    if (!supabase) return
+    
     if (!formData.name.trim()) {
       showError('请输入分类名称')
       return
@@ -193,6 +197,8 @@ export default function CategoriesPage() {
 
   // 更新分类
   const handleUpdate = async () => {
+    if (!supabase) return
+    
     if (!selectedCategory || !formData.name.trim() || !formData.slug.trim()) {
       showError('请填写必填字段')
       return
@@ -233,6 +239,8 @@ export default function CategoriesPage() {
 
   // 删除分类
   const handleDelete = async () => {
+    if (!supabase) return
+    
     if (!selectedCategory) return
 
     try {

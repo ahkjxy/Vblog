@@ -47,6 +47,8 @@ export default function CommentsPage() {
   // 检查当前用户权限
   useEffect(() => {
     const checkUser = async () => {
+      if (!supabase) return
+      
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setCurrentUserId(user.id)
@@ -67,6 +69,8 @@ export default function CommentsPage() {
 
   // 加载评论列表
   const loadComments = async () => {
+    if (!supabase) return
+    
     try {
       // 构建查询
       let query = supabase
@@ -148,6 +152,8 @@ export default function CommentsPage() {
 
   // 删除评论
   const handleDelete = async () => {
+    if (!supabase) return
+    
     if (!commentToDelete) return
 
     try {
@@ -169,6 +175,8 @@ export default function CommentsPage() {
 
   // 批量批准
   const handleBulkApprove = async () => {
+    if (!supabase) return
+    
     if (selectedComments.size === 0) return
 
     try {
@@ -190,6 +198,8 @@ export default function CommentsPage() {
 
   // 批量拒绝
   const handleBulkReject = async () => {
+    if (!supabase) return
+    
     if (selectedComments.size === 0) return
 
     try {
@@ -211,6 +221,8 @@ export default function CommentsPage() {
 
   // 批量删除
   const handleBulkDelete = async () => {
+    if (!supabase) return
+    
     if (selectedComments.size === 0) return
 
     setIsBulkDeleting(true)

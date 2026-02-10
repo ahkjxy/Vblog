@@ -36,6 +36,8 @@ export default function MediaPage() {
   // 获取用户 ID
   useEffect(() => {
     const getUserId = async () => {
+      if (!supabase) return
+      
       const { data: { user } } = await supabase.auth.getUser()
       if (user) setUserId(user.id)
     }
@@ -44,6 +46,8 @@ export default function MediaPage() {
 
   // 加载媒体文件
   const loadFiles = async () => {
+    if (!supabase) return
+    
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -108,6 +112,8 @@ export default function MediaPage() {
 
   // 上传文件
   const handleUpload = async (filesToUpload: FileList | null) => {
+    if (!supabase) return
+    
     if (!filesToUpload || filesToUpload.length === 0) return
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -177,6 +183,8 @@ export default function MediaPage() {
 
   // 复制 URL
   const handleCopyUrl = async (file: MediaFile) => {
+    if (!supabase) return
+    
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     
@@ -191,6 +199,8 @@ export default function MediaPage() {
 
   // 删除文件
   const handleDelete = async () => {
+    if (!supabase) return
+    
     if (!fileToDelete || !userId) return
 
     try {
@@ -211,6 +221,8 @@ export default function MediaPage() {
 
   // 批量删除
   const handleBulkDelete = async () => {
+    if (!supabase) return
+    
     if (selectedFiles.size === 0 || !userId) return
 
     try {

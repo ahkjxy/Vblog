@@ -41,6 +41,8 @@ export default function ReviewPostPage() {
   }, [postId])
 
   const loadPost = async () => {
+    if (!supabase) return
+    
     try {
       // 检查当前用户是否是超级管理员
       const { data: { user } } = await supabase.auth.getUser()
@@ -109,6 +111,8 @@ export default function ReviewPostPage() {
   }
 
   const handleReview = async (approve: boolean) => {
+    if (!supabase) return
+    
     if (!post) return
 
     setSubmitting(true)

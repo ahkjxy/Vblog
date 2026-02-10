@@ -37,6 +37,8 @@ export default function TagsPage() {
 
   // 加载标签列表
   const loadTags = async () => {
+    if (!supabase) return
+    
     try {
       const { data, error } = await supabase
         .from('tags')
@@ -69,6 +71,8 @@ export default function TagsPage() {
 
   // 检查 slug 是否重复
   const checkSlugUnique = async (slug: string, excludeId?: string): Promise<boolean> => {
+    if (!supabase) return true
+    
     try {
       let query = supabase
         .from('tags')
@@ -128,6 +132,8 @@ export default function TagsPage() {
 
   // 打开删除对话框
   const openDeleteDialog = async (tag: Tag) => {
+    if (!supabase) return
+    
     setSelectedTag(tag)
     
     // 检查是否有关联的文章
@@ -147,6 +153,8 @@ export default function TagsPage() {
 
   // 创建标签
   const handleCreate = async () => {
+    if (!supabase) return
+    
     if (!formData.name.trim()) {
       showError('请输入标签名称')
       return
@@ -188,6 +196,8 @@ export default function TagsPage() {
 
   // 更新标签
   const handleUpdate = async () => {
+    if (!supabase) return
+    
     if (!selectedTag || !formData.name.trim() || !formData.slug.trim()) {
       showError('请填写必填字段')
       return
@@ -227,6 +237,8 @@ export default function TagsPage() {
 
   // 删除标签
   const handleDelete = async () => {
+    if (!supabase) return
+    
     if (!selectedTag) return
 
     try {
