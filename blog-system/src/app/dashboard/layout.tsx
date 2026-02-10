@@ -64,9 +64,9 @@ export default async function DashboardLayout({
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/20 to-pink-50/20">
         <div className="flex">
           {/* Sidebar - Hidden on mobile, shown on desktop */}
-          <aside className="hidden lg:block w-72 bg-white/80 backdrop-blur-xl border-r border-purple-100 min-h-screen fixed left-0 top-0 shadow-xl">
+          <aside className="hidden lg:flex lg:flex-col w-72 bg-white/80 backdrop-blur-xl border-r border-purple-100 min-h-screen fixed left-0 top-0 shadow-xl">
             {/* Logo Section */}
-            <div className="p-6 border-b border-purple-100">
+            <div className="p-6 border-b border-purple-100 flex-shrink-0">
               <Link href="/dashboard" className="flex items-center gap-3 group">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
@@ -81,8 +81,8 @@ export default async function DashboardLayout({
               </Link>
             </div>
 
-            {/* User Profile */}
-            <div className="p-5">
+            {/* User Profile & Navigation - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-5">
               <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 shadow-sm mb-6">
                 {userAvatar ? (
                   <img 
@@ -115,8 +115,8 @@ export default async function DashboardLayout({
               <DashboardNav items={navItems} />
             </div>
 
-            {/* Bottom Actions */}
-            <div className="absolute bottom-6 left-5 right-5 space-y-2">
+            {/* Bottom Actions - Fixed at bottom */}
+            <div className="p-5 border-t border-purple-100 space-y-2 flex-shrink-0">
               <a 
                 href="https://www.familybank.chat/"
                 target="_blank"
