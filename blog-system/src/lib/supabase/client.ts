@@ -4,12 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 let supabaseInstance: SupabaseClient | null = null
 
 // 获取或创建 Supabase 客户端实例
-function getSupabaseClient(): SupabaseClient | null {
-  // 只在浏览器环境中创建客户端
-  if (typeof window === 'undefined') {
-    return null
-  }
-
+function getSupabaseClient(): SupabaseClient {
   // 如果已经创建过实例，直接返回
   if (supabaseInstance) {
     return supabaseInstance
@@ -19,29 +14,17 @@ function getSupabaseClient(): SupabaseClient | null {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('❌ Missing Supabase environment variables:', {
-      hasUrl: !!supabaseUrl,
-      hasKey: !!supabaseAnonKey,
-      url: supabaseUrl,
-      keyPrefix: supabaseAnonKey?.substring(0, 20)
-    })
-    return null
+    throw new Error('Missing Supabase environment variables. Please check your .env.local file.')
   }
 
-  try {
-    supabaseInstance = createBrowserClient(supabaseUrl, supabaseAnonKey)
-    console.log('✅ Supabase client created successfully')
-    return supabaseInstance
-  } catch (error) {
-    console.error('❌ Failed to create Supabase client:', error)
-    return null
-  }
+  supabaseInstance = createBrowserClient(supabaseUrl, supabaseAnonKey)
+  return supabaseInstance
 }
 
-// 导出 getter 函数，确保在客户端调用时总是尝试创建
+// 导出单例客户端 - 只在客户端环境中初始化
 export const supabase = typeof window !== 'undefined' ? getSupabaseClient() : null
 
 // 为了兼容现有代码，保留 createClient 函数
-export function createClient(): SupabaseClient | null {
+export function createClient(): SupabaseClient {
   return getSupabaseClient()
 }
