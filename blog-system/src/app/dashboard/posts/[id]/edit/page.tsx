@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { MarkdownEditor } from '@/components/editor/MarkdownEditor'
 
 interface PageProps {
@@ -39,7 +39,6 @@ export default function EditPostPage({ params }: PageProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     params.then(p => {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { Plus, Edit2, Trash2, FolderOpen } from 'lucide-react'
 import { Modal, ModalBody, ModalFooter, ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -36,7 +36,6 @@ export default function CategoriesPage() {
   const [slugError, setSlugError] = useState('')
   const [deleteWarning, setDeleteWarning] = useState('')
 
-  const supabase = createClient()
   const { success, error: showError } = useToast()
 
   // 加载分类列表

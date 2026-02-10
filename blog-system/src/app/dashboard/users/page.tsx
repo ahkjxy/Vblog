@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { Users as UsersIcon, Search, Shield, Trash2, Mail } from 'lucide-react'
 import { Modal, ModalBody, ModalFooter, ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -37,11 +37,12 @@ export default function UsersPage() {
   const [currentUserId, setCurrentUserId] = useState<string>('')
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
 
-  const supabase = createClient()
   const { success, error: showError } = useToast()
 
   // 加载用户列表
   const loadUsers = async () => {
+    if (!supabase) return
+    
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       if (!currentUser) return
@@ -174,6 +175,7 @@ export default function UsersPage() {
 
   // 更新用户角色
   const handleRoleUpdate = async () => {
+    if (!supabase) return
     if (!selectedUser) return
 
     try {
@@ -195,6 +197,7 @@ export default function UsersPage() {
 
   // 删除用户
   const handleDeleteUser = async () => {
+    if (!supabase) return
     if (!selectedUser) return
 
     // 不能删除自己
@@ -247,6 +250,7 @@ export default function UsersPage() {
 
   // 批量删除用户
   const handleBatchDelete = async () => {
+    if (!supabase) return
     if (selectedUserIds.size === 0) return
 
     // 检查是否包含当前用户

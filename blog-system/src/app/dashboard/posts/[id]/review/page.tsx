@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { CheckCircle, XCircle, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { MarkdownContent } from '@/components/MarkdownContent'
@@ -35,8 +35,6 @@ export default function ReviewPostPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-
-  const supabase = createClient()
 
   useEffect(() => {
     loadPost()

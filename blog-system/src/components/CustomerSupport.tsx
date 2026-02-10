@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { MessageCircle, X, Send, Mail, ExternalLink, Sparkles, HelpCircle, LogIn } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { useUser } from '@/contexts/UserContext'
 
 interface Message {
@@ -81,13 +81,14 @@ export function CustomerSupport() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
 
   const isLoggedIn = !!user
 
   // 获取用户 profile 信息
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!supabase) return
+      
       if (!user) {
         setUserProfile(null)
         return
@@ -110,6 +111,8 @@ export function CustomerSupport() {
   // 加载历史消息
   useEffect(() => {
     const loadHistory = async () => {
+      if (!supabase) return
+      
       if (!isLoggedIn || !userProfile || historyLoaded) return
 
       setIsLoadingHistory(true)
@@ -229,6 +232,8 @@ export function CustomerSupport() {
 
   // 发送消息
   const handleSendMessage = async () => {
+    if (!supabase) return
+    
     if (!inputValue.trim()) return
     
     // 检查登录状态

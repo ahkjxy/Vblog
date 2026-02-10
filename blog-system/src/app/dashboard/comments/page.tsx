@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { MessageSquare, CheckCircle, XCircle, Trash2, Filter } from 'lucide-react'
 import { ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -42,7 +42,6 @@ export default function CommentsPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
 
-  const supabase = createClient()
   const { success, error: showError } = useToast()
 
   // 检查当前用户权限

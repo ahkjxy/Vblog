@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { Image as ImageIcon, Upload, Search, Copy, Trash2, Eye } from 'lucide-react'
 import { Modal, ModalBody, ModalFooter, ConfirmDialog, useToast, LoadingSpinner, EmptyState } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -31,7 +31,6 @@ export default function MediaPage() {
   const [userId, setUserId] = useState<string>('')
   
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
   const { success, error: showError } = useToast()
 
   // 获取用户 ID

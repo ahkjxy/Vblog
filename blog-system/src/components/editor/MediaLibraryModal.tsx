@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { X, Upload, Check } from 'lucide-react'
 
 interface MediaLibraryModalProps {
@@ -21,7 +21,6 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect }: MediaLibraryMod
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null)
-  const supabase = createClient()
 
   useEffect(() => {
     if (isOpen) {
@@ -30,6 +29,8 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect }: MediaLibraryMod
   }, [isOpen])
 
   const loadFiles = async () => {
+    if (!supabase) return
+    
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -46,6 +47,8 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect }: MediaLibraryMod
       if (error) throw error
 
       const filesWithUrls = data.map((file: { name: string; created_at?: string }) => {
+        if (!supabase) return { name: file.name, url: '', created_at: file.created_at || '' }
+        
         const { data: { publicUrl } } = supabase.storage
           .from('media')
           .getPublicUrl(`${user.id}/${file.name}`)
@@ -66,6 +69,8 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect }: MediaLibraryMod
   }
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!supabase) return
+    
     const file = e.target.files?.[0]
     if (!file) return
 

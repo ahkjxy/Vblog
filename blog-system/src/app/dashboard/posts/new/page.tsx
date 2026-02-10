@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { MarkdownEditor } from '@/components/editor/MarkdownEditor'
 import { generateSlug } from '@/lib/utils'
 import { Sparkles } from 'lucide-react'
@@ -35,7 +35,6 @@ export default function NewPostPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   
   const router = useRouter()
-  const supabase = createClient()
 
   // 加载分类和标签
   useEffect(() => {
@@ -43,6 +42,8 @@ export default function NewPostPage() {
   }, [])
 
   const loadCategoriesAndTags = async () => {
+    if (!supabase) return
+    
     const { data: categoriesData } = await supabase
       .from('categories')
       .select('*')
@@ -92,6 +93,12 @@ export default function NewPostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!supabase) {
+      setError('Supabase 客户端未初始化')
+      return
+    }
+    
     setLoading(true)
     setError(null)
 

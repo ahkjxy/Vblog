@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { useUser } from '@/contexts/UserContext'
 import { LoadingSpinner } from '@/components/ui'
 import { MessageCircle, Send, User, CheckCircle, XCircle, Smile, Reply, CornerDownRight } from 'lucide-react'
@@ -76,7 +76,6 @@ export function Comments({ postId }: CommentsProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const emojiPickerRef = useRef<HTMLDivElement>(null)
   
-  const supabase = createClient()
   const isLoggedIn = !!user
 
   // Toast helper
@@ -105,6 +104,8 @@ export function Comments({ postId }: CommentsProps) {
   // 获取用户 profile 信息
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!supabase) return
+      
       if (!user) {
         setCurrentUserProfile(null)
         return
@@ -134,6 +135,8 @@ export function Comments({ postId }: CommentsProps) {
   }, [postId])
 
   const loadComments = async () => {
+    if (!supabase) return
+    
     try {
       const { data, error } = await supabase
         .from('comments')
@@ -209,6 +212,7 @@ export function Comments({ postId }: CommentsProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!supabase) return
 
     if (!content.trim()) {
       showToast('error', '请输入评论内容')

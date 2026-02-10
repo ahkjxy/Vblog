@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { MessageSquare, Send, ChevronLeft, Clock, CheckCircle, XCircle, AlertCircle, X } from 'lucide-react'
 
 interface FeedbackMessage {
@@ -59,13 +59,13 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   const [newCategory, setNewCategory] = useState('general')
   const [newPriority, setNewPriority] = useState<'low' | 'normal' | 'high' | 'urgent'>('normal')
   
-  const supabase = createClient()
-
   useEffect(() => {
     loadFeedbackList()
   }, [filter, currentPage])
 
   const loadFeedbackList = async () => {
+    if (!supabase) return
+    
     setLoading(true)
     try {
       // 先获取总数
@@ -119,6 +119,8 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   }
 
   const loadFeedbackDetail = async (feedback: FeedbackMessage) => {
+    if (!supabase) return
+    
     setSelectedFeedback(feedback)
     setLoading(true)
     try {
@@ -138,6 +140,8 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   }
 
   const handleSendReply = async () => {
+    if (!supabase) return
+    
     if (!replyMessage.trim() || !selectedFeedback) return
 
     setSubmitting(true)
@@ -167,6 +171,8 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   }
 
   const handleUpdateStatus = async (status: string) => {
+    if (!supabase) return
+    
     if (!selectedFeedback) return
 
     try {
@@ -185,6 +191,8 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   }
 
   const handleCreateFeedback = async () => {
+    if (!supabase) return
+    
     if (!newSubject.trim() || !newMessage.trim()) {
       alert('请填写主题和消息内容')
       return

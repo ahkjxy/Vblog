@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Check, X } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 interface QuickReviewActionsProps {
@@ -14,7 +14,6 @@ interface QuickReviewActionsProps {
 export function QuickReviewActions({ type, id, onSuccess }: QuickReviewActionsProps) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const showToast = (message: string, isSuccess: boolean) => {
     const toast = document.createElement('div')
@@ -41,6 +40,8 @@ export function QuickReviewActions({ type, id, onSuccess }: QuickReviewActionsPr
   }
 
   const handleApprove = async () => {
+    if (!supabase) return
+    
     setLoading(true)
     try {
       if (type === 'post') {
@@ -74,6 +75,8 @@ export function QuickReviewActions({ type, id, onSuccess }: QuickReviewActionsPr
   }
 
   const handleReject = async () => {
+    if (!supabase) return
+    
     setLoading(true)
     try {
       if (type === 'post') {
