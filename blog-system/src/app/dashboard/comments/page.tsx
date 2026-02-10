@@ -116,6 +116,8 @@ export default function CommentsPage() {
 
   // 批准评论
   const handleApprove = async (commentId: string) => {
+    if (!supabase) return
+    
     try {
       const { error } = await supabase
         .from('comments')
@@ -134,6 +136,8 @@ export default function CommentsPage() {
 
   // 拒绝评论
   const handleReject = async (commentId: string) => {
+    if (!supabase) return
+    
     try {
       const { error } = await supabase
         .from('comments')
