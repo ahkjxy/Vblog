@@ -103,6 +103,7 @@ export function UserProvider({
       await supabase.auth.signOut()
     }
     setUser(null)
+    window.location.href = 'https://blog.familybank.chat/auth/unified'
   }
 
   // 初始化：在 supabase 初始化后执行

@@ -24,6 +24,42 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '2.9.0',
+    date: '2026-02-11',
+    type: 'feature',
+    changes: [
+      {
+        category: '统一认证系统',
+        icon: Shield,
+        items: [
+          '实现 Blog 系统和家庭积分系统的统一登录入口',
+          '优化登录流程：统一跳转到统一认证页面，支持多系统无缝切换',
+          '实现单点登录（SSO）体验：一次登录，多系统通行',
+          '优化退出流程：退出任一系统，自动清除所有相关会话并跳转至统一认证页'
+        ]
+      },
+      {
+        category: 'Blog 系统优化',
+        icon: Bug,
+        items: [
+          '修复 CustomerSupport 组件中 showError 未定义的问题',
+          '修复构建错误：主布局添加 ToastProvider，解决 useToast 报错',
+          '优化登录重定向：使用 window.location.href 替代 router.push 确保状态完全重置',
+          '增强系统稳定性，优化全局错误处理机制'
+        ]
+      },
+      {
+        category: '家庭积分银行更新',
+        icon: Users,
+        items: [
+          '移除本地登录表单，改为"欢迎回来"引导页，统一跳转至认证中心',
+          '优化退出逻辑：退出后自动重定向至统一认证中心',
+          '保留 PWA 体验：在移动端保留沉浸式体验的同时接入统一认证'
+        ]
+      }
+    ]
+  },
+  {
     version: '2.8.5',
     date: '2026-02-11',
     type: 'improvement',

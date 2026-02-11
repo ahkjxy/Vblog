@@ -36,8 +36,6 @@ export function Header() {
     await logout()
     setIsDropdownOpen(false)
     setIsMobileMenuOpen(false)
-    router.push('/')
-    router.refresh()
   }
 
   // 关闭移动菜单

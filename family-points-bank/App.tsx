@@ -1450,7 +1450,8 @@ function AppContent() {
         rewards: [],
         syncId: "",
       });
-      navigate("/", { replace: true });
+      console.log('Redirecting to unified auth...');
+      window.location.href = 'https://blog.familybank.chat/auth/unified';
     } catch (e) {
       notifyError("退出登录失败", e);
     }

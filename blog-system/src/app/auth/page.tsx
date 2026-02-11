@@ -66,7 +66,8 @@ function AuthPageContent() {
         } else if (redirectTarget === 'family') {
           window.location.href = 'https://www.familybank.chat'
         } else {
-        router.push('/dashboard')
+          // Use window.location.href to ensure reliable redirection, especially if there are state/context updates
+          window.location.href = '/dashboard'
         }
         return
       }
@@ -125,7 +126,8 @@ function AuthPageContent() {
           } else if (redirectTarget === 'family') {
             window.location.href = 'https://www.familybank.chat'
           } else {
-          router.push('/dashboard')
+            // Use window.location.href for reliable redirect
+            window.location.href = '/dashboard'
           }
         } else if (signUpData?.user) {
           // 注册成功但需要验证邮件
