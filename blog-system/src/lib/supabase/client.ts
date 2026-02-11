@@ -56,7 +56,7 @@ export function createClient(): SupabaseClient {
         const secure = isProduction ? 'Secure' : ''
         const path = 'path=/'
         
-        document.cookie = `${name}=${encodeURIComponent(value)}; ${domain}${maxAge}; ${sameSite}; ${secure}; ${path}`
+        document.cookie = `${name}=${value}; ${domain}${maxAge}; ${sameSite}; ${secure}; ${path}`
       },
       remove(name: string) {
         // 删除 Cookie

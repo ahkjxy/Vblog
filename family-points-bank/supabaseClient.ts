@@ -34,7 +34,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         if (typeof window === 'undefined') return;
         // Cookie access is tricky with subdomains. We use the same domain for both apps.
         const domain = '.familybank.chat';
-        document.cookie = `${key}=${encodeURIComponent(value)}; path=/; domain=${domain}; max-age=31536000; SameSite=Lax; Secure`;
+        document.cookie = `${key}=${value}; path=/; domain=${domain}; max-age=31536000; SameSite=Lax; Secure`;
       },
       removeItem: (key: string) => {
         if (typeof window === 'undefined') return;
