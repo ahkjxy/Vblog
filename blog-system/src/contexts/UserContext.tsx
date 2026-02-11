@@ -108,7 +108,6 @@ export function UserProvider({
     return () => {
       subscription.unsubscribe()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // 空依赖数组，只执行一次
 
   return (

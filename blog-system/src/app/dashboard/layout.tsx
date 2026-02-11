@@ -5,7 +5,18 @@ import { Logo } from '@/components/Logo'
 import { ToastProvider } from '@/components/ui'
 import { DashboardNav } from '@/components/dashboard/DashboardNav'
 import { LogoutButton } from '@/components/dashboard/LogoutButton'
-import { Home } from 'lucide-react'
+import { 
+  Home,
+  LayoutDashboard,
+  FileText,
+  Image,
+  FolderOpen,
+  Tag,
+  MessageSquare,
+  MessageCircle,
+  Users,
+  Settings,
+} from 'lucide-react'
 
 export default async function DashboardLayout({
   children,
@@ -39,6 +50,19 @@ export default async function DashboardLayout({
     if (userRole === 'admin') return '家长'
     if (userRole === 'editor') return '编辑'
     return '作者'
+  }
+
+  // 图标映射
+  const iconMap = {
+    LayoutDashboard,
+    FileText,
+    Image,
+    FolderOpen,
+    Tag,
+    MessageSquare,
+    MessageCircle,
+    Users,
+    Settings,
   }
 
   // 根据用户权限动态生成导航菜单
@@ -171,7 +195,7 @@ export default async function DashboardLayout({
             <div className="px-4 pb-3 overflow-x-auto">
               <div className="flex gap-2">
                 {navItems.map((item) => {
-                  const Icon = require('lucide-react')[item.icon] || require('lucide-react').LayoutDashboard
+                  const Icon = iconMap[item.icon as keyof typeof iconMap] || LayoutDashboard
                   return (
                     <Link
                       key={item.href}
