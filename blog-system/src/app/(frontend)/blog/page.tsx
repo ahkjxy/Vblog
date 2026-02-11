@@ -193,9 +193,9 @@ export default async function BlogListPage({ searchParams }: PageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
             {/* Main Content */}
             <div className="lg:col-span-8">
-              {/* 横幅广告 */}
-              <BannerAd className="mb-8" />
-              
+          {/* 横幅广告 */}
+          <BannerAd className="mb-8" />
+          
               {postsWithComments && postsWithComments.length > 0 ? (
                 <div className="space-y-4">
                   {postsWithComments.map((post: any, index: number) => {

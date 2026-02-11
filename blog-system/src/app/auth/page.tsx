@@ -21,7 +21,7 @@ function AuthPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
-  
+
   // 获取重定向目标：blog 或 family
   const redirectTarget = searchParams.get('redirect') || 'blog' // 默认为 blog
   const returnUrl = searchParams.get('returnUrl') // 自定义返回 URL
@@ -66,7 +66,7 @@ function AuthPageContent() {
         } else if (redirectTarget === 'family') {
           window.location.href = 'https://www.familybank.chat'
         } else {
-          router.push('/dashboard')
+        router.push('/dashboard')
         }
         return
       }
@@ -125,7 +125,7 @@ function AuthPageContent() {
           } else if (redirectTarget === 'family') {
             window.location.href = 'https://www.familybank.chat'
           } else {
-            router.push('/dashboard')
+          router.push('/dashboard')
           }
         } else if (signUpData?.user) {
           // 注册成功但需要验证邮件
