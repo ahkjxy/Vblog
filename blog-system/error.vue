@@ -336,12 +336,4 @@ const goHome = () => {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-12px); }
 }
-
-/* GLOBAL RESET FOR NUXT ERROR PAGES */
-:global(#__nuxt > div:not(.err-root)) {
-  display: none !important;
-}
-:global(.__nuxt-error-page) {
-  display: none !important;
-}
 </style>
