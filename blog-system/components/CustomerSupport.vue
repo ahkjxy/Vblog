@@ -74,7 +74,7 @@ const scrollToBottom = () => {
 watch(messages, () => scrollToBottom(), { deep: true })
 
 const loadHistory = async () => {
-  if (!user.value || !profile.value || historyLoaded.value) return
+  if (!user.value || !profile.value || historyLoaded.value || !profile.value.id) return
 
   isLoadingHistory.value = true
   try {
@@ -166,7 +166,7 @@ const handleSendMessage = async () => {
   isSubmitting.value = true
 
   try {
-    if (!profile.value.family_id) {
+    if (!profile.value?.family_id) {
        throw new Error('用户没有关联的家庭，请先在元气银行系统中完成设置')
     }
 

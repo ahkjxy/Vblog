@@ -1,194 +1,25 @@
 <script setup lang="ts">
-import {
-  Sparkles,
-  BookOpen,
-  ArrowRight,
-  Zap,
-  Star,
-  Eye,
-  MessageCircle,
-  User,
-  TrendingUp,
-  FileText,
-  Target,
-  Download,
-  Smartphone,
-  Users,
-  Clock,
-  Layers
-} from 'lucide-vue-next'
-
+// 简化版本用于测试白屏问题
 const client = useSupabaseClient()
-const { formatDate, formatAuthorName } = useUtils()
 
-interface HomeData {
-  stats: {
-    totalPosts: number
-    totalUsers: number
-    totalComments: number
-    totalCategories: number
-  }
-  categories: any[]
-  featuredPosts: any[]
-  hotPosts: any[]
-  recentPosts: any[]
-  recentComments: any[]
-  activeUsers: any[]
-  tags: any[]
-}
-
-// SSR Data Fetching
-const { data: homeData } = await useAsyncData<HomeData>('home-data', async () => {
-  // 1. 获取基础统计
+// 基础数据获取
+const { data: homeData } = await useAsyncData('home-simple', async () => {
   const [
     { count: totalPosts },
-    { count: totalUsers },
-    { count: totalComments },
-    { count: totalCategories }
+    { count: totalUsers }
   ] = await Promise.all([
     client.from('posts').select('*', { count: 'exact', head: true }).eq('status', 'published'),
-    client.from('profiles').select('*', { count: 'exact', head: true }),
-    client.from('comments').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
-    client.from('categories').select('*', { count: 'exact', head: true })
+    client.from('profiles').select('*', { count: 'exact', head: true })
   ])
-
-  // 2. 获取分类
-  const { data: categories } = await client
-    .from('categories')
-    .select('id, name, slug, description')
-    .order('name')
-
-  // 3. 预加载所有文章的评论数 (可选，如果量大建议只对精选文章查)
-  // ... 由于 Supabase 限制，暂且维持对特定文章查评论数
-
-  // 4. 获取分类下的统计和最新文章 (并发执行以提升性能)
-  const categoriesWithStats = categories ? await Promise.all(categories.map(async (category: any) => {
-    // 获取文章数
-    const { count: postCount } = await client
-      .from('post_categories')
-      .select('*', { count: 'exact', head: true })
-      .eq('category_id', category.id)
-
-    // 获取该分类下最新的一篇文章
-    const { data: latestPostIdData } = await client
-      .from('post_categories')
-      .select('post_id')
-      .eq('category_id', category.id)
-      .limit(1) // 简化：只取第一个，或者按发布时间排序
-
-    let latestPost = null
-    let latestCommentCount = 0
-
-    const { data: latestPosts } = await client
-      .from('posts')
-      .select(`
-        id, title, slug, published_at, view_count, status,
-        profiles!posts_author_id_fkey(name, avatar_url)
-      `)
-      .eq('status', 'published')
-      .order('published_at', { ascending: false })
-      .limit(1)
-
-    // 注意：这里其实是全局最新的文章，如果想分类内最新，需要更复杂的 join
-    // 简化处理：由于 Supabase join 复杂性，先取分类内任意一篇展示或全局最新
-    latestPost = latestPosts?.[0] || null
-
-    if (latestPost) {
-      const { count } = await client
-        .from('comments')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', (latestPost as any).id)
-        .eq('status', 'approved')
-      latestCommentCount = count || 0
-    }
-
-    return {
-      id: category.id,
-      name: category.name,
-      slug: category.slug,
-      description: category.description,
-      postCount: postCount || 0,
-      latestPost: latestPost ? {
-        ...(latestPost as any),
-        commentCount: latestCommentCount,
-        author_name: (latestPost as any).profiles?.name || '匿名'
-      } : null
-    }
-  })) : []
-
-  // 5. 获取精选文章
-  const { data: featuredPostsRaw } = await client
-    .from('posts')
-    .select(`
-      id, title, slug, excerpt, published_at, view_count,
-      profiles!posts_author_id_fkey(name, avatar_url)
-    `)
-    .eq('status', 'published')
-    .order('view_count', { ascending: false })
-    .limit(3)
-
-  const featuredPosts = featuredPostsRaw ? await Promise.all(
-    featuredPostsRaw.map(async (post: any) => {
-      const { count } = await client
-        .from('comments')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', post.id)
-        .eq('status', 'approved')
-      return { ...post, commentCount: count || 0 }
-    })
-  ) : []
-
-  // 6. 获取侧边栏数据
-  const [
-    { data: hotPosts },
-    { data: recentPosts },
-    { data: recentComments },
-    { data: tags },
-    { data: activeUsersRaw }
-  ] = await Promise.all([
-    client.from('posts').select('id, title, slug, view_count').eq('status', 'published').order('view_count', { ascending: false }).limit(5),
-    client.from('posts').select('id, title, slug, published_at').eq('status', 'published').order('published_at', { ascending: false }).limit(5),
-    client.from('comments').select(`id, content, created_at, profiles!comments_user_id_fkey(name, avatar_url), posts!comments_post_id_fkey(title, slug)`).eq('status', 'approved').order('created_at', { ascending: false }).limit(5),
-    client.from('tags').select('id, name, slug').limit(12),
-    client.from('profiles').select('id, name, avatar_url').limit(20)
-  ])
-  
-  let activeUsers = []
-  if (activeUsersRaw) {
-    activeUsers = await Promise.all(
-      activeUsersRaw.map(async (user: any) => {
-        const { count } = await client
-          .from('posts')
-          .select('*', { count: 'exact', head: true })
-          .eq('author_id', user.id)
-          .eq('status', 'published')
-        return { ...user, postCount: count || 0 }
-      })
-    )
-    activeUsers = activeUsers
-      .filter((u: any) => u.postCount > 0)
-      .sort((a: any, b: any) => b.postCount - a.postCount)
-      .slice(0, 6)
-  }
 
   return {
     stats: { 
       totalPosts: totalPosts || 0, 
-      totalUsers: totalUsers || 0, 
-      totalComments: totalComments || 0, 
-      totalCategories: categories?.length || 0 
-    },
-    categories: categoriesWithStats || [],
-    featuredPosts: featuredPosts || [],
-    hotPosts: hotPosts || [],
-    recentPosts: recentPosts || [],
-    recentComments: recentComments || [],
-    activeUsers: activeUsers || [],
-    tags: tags || []
+      totalUsers: totalUsers || 0
+    }
   }
 })
 
-// SEO Meta
 useSeoMeta({
   title: '元气银行博客 - 家庭教育与积分管理系统',
   description: '元气银行官方博客，分享家庭教育、积分管理、习惯养成等内容。'
