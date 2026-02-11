@@ -1,6 +1,9 @@
 import { Code, Zap, Lock, Database, Cloud, Sparkles, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default function APIPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">

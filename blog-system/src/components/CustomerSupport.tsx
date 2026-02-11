@@ -81,12 +81,26 @@ export function CustomerSupport() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null)
 
   const isLoggedIn = !!user
 
+  // 在客户端初始化 Supabase
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const client = createClient()
+        setSupabase(client)
+      } catch (error) {
+        console.error('Failed to create Supabase client:', error)
+      }
+    }
+  }, [])
+
   // 获取用户 profile 信息
   useEffect(() => {
+    if (!supabase) return
+    
     const fetchProfile = async () => {
       
       if (!user) {
@@ -110,6 +124,8 @@ export function CustomerSupport() {
 
   // 加载历史消息
   useEffect(() => {
+    if (!supabase) return
+    
     const loadHistory = async () => {
       if (!isLoggedIn || !userProfile || historyLoaded) return
 
@@ -256,6 +272,12 @@ export function CustomerSupport() {
     setInputValue('')
     setShowFAQ(false)
     setIsSubmitting(true)
+
+    if (!supabase) {
+      showError('系统初始化中，请稍后再试')
+      setIsSubmitting(false)
+      return
+    }
 
     try {
       // 获取最新的 profile 信息（包含 family_id）
