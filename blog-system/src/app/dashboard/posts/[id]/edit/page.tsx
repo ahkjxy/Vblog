@@ -31,6 +31,7 @@ export default function EditPostPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const supabase = createClient()
   
   // 分类和标签
   const [categories, setCategories] = useState<Category[]>([])
@@ -49,8 +50,6 @@ export default function EditPostPage({ params }: PageProps) {
   }, [])
 
   const loadCategoriesAndTags = async () => {
-    if (!supabase) return
-    
     const { data: categoriesData } = await supabase
       .from('categories')
       .select('*')
@@ -66,11 +65,6 @@ export default function EditPostPage({ params }: PageProps) {
   }
 
   const loadPost = async (postId: string) => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-    
     try {
       const { data: post, error: fetchError } = await supabase
         .from('posts')
@@ -125,8 +119,6 @@ export default function EditPostPage({ params }: PageProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!supabase) return
-    
     setSaving(true)
     setError(null)
 
@@ -250,8 +242,6 @@ export default function EditPostPage({ params }: PageProps) {
   }
 
   const handleDelete = async () => {
-    if (!supabase) return
-    
     if (!confirm('确定要删除这篇文章吗？此操作无法撤销。')) return
 
     try {
@@ -271,7 +261,7 @@ export default function EditPostPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <div className="max-w-4xl">
+      <div className="max-w-7xl">
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
           <p className="mt-4 text-gray-600">加载中...</p>

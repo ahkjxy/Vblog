@@ -29,6 +29,7 @@ export default function ReviewPostPage() {
   const router = useRouter()
   const params = useParams()
   const postId = params.id as string
+  const supabase = createClient()
   
   const [post, setPost] = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
@@ -41,11 +42,6 @@ export default function ReviewPostPage() {
   }, [postId])
 
   const loadPost = async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-    
     try {
       // 检查当前用户是否是超级管理员
       const { data: { user } } = await supabase.auth.getUser()
@@ -114,8 +110,6 @@ export default function ReviewPostPage() {
   }
 
   const handleReview = async (approve: boolean) => {
-    if (!supabase) return
-    
     if (!post) return
 
     setSubmitting(true)
@@ -149,7 +143,7 @@ export default function ReviewPostPage() {
 
   if (error || !post) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-800">{error || '文章不存在'}</p>
           <Link

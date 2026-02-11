@@ -103,9 +103,8 @@ export function Comments({ postId }: CommentsProps) {
 
   // 获取用户 profile 信息
   useEffect(() => {
+    const supabase = createClient()
     const fetchProfile = async () => {
-      if (!supabase) return
-      
       if (!user) {
         setCurrentUserProfile(null)
         return
@@ -127,7 +126,7 @@ export function Comments({ postId }: CommentsProps) {
     }
 
     fetchProfile()
-  }, [user, supabase])
+  }, [user])
 
   // 加载评论
   useEffect(() => {
@@ -135,10 +134,7 @@ export function Comments({ postId }: CommentsProps) {
   }, [postId])
 
   const loadComments = async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
+    const supabase = createClient()
     
     try {
       const { data, error } = await supabase
@@ -215,7 +211,7 @@ export function Comments({ postId }: CommentsProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!supabase) return
+    const supabase = createClient()
 
     if (!content.trim()) {
       showToast('error', '请输入评论内容')

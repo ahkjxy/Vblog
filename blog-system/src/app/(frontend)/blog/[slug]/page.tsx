@@ -85,9 +85,6 @@ export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params
   const supabase = await createClient()
   
-  console.log('=== Blog Post Debug ===')
-  console.log('Requested slug:', slug)
-  
   // 步骤 1: 先查询文章是否存在（不加任何过滤条件）
   const { data: checkPost, error: checkError } = await supabase
     .from('posts')
@@ -176,13 +173,13 @@ export default async function BlogPostPage({ params }: PageProps) {
     .eq('id', post.id)
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#FDFCFD] via-[#FFF5F9] to-[#EAF6FF]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* 主内容区 - 占 8 列 */}
           <article className="lg:col-span-8">
             {/* Header */}
-            <header className="py-12 sm:py-16 border-b border-gray-100">
+            <header className="py-8 sm:py-12 md:py-16 border-b border-gray-100">
           {/* Categories */}
           {post.post_categories && post.post_categories.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
@@ -199,15 +196,15 @@ export default async function BlogPostPage({ params }: PageProps) {
           )}
 
           {/* Title */}
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 text-gray-900 leading-tight">{post.title}</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-4 sm:mb-6 text-gray-900 leading-tight tracking-tight">{post.title}</h1>
           
           {/* Excerpt */}
           {post.excerpt && (
-            <p className="text-lg text-gray-600 mb-8 leading-relaxed">{post.excerpt}</p>
+            <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 leading-relaxed font-medium">{post.excerpt}</p>
           )}
 
           {/* Meta Info */}
-          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
             <div className="flex items-center gap-3">
               {post.profiles?.avatar_url ? (
                 <img 
@@ -231,7 +228,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         </header>
 
         {/* Content */}
-        <div className="py-12 sm:py-16">
+        <div className="py-8 sm:py-12 md:py-16">
           <div className="article-content">
             {renderPostContent(post.content)}
           </div>
@@ -242,13 +239,13 @@ export default async function BlogPostPage({ params }: PageProps) {
 
         {/* Tags */}
         {post.post_tags && post.post_tags.length > 0 && (
-          <div className="py-8 border-t border-gray-100">
+          <div className="py-6 sm:py-8 border-t border-gray-100">
             <div className="flex flex-wrap gap-2">
               {post.post_tags.map((pt: { tags: { slug: string; name: string } }) => (
                 <a
                   key={pt.tags.slug}
                   href={`/tags/${pt.tags.slug}`}
-                  className="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-lg text-sm hover:bg-gray-100 transition-colors"
+                  className="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs sm:text-sm hover:bg-[#FF4D94]/5 hover:border-[#FF4D94]/30 hover:text-[#FF4D94] transition-all font-bold"
                 >
                   #{pt.tags.name}
                 </a>
@@ -259,8 +256,8 @@ export default async function BlogPostPage({ params }: PageProps) {
 
         {/* Author Bio */}
         {post.profiles?.bio && (
-          <div className="py-8 border-t border-gray-100">
-            <div className="flex gap-4 items-start bg-gray-50 rounded-xl p-6">
+          <div className="py-6 sm:py-8 border-t border-gray-100">
+            <div className="flex gap-4 items-start bg-white border border-gray-100 rounded-2xl p-4 sm:p-6 shadow-sm">
               {post.profiles.avatar_url ? (
                 <img 
                   src={post.profiles.avatar_url} 
@@ -282,15 +279,15 @@ export default async function BlogPostPage({ params }: PageProps) {
         )}
 
         {/* Comments Section */}
-        <div className="py-12 border-t border-gray-100">
+        <div className="py-8 sm:py-12 border-t border-gray-100">
           <Comments postId={post.id} />
         </div>
 
         {/* Back to Blog */}
-        <div className="py-12 border-t border-gray-100 text-center">
+        <div className="py-8 sm:py-12 border-t border-gray-100 text-center">
           <Link 
             href="/blog"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-2xl hover:shadow-xl transition-all font-black text-sm sm:text-base"
           >
             ← 返回文章列表
           </Link>
@@ -304,9 +301,9 @@ export default async function BlogPostPage({ params }: PageProps) {
           <SidebarAd />
           
           {/* 其他侧边栏内容可以在这里添加 */}
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100">
-            <h3 className="font-bold text-gray-900 mb-3">💡 提示</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
+          <div className="bg-gradient-to-br from-[#FF4D94]/5 to-[#7C4DFF]/5 rounded-2xl p-4 sm:p-6 border border-[#FF4D94]/10">
+            <h3 className="font-black text-gray-900 mb-3 text-sm sm:text-base">💡 提示</h3>
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-medium">
               喜欢这篇文章？欢迎在下方留言分享你的想法！
             </p>
           </div>

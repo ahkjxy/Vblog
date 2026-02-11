@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -25,7 +26,8 @@ export async function GET() {
     }
 
     // 使用 service role 获取所有用户的邮箱
-    const { data: authData, error } = await supabase.auth.admin.listUsers()
+    const serviceClient = createServiceClient()
+    const { data: authData, error } = await serviceClient.auth.admin.listUsers()
     
     if (error) {
       console.error('Error fetching users:', error)

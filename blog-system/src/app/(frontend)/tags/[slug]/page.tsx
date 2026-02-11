@@ -91,21 +91,21 @@ export default async function TagPage({ params }: PageProps) {
   })) as PostWithProfile[]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-[#FDFCFD] via-[#FFF5F9] to-[#EAF6FF]">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-white border-b border-purple-100">
-        <div className="container mx-auto px-6 py-20">
-          <div className="max-w-6xl mx-auto">
+      <div className="bg-gradient-to-br from-[#FF4D94]/5 via-[#7C4DFF]/5 to-white border-b border-gray-100">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
+          <div className="max-w-7xl mx-auto">
             <Link 
               href="/tags"
-              className="inline-flex items-center gap-2 text-sm text-purple-600 hover:text-pink-600 mb-6 font-semibold"
+              className="inline-flex items-center gap-2 text-xs sm:text-sm text-[#FF4D94] hover:text-[#7C4DFF] mb-6 font-bold"
             >
               ← 返回标签列表
             </Link>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-4 sm:mb-6 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] bg-clip-text text-transparent tracking-tight">
               #{tag.name}
             </h1>
-            <p className="text-gray-600 text-lg">
+            <p className="text-sm sm:text-base md:text-lg text-gray-600 font-medium">
               共 {postList.length} 篇文章
             </p>
           </div>
@@ -113,8 +113,8 @@ export default async function TagPage({ params }: PageProps) {
       </div>
 
       {/* Posts List */}
-      <div className="container mx-auto px-6 py-20">
-        <div className="max-w-6xl mx-auto">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
+        <div className="max-w-7xl mx-auto">
           {postList.length > 0 ? (
             <div className="space-y-6">
               {postList.map((post, index) => {
@@ -127,19 +127,19 @@ export default async function TagPage({ params }: PageProps) {
                 const gradient = gradients[index % gradients.length]
                 
                 return (
-                  <article key={post.id} className="group bg-white rounded-2xl p-8 hover:shadow-2xl transition-all border border-gray-100 hover:border-purple-200">
-                    <div className={`h-1 w-20 rounded-full bg-gradient-to-r ${gradient.from} ${gradient.to} mb-6`}></div>
+                  <article key={post.id} className="group bg-white rounded-3xl p-6 sm:p-8 hover:shadow-2xl transition-all border border-gray-100 hover:border-[#FF4D94]/30">
+                    <div className={`h-1 w-16 sm:w-20 rounded-full bg-gradient-to-r ${gradient.from} ${gradient.to} mb-4 sm:mb-6`}></div>
                     
                     <Link href={`/blog/${post.slug}`}>
-                      <h2 className="text-3xl font-bold mb-4 group-hover:text-purple-600 transition-colors leading-tight">
+                      <h2 className="text-xl sm:text-2xl md:text-3xl font-black mb-4 group-hover:text-[#FF4D94] transition-colors leading-tight tracking-tight">
                         {post.title}
                       </h2>
                     </Link>
                     {post.excerpt && (
-                      <p className="text-gray-600 mb-8 line-clamp-2 text-lg leading-relaxed">{post.excerpt}</p>
+                      <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-6 sm:mb-8 line-clamp-2 leading-relaxed font-medium">{post.excerpt}</p>
                     )}
-                    <div className="flex items-center justify-between pt-6 border-t border-gray-100">
-                      <div className="flex items-center gap-6 text-sm text-gray-600">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-gray-100">
+                      <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600">
                         <div className="flex items-center gap-3">
                           {post.profiles?.avatar_url ? (
                             <img 
@@ -148,26 +148,26 @@ export default async function TagPage({ params }: PageProps) {
                               className="w-10 h-10 rounded-full ring-2 ring-gray-100"
                             />
                           ) : (
-                            <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradient.from} ${gradient.to} flex items-center justify-center shadow-sm`}>
-                              <span className="text-white font-semibold">
+                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient.from} ${gradient.to} flex items-center justify-center shadow-sm`}>
+                              <span className="text-white font-black text-sm">
                                 {post.profiles?.name?.charAt(0).toUpperCase()}
                               </span>
                             </div>
                           )}
-                          <span className="font-semibold text-gray-900">{formatAuthorName(post.profiles)}</span>
+                          <span className="font-black text-gray-900">{formatAuthorName(post.profiles)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          <span>{formatDate(post.published_at!)}</span>
+                          <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="font-medium">{formatDate(post.published_at!)}</span>
                         </div>
-                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full">
-                          <Eye className="w-4 h-4" />
-                          <span>{post.view_count}</span>
+                        <div className="flex items-center gap-2 bg-[#FF4D94]/5 px-3 py-1.5 rounded-xl border border-[#FF4D94]/10">
+                          <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-[#FF4D94]" />
+                          <span className="font-black text-[#FF4D94]">{post.view_count}</span>
                         </div>
                       </div>
                       <Link 
                         href={`/blog/${post.slug}`}
-                        className="flex items-center gap-2 text-purple-600 hover:text-pink-600 font-semibold text-sm group-hover:gap-3 transition-all"
+                        className="flex items-center gap-2 text-[#FF4D94] hover:text-[#7C4DFF] font-black text-xs sm:text-sm group-hover:gap-3 transition-all"
                       >
                         阅读全文
                         <ArrowRight className="w-4 h-4" />
@@ -178,21 +178,21 @@ export default async function TagPage({ params }: PageProps) {
               })}
             </div>
           ) : (
-            <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed border-purple-200">
-              <div className="max-w-md mx-auto">
-                <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg">
-                  <svg className="w-12 h-12 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="text-center py-16 sm:py-24 bg-white rounded-3xl border-2 border-dashed border-[#FF4D94]/20">
+              <div className="max-w-md mx-auto px-4">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-[#FF4D94]/10 to-[#7C4DFF]/10 rounded-3xl flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-lg">
+                  <svg className="w-10 h-10 sm:w-12 sm:h-12 text-[#FF4D94]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h3 className="text-3xl font-bold mb-4 text-gray-900">暂无文章</h3>
-                <p className="text-gray-600 mb-10 text-lg">该标签下还没有文章</p>
+                <h3 className="text-2xl sm:text-3xl font-black mb-4 text-gray-900">暂无文章</h3>
+                <p className="text-sm sm:text-base text-gray-600 mb-8 sm:mb-10 font-medium">该标签下还没有文章</p>
                 <Link 
                   href="/blog"
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-xl transition-all font-semibold text-lg hover:scale-105"
+                  className="inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-2xl hover:shadow-xl transition-all font-black text-sm sm:text-base hover:scale-105 active:scale-95"
                 >
                   浏览所有文章
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Link>
               </div>
             </div>

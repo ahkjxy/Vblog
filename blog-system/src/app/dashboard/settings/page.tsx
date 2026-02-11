@@ -88,7 +88,7 @@ export default function SettingsPage() {
         <div className="p-8">
           {/* General Settings */}
           {activeTab === 'general' && (
-            <div className="space-y-6 max-w-2xl">
+            <div className="space-y-6 max-w-7xl">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   网站标题
@@ -132,7 +132,7 @@ export default function SettingsPage() {
 
           {/* SEO Settings */}
           {activeTab === 'seo' && (
-            <div className="space-y-6 max-w-2xl">
+            <div className="space-y-6 max-w-7xl">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   默认 Meta 标题
@@ -185,7 +185,7 @@ export default function SettingsPage() {
 
           {/* Comment Settings */}
           {activeTab === 'comments' && (
-            <div className="space-y-6 max-w-2xl">
+            <div className="space-y-6 max-w-7xl">
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>
                   <div className="font-medium text-gray-900">评论审核</div>

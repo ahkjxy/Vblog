@@ -47,6 +47,7 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   const [submitting, setSubmitting] = useState(false)
   const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'resolved'>('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const supabase = createClient()
   
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1)
@@ -64,10 +65,6 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   }, [filter, currentPage])
 
   const loadFeedbackList = async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
     
     setLoading(true)
     try {
@@ -122,11 +119,6 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   }
 
   const loadFeedbackDetail = async (feedback: FeedbackMessage) => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-    
     setSelectedFeedback(feedback)
     setLoading(true)
     try {
@@ -146,8 +138,6 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   }
 
   const handleSendReply = async () => {
-    if (!supabase) return
-    
     if (!replyMessage.trim() || !selectedFeedback) return
 
     setSubmitting(true)
@@ -177,8 +167,6 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   }
 
   const handleUpdateStatus = async (status: string) => {
-    if (!supabase) return
-    
     if (!selectedFeedback) return
 
     try {
@@ -197,8 +185,6 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
   }
 
   const handleCreateFeedback = async () => {
-    if (!supabase) return
-    
     if (!newSubject.trim() || !newMessage.trim()) {
       alert('请填写主题和消息内容')
       return

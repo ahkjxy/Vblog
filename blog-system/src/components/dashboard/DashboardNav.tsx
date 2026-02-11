@@ -48,7 +48,7 @@ export function DashboardNav({ items }: DashboardNavProps) {
   }
 
   return (
-    <nav className="space-y-2">
+    <nav className="space-y-1.5">
       {items.map((item) => {
         const active = isActive(item.href)
         const Icon = iconMap[item.icon as keyof typeof iconMap]
@@ -58,19 +58,19 @@ export function DashboardNav({ items }: DashboardNavProps) {
             key={item.href}
             href={item.href}
             className={cn(
-              'group flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-semibold relative overflow-hidden',
+              'group flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-sm font-bold relative overflow-hidden',
               active
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-200'
-                : 'text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700'
+                ? 'bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white shadow-lg shadow-[#FF4D94]/20'
+                : 'text-gray-700 hover:bg-gradient-to-r hover:from-[#FF4D94]/5 hover:to-[#7C4DFF]/5 hover:text-[#FF4D94]'
             )}
           >
             {active && (
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-100"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] opacity-100"></div>
             )}
-            <Icon className={cn('w-5 h-5 relative z-10', active ? 'text-white' : 'text-gray-500 group-hover:text-purple-600')} />
+            <Icon className={cn('w-5 h-5 relative z-10 transition-colors', active ? 'text-white' : 'text-gray-500 group-hover:text-[#FF4D94]')} />
             <span className="relative z-10">{item.label}</span>
             {active && (
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/30 rounded-l-full"></div>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-white/40 rounded-l-full"></div>
             )}
           </Link>
         )

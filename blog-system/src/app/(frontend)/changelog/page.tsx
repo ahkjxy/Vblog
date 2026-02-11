@@ -24,6 +24,119 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '2.8.5',
+    date: '2026-02-11',
+    type: 'improvement',
+    changes: [
+      {
+        category: '首页重构',
+        icon: Layout,
+        items: [
+          '全面重构首页设计，增加更多内容板块',
+          '新增最新回复板块：显示最新5条评论，包含评论者、时间、内容预览',
+          '新增热门标签板块：显示前12个热门标签，带文章数统计',
+          '新增活跃贡献者板块：显示发帖最多的6位用户，带排名徽章',
+          '优化布局：从3列改为12列网格系统，主内容8列，侧边栏4列',
+          '优化统计信息：增加评论回复统计，卡片hover效果优化'
+        ]
+      },
+      {
+        category: 'Blog 页面优化',
+        icon: FileText,
+        items: [
+          '重构 /blog 页面，与首页设计风格保持一致',
+          '优化Header区域：使用渐变背景，添加背景装饰效果',
+          '优化文章卡片：使用rounded-3xl，增强hover效果，添加评论数显示',
+          '新增侧边栏：热门主题、最新主题板块',
+          '优化布局：12列网格系统，主内容8列，侧边栏4列',
+          '优化元信息展示：图标+数据，更清晰的视觉层次'
+        ]
+      },
+      {
+        category: 'UI 优化',
+        icon: Palette,
+        items: [
+          '修复活跃贡献者板块：排名徽章不再遮挡头像，改为独立显示',
+          '统一所有页面设计语言：品牌色、圆角、字体',
+          '优化交互效果：所有卡片都有hover效果，渐变背景和阴影',
+          '优化响应式设计：移动端、平板、桌面端完美适配'
+        ]
+      },
+      {
+        category: '功能修复',
+        icon: Bug,
+        items: [
+          '修复后台退出按钮：添加加载状态，清除所有认证信息，强制刷新页面',
+          '优化退出流程：清除localStorage、sessionStorage和所有cookies',
+          '确保退出后完全清除认证状态'
+        ]
+      }
+    ]
+  },
+  {
+    version: '2.8.4',
+    date: '2026-02-11',
+    type: 'improvement',
+    changes: [
+      {
+        category: '问题修复',
+        icon: Bug,
+        items: [
+          '修复 LogoutButton 中的 supabase 未定义错误：在 LogoutButton.tsx 中正确初始化 Supabase 客户端实例，添加错误处理',
+          '修复嵌套 Link 组件错误：修复了首页板块列表中嵌套 Link 组件导致的 "Event handlers cannot be passed to Client Component props" 错误',
+          '重构板块列表的链接结构：将嵌套的 Link 分离为独立的链接区域，板块信息和统计信息各自作为独立的 Link 指向分类页面，最新动态作为独立的 Link 指向文章页面',
+          '移除了不必要的 onClick 事件处理器，符合 Next.js App Router 的要求'
+        ]
+      },
+      {
+        category: 'Dashboard Layout 优化',
+        icon: Layout,
+        items: [
+          '统一使用品牌色（#FF4D94 和 #7C4DFF）替代之前的紫色/粉色渐变',
+          '优化侧边栏设计：使用 rounded-2xl、更好的阴影效果、hover 动画',
+          '优化顶部栏：更清晰的用户信息展示，统一的品牌色',
+          '优化移动端导航：添加图标，更好的响应式设计',
+          '优化背景渐变：使用更柔和的颜色（from-[#FDFCFD] via-[#FFF5F9] to-[#EAF6FF]）',
+          '优化 Logo 区域：使用品牌色渐变和更好的 hover 效果'
+        ]
+      },
+      {
+        category: 'Dashboard 首页优化',
+        icon: Sparkles,
+        items: [
+          '统一标题样式：使用 font-black 和品牌色渐变',
+          '优化统计卡片：使用 rounded-3xl、更好的 hover 效果、统一的品牌色图标',
+          '优化列表设计：使用 rounded-3xl、更好的间距、响应式布局',
+          '优化按钮样式：使用 font-black、active:scale-95 交互效果',
+          '优化空状态：添加图标和更好的视觉反馈',
+          '优化待审核文章和评论列表：更好的视觉层次和交互效果'
+        ]
+      },
+      {
+        category: 'Posts 页面优化',
+        icon: FileText,
+        items: [
+          '统一标题和按钮样式：使用品牌色和 font-black',
+          '优化搜索和筛选：使用 rounded-2xl、更好的 focus 状态、品牌色 focus ring',
+          '优化表格设计：使用品牌色表头、更好的 hover 效果、响应式字体大小',
+          '优化分页组件：使用品牌色、更好的按钮样式、响应式布局',
+          '优化操作按钮：使用品牌色和更好的 hover 效果'
+        ]
+      },
+      {
+        category: '统一后台页面样式',
+        icon: Settings,
+        items: [
+          '所有页面标题统一使用 font-black 和品牌色渐变',
+          '所有卡片统一使用 rounded-3xl',
+          '所有按钮统一使用品牌色和 font-black',
+          '优化移动端显示：响应式字体大小、间距和布局',
+          '统一导航组件样式：使用品牌色和更好的 hover 效果'
+        ]
+      }
+    ]
+  },
+  {
     version: '2.8.3',
     date: '2026-02-10',
     type: 'fix',

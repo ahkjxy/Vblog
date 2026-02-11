@@ -192,35 +192,35 @@ export default function PostsPage() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] bg-clip-text text-transparent mb-2 tracking-tight">
             文章管理
           </h1>
-          <p className="text-gray-600">共 {totalCount} 篇文章</p>
+          <p className="text-sm sm:text-base text-gray-600 font-medium">共 {totalCount} 篇文章</p>
         </div>
         <Link
           href="/dashboard/posts/new"
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-medium shadow-lg hover:shadow-xl"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-2xl font-black hover:shadow-xl hover:scale-105 active:scale-95 transition-all text-sm sm:text-base"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
           新建文章
         </Link>
       </div>
 
       {/* 搜索和筛选 */}
-      <div className="bg-white rounded-2xl p-6 mb-6 border border-gray-100 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-100 shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {/* 搜索 */}
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <div className="relative sm:col-span-2 lg:col-span-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜索标题或 Slug..."
-              className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full pl-11 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF4D94] focus:border-transparent transition-all text-sm sm:text-base font-medium"
             />
           </div>
 
@@ -228,7 +228,7 @@ export default function PostsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="px-4 py-2.5 sm:py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF4D94] focus:border-transparent transition-all text-sm sm:text-base font-bold bg-white"
           >
             <option value="all">全部状态</option>
             <option value="published">已发布</option>
@@ -240,7 +240,7 @@ export default function PostsPage() {
           <select
             value={reviewFilter}
             onChange={(e) => setReviewFilter(e.target.value)}
-            className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="px-4 py-2.5 sm:py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#FF4D94] focus:border-transparent transition-all text-sm sm:text-base font-bold bg-white"
           >
             <option value="all">全部审核状态</option>
             <option value="approved">已通过</option>
@@ -252,8 +252,8 @@ export default function PostsPage() {
         {/* 筛选结果统计 */}
         {(searchQuery || statusFilter !== 'all' || reviewFilter !== 'all') && (
           <div className="mt-4 pt-4 border-t border-gray-100">
-            <p className="text-sm text-gray-600">
-              找到 <span className="font-bold text-purple-600">{filteredPosts.length}</span> 篇文章
+            <p className="text-xs sm:text-sm text-gray-600 font-medium">
+              找到 <span className="font-black text-[#FF4D94]">{filteredPosts.length}</span> 篇文章
               {searchQuery && ` · 搜索: "${searchQuery}"`}
               {statusFilter !== 'all' && ` · 状态: ${statusFilter}`}
               {reviewFilter !== 'all' && ` · 审核: ${reviewFilter}`}
@@ -271,48 +271,48 @@ export default function PostsPage() {
         />
       ) : (
         <>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-100">
+                <thead className="bg-gradient-to-r from-[#FF4D94]/5 to-[#7C4DFF]/5 border-b border-gray-100">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">标题</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">状态</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">审核</th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-black text-gray-700 uppercase tracking-wider">标题</th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-black text-gray-700 uppercase tracking-wider">状态</th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-black text-gray-700 uppercase tracking-wider">审核</th>
                     {isSuperAdmin && (
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">作者</th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-black text-gray-700 uppercase tracking-wider">作者</th>
                     )}
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">发布时间</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">阅读</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">操作</th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-black text-gray-700 uppercase tracking-wider">发布时间</th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-black text-gray-700 uppercase tracking-wider">阅读</th>
+                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-xs sm:text-sm font-black text-gray-700 uppercase tracking-wider">操作</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {currentPosts.map((post) => (
-                    <tr key={post.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900 line-clamp-2">{post.title}</div>
-                        <div className="text-xs text-gray-500 mt-1">/blog/{post.slug}</div>
+                    <tr key={post.id} className="hover:bg-gradient-to-r hover:from-[#FF4D94]/5 hover:to-[#7C4DFF]/5 transition-all group">
+                      <td className="px-4 sm:px-6 py-4">
+                        <div className="font-black text-sm sm:text-base text-gray-900 line-clamp-2 group-hover:text-[#FF4D94] transition-colors">{post.title}</div>
+                        <div className="text-xs text-gray-500 mt-1 font-medium">/blog/{post.slug}</div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
+                      <td className="px-4 sm:px-6 py-4">
+                        <span className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-xl text-xs font-bold ${
                           post.status === 'published' 
-                            ? 'bg-green-100 text-green-700 border border-green-200' 
+                            ? 'bg-green-50 text-green-700 border border-green-200' 
                             : post.status === 'draft'
-                            ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
-                            : 'bg-gray-100 text-gray-700 border border-gray-200'
+                            ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                            : 'bg-gray-50 text-gray-700 border border-gray-200'
                         }`}>
                           {post.status === 'published' ? '已发布' : post.status === 'draft' ? '草稿' : '已归档'}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 sm:px-6 py-4">
                         {post.review_status ? (
-                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
+                          <span className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-xl text-xs font-bold ${
                             post.review_status === 'approved' 
-                              ? 'bg-green-100 text-green-700 border border-green-200' 
+                              ? 'bg-green-50 text-green-700 border border-green-200' 
                               : post.review_status === 'rejected'
-                              ? 'bg-red-100 text-red-700 border border-red-200'
-                              : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+                              ? 'bg-red-50 text-red-700 border border-red-200'
+                              : 'bg-orange-50 text-orange-700 border border-orange-200'
                           }`}>
                             {post.review_status === 'approved' && <CheckCircle className="w-3 h-3" />}
                             {post.review_status === 'rejected' && <XCircle className="w-3 h-3" />}
@@ -320,28 +320,28 @@ export default function PostsPage() {
                             {post.review_status === 'approved' ? '已通过' : post.review_status === 'rejected' ? '已拒绝' : '待审核'}
                           </span>
                         ) : (
-                          <span className="text-xs text-gray-400">-</span>
+                          <span className="text-xs text-gray-400 font-medium">-</span>
                         )}
                       </td>
                       {isSuperAdmin && (
-                        <td className="px-6 py-4 text-sm text-gray-600">
+                        <td className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 font-bold">
                           {post.profiles?.name ? `${post.profiles.name}的家庭` : '未知家庭'}
                         </td>
                       )}
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-gray-600 font-medium">
                         {post.published_at ? formatDate(post.published_at) : '-'}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1 text-sm text-gray-600">
-                          <Eye className="w-4 h-4" />
+                      <td className="px-4 sm:px-6 py-4">
+                        <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-600 font-bold">
+                          <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           {post.view_count}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-4 sm:px-6 py-4">
+                        <div className="flex items-center justify-end gap-1.5 sm:gap-2">
                           <Link
                             href={`/dashboard/posts/${post.id}/edit`}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-2 text-[#7C4DFF] hover:bg-[#7C4DFF]/10 rounded-xl transition-all"
                             title="编辑"
                           >
                             <Edit className="w-4 h-4" />
@@ -349,7 +349,7 @@ export default function PostsPage() {
                           {isSuperAdmin && post.review_status === 'pending' && (
                             <Link
                               href={`/dashboard/posts/${post.id}/review`}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              className="p-2 text-green-600 hover:bg-green-50 rounded-xl transition-all"
                               title="审核"
                             >
                               <CheckCircle className="w-4 h-4" />
@@ -358,7 +358,7 @@ export default function PostsPage() {
                           {(isSuperAdmin || post.author_id === currentUserId) && (
                             <button
                               onClick={() => setDeletePostId(post.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all"
                               title="删除"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -375,16 +375,16 @@ export default function PostsPage() {
 
           {/* 分页 */}
           {totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                显示 {startIndex + 1} - {Math.min(endIndex, filteredPosts.length)} 条，共 {filteredPosts.length} 条
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-xs sm:text-sm text-gray-600 font-medium">
+                显示 <span className="font-black text-[#FF4D94]">{startIndex + 1}</span> - <span className="font-black text-[#FF4D94]">{Math.min(endIndex, filteredPosts.length)}</span> 条，共 <span className="font-black text-[#FF4D94]">{filteredPosts.length}</span> 条
               </div>
               
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 sm:px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-xs sm:text-sm font-bold"
                 >
                   上一页
                 </button>
@@ -392,15 +392,15 @@ export default function PostsPage() {
                 <div className="flex items-center gap-1">
                   {getPageNumbers().map((page, index) => (
                     page === '...' ? (
-                      <span key={`ellipsis-${index}`} className="px-3 py-2 text-gray-400">...</span>
+                      <span key={`ellipsis-${index}`} className="px-2 sm:px-3 py-2 text-gray-400 text-xs sm:text-sm">...</span>
                     ) : (
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page as number)}
-                        className={`px-4 py-2 rounded-lg transition-colors ${
+                        className={`px-3 sm:px-4 py-2 rounded-xl transition-all text-xs sm:text-sm font-bold ${
                           currentPage === page
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium'
-                            : 'border border-gray-200 hover:bg-gray-50'
+                            ? 'bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white shadow-lg'
+                            : 'border border-gray-200 hover:bg-gray-50 hover:border-[#FF4D94]/30'
                         }`}
                       >
                         {page}
@@ -412,7 +412,7 @@ export default function PostsPage() {
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 sm:px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-xs sm:text-sm font-bold"
                 >
                   下一页
                 </button>

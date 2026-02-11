@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { formatDate, formatAuthorName } from '@/lib/utils'
-import { Calendar, Eye, User, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar, Eye, User, ArrowRight, ChevronLeft, ChevronRight, MessageCircle, TrendingUp, Clock, FileText } from 'lucide-react'
 import { FamilyBankCTA } from '@/components/FamilyBankCTA'
 import { BannerAd, FeedAd } from '@/components/ads'
 import type { Metadata } from 'next'
@@ -122,52 +122,99 @@ export default async function BlogListPage({ searchParams }: PageProps) {
     posts = fallbackData as unknown as PostWithProfile[]
   }
 
+  // 为每篇文章获取评论数
+  let postsWithComments = []
+  if (posts) {
+    postsWithComments = await Promise.all(
+      posts.map(async (post: any) => {
+        const { count } = await supabase
+          .from('comments')
+          .select('*', { count: 'exact', head: true })
+          .eq('post_id', post.id)
+          .eq('status', 'approved')
+        
+        return {
+          ...post,
+          comment_count: count || 0
+        }
+      })
+    )
+  }
+
+  // 获取热门文章（侧边栏）
+  const { data: hotPosts } = await supabase
+    .from('posts')
+    .select('id, title, slug, view_count')
+    .eq('status', 'published')
+    .order('view_count', { ascending: false })
+    .limit(5)
+
+  // 获取最新文章（侧边栏）
+  const { data: recentPosts } = await supabase
+    .from('posts')
+    .select('id, title, slug, published_at')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .limit(5)
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Forum Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto px-6 py-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-[#FDFCFD] via-[#FFF5F9] to-[#EAF6FF]">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-[#FF4D94] via-[#7C4DFF] to-[#FF4D94] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-white/30 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-white/30 rounded-full blur-[100px]"></div>
+        </div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20 relative z-10">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">💬 社区讨论</h1>
-                <p className="text-gray-600">家长们分享经验、交流心得的互动平台</p>
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-sm font-bold text-white mb-4 border border-white/30">
+                  <MessageCircle className="w-4 h-4" />
+                  <span>社区讨论</span>
+                </div>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-3 tracking-tight">
+                  所有讨论主题
+                </h1>
+                <p className="text-base sm:text-lg text-white/90 font-medium">家长们分享经验、交流心得的互动平台</p>
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-purple-600">{totalCount || 0}</div>
-                <div className="text-sm text-gray-500">主题</div>
+              <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 text-center">
+                <div className="text-4xl sm:text-5xl font-black text-white mb-2">{totalCount || 0}</div>
+                <div className="text-sm font-bold text-white/80 uppercase tracking-wider">主题总数</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Forum Content */}
-      <div className="container mx-auto px-6 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* 横幅广告 */}
-          <BannerAd className="mb-8" />
-          
-          {posts && posts.length > 0 ? (
-            <div className="space-y-3">
-              {posts.map((post, index) => {
+      {/* Content */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-8">
+              {/* 横幅广告 */}
+              <BannerAd className="mb-8" />
+              
+              {postsWithComments && postsWithComments.length > 0 ? (
+                <div className="space-y-4">
+                  {postsWithComments.map((post: any, index: number) => {
                 return (
                   <div key={post.id}>
-                    {/* Forum Thread Item */}
                     <Link href={`/blog/${post.slug}`}>
-                      <article className="bg-white rounded-lg hover:shadow-md transition-all border border-gray-200 hover:border-purple-300 p-5">
-                        <div className="flex gap-4">
+                      <article className="group bg-white rounded-3xl hover:shadow-2xl transition-all border border-gray-100 hover:border-[#FF4D94]/30 p-5 sm:p-6 overflow-hidden">
+                        <div className="flex gap-4 sm:gap-6">
                           {/* Avatar */}
                           <div className="flex-shrink-0">
                             {post.profiles?.avatar_url ? (
                               <img 
                                 src={post.profiles.avatar_url} 
                                 alt={post.profiles.name}
-                                className="w-12 h-12 rounded-full ring-2 ring-gray-100"
+                                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ring-2 ring-gray-100 group-hover:ring-[#FF4D94]/30 transition-all"
                               />
                             ) : (
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                                <User className="w-6 h-6 text-white" />
+                              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                <User className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                               </div>
                             )}
                           </div>
@@ -175,42 +222,54 @@ export default async function BlogListPage({ searchParams }: PageProps) {
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             {/* Title */}
-                            <h2 className="text-lg font-semibold text-gray-900 hover:text-purple-600 transition-colors mb-2 line-clamp-1">
+                            <h2 className="text-lg sm:text-xl font-black text-gray-900 group-hover:text-[#FF4D94] transition-colors mb-2 sm:mb-3 line-clamp-2 leading-snug">
                               {post.title}
                             </h2>
                             
                             {/* Excerpt */}
                             {post.excerpt && (
-                              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{post.excerpt}</p>
+                              <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4 line-clamp-2 leading-relaxed font-medium">{post.excerpt}</p>
                             )}
                             
                             {/* Meta Info */}
-                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                              <span className="font-medium text-gray-700">{formatAuthorName(post.profiles)}</span>
-                              <span>•</span>
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {formatDate(post.published_at!)}
+                            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-black text-gray-900">{formatAuthorName(post.profiles)}</span>
                               </div>
-                              <span>•</span>
-                              <div className="flex items-center gap-1">
-                                <Eye className="w-3 h-3" />
-                                {post.view_count} 浏览
+                              <span className="text-gray-300">•</span>
+                              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600">
+                                <Calendar className="w-3.5 h-3.5" />
+                                <span className="font-bold">{formatDate(post.published_at!)}</span>
+                              </div>
+                              <span className="text-gray-300">•</span>
+                              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600">
+                                <div className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center">
+                                  <Eye className="w-3.5 h-3.5 text-blue-600" />
+                                </div>
+                                <span className="font-bold">{post.view_count || 0}</span>
+                              </div>
+                              <span className="text-gray-300">•</span>
+                              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600">
+                                <div className="w-6 h-6 rounded-lg bg-green-50 flex items-center justify-center">
+                                  <MessageCircle className="w-3.5 h-3.5 text-green-600" />
+                                </div>
+                                <span className="font-bold">{post.comment_count || 0}</span>
                               </div>
                             </div>
                           </div>
                           
-                          {/* Stats */}
-                          <div className="flex-shrink-0 text-center hidden sm:block">
-                            <div className="text-lg font-bold text-purple-600">{post.view_count}</div>
-                            <div className="text-xs text-gray-500">浏览</div>
+                          {/* Arrow Icon */}
+                          <div className="flex-shrink-0 hidden md:flex items-center">
+                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-r from-[#FF4D94]/10 to-[#7C4DFF]/10 group-hover:from-[#FF4D94] group-hover:to-[#7C4DFF] flex items-center justify-center transition-all">
+                              <ArrowRight className="w-5 h-5 text-[#FF4D94] group-hover:text-white transition-colors" />
+                            </div>
                           </div>
                         </div>
                       </article>
                     </Link>
                   
                     {/* 每隔 4 篇插入信息流广告 */}
-                    {(index + 1) % 4 === 0 && index < posts.length - 1 && (
+                    {(index + 1) % 4 === 0 && index < postsWithComments.length - 1 && (
                       <FeedAd className="my-6" />
                     )}
                   </div>
@@ -218,18 +277,16 @@ export default async function BlogListPage({ searchParams }: PageProps) {
               })}
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+            <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center shadow-sm">
               <div className="max-w-md mx-auto">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
+                <div className="w-20 h-20 bg-gradient-to-br from-[#FF4D94]/10 to-[#7C4DFF]/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <MessageCircle className="w-10 h-10 text-[#FF4D94]" />
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-gray-900">还没有讨论主题</h3>
-                <p className="text-gray-600 mb-6">成为第一个发起讨论的人</p>
+                <h3 className="text-2xl font-black mb-2 text-gray-900">还没有讨论主题</h3>
+                <p className="text-sm text-gray-600 mb-6 font-bold">成为第一个发起讨论的人</p>
                 <Link 
                   href="/auth/login"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-2xl hover:shadow-xl hover:scale-105 active:scale-95 transition-all font-black text-sm sm:text-base"
                 >
                   登录后台发布主题
                   <ArrowRight className="w-4 h-4" />
@@ -239,21 +296,21 @@ export default async function BlogListPage({ searchParams }: PageProps) {
           )}
           
           {/* Pagination */}
-          {posts && posts.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
+          {postsWithComments && postsWithComments.length > 0 && totalPages > 1 && (
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-8 sm:mt-12">
               {/* Previous Button */}
               {currentPage > 1 ? (
                 <Link
                   href={`/blog?page=${currentPage - 1}`}
-                  className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+                  className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 hover:border-[#FF4D94]/30 transition-all text-sm font-bold text-gray-700"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  上一页
+                  <span className="hidden sm:inline">上一页</span>
                 </Link>
               ) : (
-                <div className="flex items-center gap-1 px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed">
+                <div className="flex items-center gap-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold text-gray-400 cursor-not-allowed">
                   <ChevronLeft className="w-4 h-4" />
-                  上一页
+                  <span className="hidden sm:inline">上一页</span>
                 </div>
               )}
               
@@ -275,10 +332,10 @@ export default async function BlogListPage({ searchParams }: PageProps) {
                     <Link
                       key={pageNum}
                       href={`/blog?page=${pageNum}`}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-bold transition-all ${
                         currentPage === pageNum
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                          ? 'bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white shadow-lg'
+                          : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-[#FF4D94]/30'
                       }`}
                     >
                       {pageNum}
@@ -291,14 +348,14 @@ export default async function BlogListPage({ searchParams }: PageProps) {
               {currentPage < totalPages ? (
                 <Link
                   href={`/blog?page=${currentPage + 1}`}
-                  className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+                  className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 hover:border-[#FF4D94]/30 transition-all text-sm font-bold text-gray-700"
                 >
-                  下一页
+                  <span className="hidden sm:inline">下一页</span>
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               ) : (
-                <div className="flex items-center gap-1 px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed">
-                  下一页
+                <div className="flex items-center gap-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold text-gray-400 cursor-not-allowed">
+                  <span className="hidden sm:inline">下一页</span>
                   <ChevronRight className="w-4 h-4" />
                 </div>
               )}
@@ -306,11 +363,100 @@ export default async function BlogListPage({ searchParams }: PageProps) {
           )}
           
           {/* Family Bank CTA */}
-          {posts && posts.length > 0 && (
+          {postsWithComments && postsWithComments.length > 0 && (
             <div className="mt-12">
               <FamilyBankCTA variant="compact" />
             </div>
           )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="lg:col-span-4 space-y-6">
+              {/* Hot Posts */}
+              {hotPosts && hotPosts.length > 0 && (
+                <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="font-black text-gray-900 text-lg">热门主题</h3>
+                  </div>
+                  <div className="space-y-4">
+                    {hotPosts.map((post: any, index: number) => (
+                      <Link 
+                        key={post.id} 
+                        href={`/blog/${post.slug}`}
+                        className="block group"
+                      >
+                        <div className="flex gap-3">
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shadow-sm ${
+                            index === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white' :
+                            index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white' :
+                            index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-500 text-white' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {index + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-black text-gray-900 group-hover:text-[#FF4D94] line-clamp-2 mb-2 transition-colors leading-snug">
+                              {post.title}
+                            </h4>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 text-xs font-bold text-gray-500">
+                                <div className="w-5 h-5 rounded bg-blue-50 flex items-center justify-center">
+                                  <Eye className="w-3 h-3 text-blue-600" />
+                                </div>
+                                <span>{post.view_count || 0}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Recent Posts */}
+              {recentPosts && recentPosts.length > 0 && (
+                <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="font-black text-gray-900 text-lg">最新主题</h3>
+                  </div>
+                  <div className="space-y-4">
+                    {recentPosts.map((post: any) => (
+                      <Link 
+                        key={post.id} 
+                        href={`/blog/${post.slug}`}
+                        className="block group"
+                      >
+                        <h4 className="text-sm font-black text-gray-900 group-hover:text-[#FF4D94] line-clamp-2 mb-2 transition-colors leading-snug">
+                          {post.title}
+                        </h4>
+                        <div className="flex items-center gap-1 text-xs font-bold text-gray-500">
+                          <Clock className="w-3 h-3" />
+                          {formatDate(post.published_at)}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  <Link 
+                    href="/blog"
+                    className="flex items-center justify-center gap-2 mt-6 pt-6 border-t border-gray-100 text-sm text-[#FF4D94] hover:text-[#7C4DFF] font-black uppercase tracking-wider group"
+                  >
+                    查看更多
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </div>
+              )}
+
+              {/* Banner Ad in Sidebar */}
+              <BannerAd />
+            </div>
+          </div>
         </div>
       </div>
     </div>

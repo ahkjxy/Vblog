@@ -27,6 +27,7 @@ export default function NewPostPage() {
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const supabase = createClient()
   
   // 分类和标签
   const [categories, setCategories] = useState<Category[]>([])
@@ -42,8 +43,6 @@ export default function NewPostPage() {
   }, [])
 
   const loadCategoriesAndTags = async () => {
-    if (!supabase) return
-    
     const { data: categoriesData } = await supabase
       .from('categories')
       .select('*')
@@ -93,12 +92,6 @@ export default function NewPostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!supabase) {
-      setError('Supabase 客户端未初始化')
-      return
-    }
-    
     setLoading(true)
     setError(null)
 
@@ -219,7 +212,7 @@ export default function NewPostPage() {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-7xl">
       <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
         新建文章
       </h1>

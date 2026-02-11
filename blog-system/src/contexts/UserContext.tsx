@@ -30,13 +30,10 @@ export function UserProvider({
 }) {
   const [user, setUser] = useState<UserProfile | null>(initialUser || null)
   const [loading, setLoading] = useState(!initialUser)
+  const supabase = createClient()
 
   // 获取用户信息
   const fetchUser = async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -95,11 +92,6 @@ export function UserProvider({
 
   // 初始化：只执行一次
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-
     // 总是获取最新的用户信息
     fetchUser()
 

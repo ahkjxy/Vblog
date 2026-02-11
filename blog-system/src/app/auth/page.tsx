@@ -21,6 +21,10 @@ function AuthPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
+  
+  // 获取重定向目标：blog 或 family
+  const redirectTarget = searchParams.get('redirect') || 'blog' // 默认为 blog
+  const returnUrl = searchParams.get('returnUrl') // 自定义返回 URL
 
   useEffect(() => {
     const msg = searchParams.get('message')
@@ -36,11 +40,6 @@ function AuthPageContent() {
 
   const handlePasswordAuth = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!supabase) {
-      showToast('error', '系统初始化失败，请刷新页面重试')
-      return
-    }
     
     const em = email.trim()
     const pw = password.trim()
@@ -61,7 +60,14 @@ function AuthPageContent() {
 
       if (!signInError && signInData?.session) {
         showToast('success', '登录成功，正在进入...')
-        router.push('/dashboard')
+        // 根据 redirect 参数跳转到不同系统
+        if (returnUrl) {
+          window.location.href = returnUrl
+        } else if (redirectTarget === 'family') {
+          window.location.href = 'https://www.familybank.chat'
+        } else {
+          router.push('/dashboard')
+        }
         return
       }
 
@@ -77,7 +83,7 @@ function AuthPageContent() {
         email: em,
         password: pw,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${redirectTarget}${returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : ''}`,
           data: {
             username: em.split('@')[0],
           }
@@ -112,8 +118,15 @@ function AuthPageContent() {
         
         if (signUpData?.session) {
           // 自动登录成功
-          showToast('success', '注册并登录成功，欢迎加入元气银行博客!')
-          router.push('/dashboard')
+          showToast('success', '注册并登录成功，欢迎加入元气银行!')
+          // 根据 redirect 参数跳转到不同系统
+          if (returnUrl) {
+            window.location.href = returnUrl
+          } else if (redirectTarget === 'family') {
+            window.location.href = 'https://www.familybank.chat'
+          } else {
+            router.push('/dashboard')
+          }
         } else if (signUpData?.user) {
           // 注册成功但需要验证邮件
           showToast('info', '注册成功！请前往邮箱验证链接以完成激活')
@@ -134,11 +147,6 @@ function AuthPageContent() {
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!supabase) {
-      showToast('error', '系统初始化失败，请刷新页面重试')
-      return
-    }
-    
     const em = email.trim()
     
     if (!em) {
@@ -152,7 +160,7 @@ function AuthPageContent() {
       const { error } = await supabase.auth.signInWithOtp({
         email: em,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${redirectTarget}${returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : ''}`,
         }
       })
       
@@ -171,11 +179,6 @@ function AuthPageContent() {
   }
 
   const handleSendReset = async () => {
-    if (!supabase) {
-      showToast('error', '系统初始化失败，请刷新页面重试')
-      return
-    }
-    
     const em = resetEmail.trim()
     
     if (!em) {
@@ -187,7 +190,7 @@ function AuthPageContent() {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(em, {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?redirect=${redirectTarget}${returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : ''}`,
       })
       
       if (error) throw error
@@ -219,10 +222,16 @@ function AuthPageContent() {
           </Link>
           
           <div className="mt-2">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#FF4D94]">博 客 系 统</p>
-            <h2 className="text-3xl font-black text-gray-900 tracking-tighter mt-1">欢迎来到元气银行博客</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#FF4D94]">
+              {redirectTarget === 'family' ? '家 庭 系 统' : '元 气 银 行'}
+            </p>
+            <h2 className="text-3xl font-black text-gray-900 tracking-tighter mt-1">
+              {redirectTarget === 'family' ? '欢迎来到元气银行' : '欢迎来到元气银行博客'}
+            </h2>
             <p className="text-[11px] font-bold text-gray-400 leading-snug mt-2 max-w-[240px] mx-auto opacity-80">
-              分享家庭管理智慧，记录成长点滴
+              {redirectTarget === 'family' 
+                ? '管理家庭积分，记录成长点滴' 
+                : '分享家庭管理智慧，记录成长点滴'}
             </p>
           </div>
         </div>
