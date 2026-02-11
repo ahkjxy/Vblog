@@ -37,12 +37,24 @@ export function createClient(): SupabaseClient {
             c = c.substring(1)
           }
           if (c.indexOf(cookieName) === 0) {
-            const value = c.substring(cookieName.length, c.length)
+            let value = c.substring(cookieName.length, c.length)
             try {
-              return decodeURIComponent(value)
+              value = decodeURIComponent(value)
             } catch (e) {
-              return value
+              // use raw value
             }
+
+            // Handle Supabase SSR's base64 prefix
+            if (value.startsWith('base64-')) {
+              try {
+                const base64 = value.substring(7)
+                return atob(base64)
+              } catch (e) {
+                console.error('Failed to decode base64 cookie', e)
+                return null
+              }
+            }
+            return value
           }
         }
         return null
@@ -59,9 +71,19 @@ export function createClient(): SupabaseClient {
         document.cookie = `${name}=${value}; ${domain}${maxAge}; ${sameSite}; ${secure}; ${path}`
       },
       remove(name: string) {
-        // 删除 Cookie
-        const domain = isProduction ? 'domain=.familybank.chat;' : ''
-        document.cookie = `${name}=; ${domain}path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`
+        // 删除 Cookie (尝试删除多个可能的 domain/path 组合)
+        const domains = [
+          isProduction ? '.familybank.chat' : '',
+          window.location.hostname
+        ]
+        const paths = ['/', '/auth', '/dashboard']
+        
+        domains.forEach(domain => {
+          const domainAttr = domain ? `domain=${domain};` : ''
+          paths.forEach(path => {
+            document.cookie = `${name}=; ${domainAttr} path=${path}; expires=Thu, 01 Jan 1970 00:00:00 GMT`
+          })
+        })
       },
     },
   })

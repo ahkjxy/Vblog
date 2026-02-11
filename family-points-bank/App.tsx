@@ -3,7 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import { App as CapApp } from "@capacitor/app";
 import { Dialog } from "@capacitor/dialog";
 
-import { Routes, Route, Navigate, useNavigate, useLocation, useMatch } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { FamilyState, Transaction, Profile, Category } from "./types";
 import { INITIAL_TASKS, INITIAL_REWARDS } from "./constants";
 import { supabase } from "./supabaseClient";
@@ -50,24 +50,19 @@ export default function App() {
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const matchAny = useMatch("/:syncId/*");
-  const matchExact = useMatch("/:syncId");
-  const match = matchAny || matchExact;
-  const syncId = match?.params?.syncId;
-  const fallbackSyncId = syncId || "";
 
   const [state, setState] = useState<FamilyState>({
     currentProfileId: null,
     profiles: [],
     tasks: [],
     rewards: [],
-    syncId: fallbackSyncId,
+    syncId: "",
   });
 
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
 
-  const resolveFamilyId = () => syncId || state.syncId || "";
+  const resolveFamilyId = () => state.syncId || "";
   const activeFamilyId = resolveFamilyId();
   const mainContentRef = useRef<HTMLElement>(null);
   const { showToast, dismissToast } = useToast();
@@ -126,7 +121,7 @@ function AppContent() {
         // If we are at the dashboard or root level, ask to exit
         const path = location.pathname;
         const segments = path.split('/').filter(Boolean);
-        const isEntryPage = segments.length <= 1 || segments[1] === 'dashboard';
+        const isEntryPage = segments.length === 0 || segments[0] === 'dashboard';
 
         if (isEntryPage) {
           const { value } = await Dialog.confirm({
@@ -318,7 +313,7 @@ function AppContent() {
 
   const ensureFamilyForSession = async (sess: Session) => {
     const userId = sess.user.id;
-    let targetFamilyId = syncId?.trim() || "";
+    let targetFamilyId = "";
 
     if (targetFamilyId) {
       const { error: upsertError } = await supabase
@@ -346,15 +341,17 @@ function AppContent() {
       }
       
       if (upsertError) throw upsertError;
-    } else {
-      const { data: memberships } = await supabase
-        .from("family_members")
-        .select("family_id, role, created_at")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: true });
-      if (memberships?.length) {
-        targetFamilyId = memberships[0].family_id as string;
-      }
+    }
+
+    // Always try to load from membership first
+    const { data: memberships } = await supabase
+      .from("family_members")
+      .select("family_id, role, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+    
+    if (memberships?.length) {
+      targetFamilyId = memberships[0].family_id as string;
     }
 
     if (!targetFamilyId) {
@@ -483,7 +480,7 @@ function AppContent() {
   const fetchData = async (targetSyncId: string) => {
     const normalized = targetSyncId?.trim();
     if (!normalized) {
-      setFatalError("缺少 Sync ID，请在 URL 中使用 /{syncId}/dashboard 访问");
+      setFatalError("无法识别家庭身份，请尝试重新登录");
       setIsSyncing(false);
       return;
     }
@@ -577,98 +574,92 @@ function AppContent() {
 
   useEffect(() => {
     let mounted = true;
-    let authStateResolved = false;
 
-    const readyTimeout = setTimeout(() => {
-      if (mounted && !authStateResolved) {
-        console.warn("INITIAL_SESSION event did not fire, forcing authReady");
-        setAuthReady(true);
-        authStateResolved = true;
-      }
-    }, 2000);
-
-    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
-      if (!mounted) return;
-
-      setSession(sess);
-
-      if (event === "INITIAL_SESSION") {
-        setAuthReady(true);
-        authStateResolved = true;
-        clearTimeout(readyTimeout);
-      }
-
-      if (event === "PASSWORD_RECOVERY") {
-        setShowPasswordReset(true);
-      }
-      
-      // 使用 sessionStorage 锁定状态，即使 Tab 睡眠重新加载也能保持记录
-      // 只有在本次会话（打开 Tab 后）第一次触发 SIGNED_IN 时采显示 Splash
-      if (event === "SIGNED_IN") {
-        const hasShown = sessionStorage.getItem('fpb_splash_shown');
-        if (!hasShown) {
-          setShowSplash(true);
-          sessionStorage.setItem('fpb_splash_shown', 'true');
-        }
-      }
-
-      if (!sess && authStateResolved) {
-        setFatalError(null);
-        setState((s) => ({ ...s, syncId: fallbackSyncId }));
-        hasFetched.current = false;
-      }
-    });
-
-    const init = async () => {
+    // Handle OAuth callback (if any)
+    const handleCallback = async () => {
       const url = window.location.href;
       if (url.includes("code=")) {
         try {
           await supabase.auth.exchangeCodeForSession(url);
+          // Clean URL
           const cleaned = new URL(url);
           cleaned.searchParams.delete("code");
           cleaned.searchParams.delete("token");
           cleaned.searchParams.delete("type");
           if (cleaned.hash) cleaned.hash = "";
           window.history.replaceState({}, document.title, cleaned.toString());
-
-          setTimeout(() => {
-            if (mounted && !authStateResolved) {
-              setAuthReady(true);
-              authStateResolved = true;
-            }
-          }, 500);
         } catch (e) {
           console.warn("exchangeCodeForSession failed", e);
         }
       }
     };
 
-    init();
+    handleCallback().then(() => {
+      // Get initial session
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (mounted) {
+          setSession(session);
+          setAuthReady(true);
+        }
+      });
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (!mounted) return;
+      console.log("Auth state changed:", event);
+      setSession(sess);
+      
+      if (event === "PASSWORD_RECOVERY") {
+        setShowPasswordReset(true);
+      }
+      
+      if (event === "SIGNED_IN") {
+         const hasShown = sessionStorage.getItem('fpb_splash_shown');
+         if (!hasShown) {
+           setShowSplash(true);
+           sessionStorage.setItem('fpb_splash_shown', 'true');
+         }
+      }
+
+      if (event === "SIGNED_OUT") {
+        setFatalError(null);
+        setState((s) => ({ ...s, syncId: "" }));
+        hasFetched.current = false;
+      }
+      
+      // Ensure auth is marked ready
+      setAuthReady(true);
+    });
 
     return () => {
       mounted = false;
-      clearTimeout(readyTimeout);
-      sub?.subscription?.unsubscribe();
+      subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Fetch data effect
   useEffect(() => {
     if (!authReady) return;
     if (!session) return;
-    if (hasFetched.current) return; // Prevent automatic re-fetch on session/focus
+    
+    // Prevent re-running if we already fetched for this session
+    // Unless syncId changed and it's different from current
+    if (hasFetched.current && state.syncId) return;
 
     let cancelled = false;
     (async () => {
       try {
         const familyId = await ensureFamilyForSession(session);
         if (cancelled) return;
+        
         setState((s) => ({ ...s, syncId: familyId }));
-        const segments = location.pathname.split("/").filter(Boolean);
-        const currentId = segments[0];
-        if (currentId !== familyId) {
-          navigate(`/${familyId}/dashboard`, { replace: true });
+        
+        // Redirect if needed (e.g. from root to dashboard)
+        if (location.pathname === "/" || location.pathname === "") {
+             navigate("/dashboard", { replace: true });
         }
+
         await fetchData(familyId);
         hasFetched.current = true;
       } catch (e) {
@@ -679,7 +670,7 @@ function AppContent() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, authReady, syncId]);
+  }, [session, authReady]);
 
   const currentProfile = useMemo<Profile>(() => {
     const found = state.profiles.find((p) => p.id === state.currentProfileId);
@@ -717,15 +708,15 @@ function AppContent() {
     "dashboard" | "earn" | "redeem" | "history" | "settings" | "achievements"
   >(() => {
     const segments = location.pathname.split("/").filter(Boolean);
-    const tab = segments[1]; // /:syncId/:tab
+    const tab = segments[0]; // /:tab
     return (pathToTab[tab] as any) || "dashboard";
   }, [location.pathname]);
 
   useEffect(() => {
     if (!isAdmin && activeTab === "settings") {
-      navigate(`/${resolveFamilyId()}/dashboard`, { replace: true });
+      navigate("/dashboard", { replace: true });
     }
-  }, [isAdmin, activeTab, navigate, syncId, state.syncId]);
+  }, [isAdmin, activeTab, navigate]);
 
   const syncToCloud = async (newState: FamilyState) => {
     // Supabase 模式下，写操作在各自函数内完成，这里仅更新本地状态
@@ -1432,9 +1423,7 @@ function AppContent() {
   const goTab = (
     tab: "dashboard" | "earn" | "redeem" | "history" | "settings" | "achievements"
   ) => {
-    const target = resolveFamilyId();
-    if (!target) return;
-    navigate(`/${target}/${tab}`);
+    navigate(`/${tab}`);
   };
 
   const handleLogout = async () => {
@@ -1457,7 +1446,6 @@ function AppContent() {
     }
   };
 
-  const resolvedFamilyId = activeFamilyId;
 
   useEffect(() => {
     // Both window and container scroll to top, with a tiny delay to ensure render
@@ -1524,28 +1512,18 @@ function AppContent() {
         />
       )}
       
-      {activeFamilyId && (
-        <>
-      {fatalError && (
-        <div className="mx-3 sm:mx-0 mb-4 rounded-2xl bg-rose-50 dark:bg-rose-900/40 text-rose-700 dark:text-rose-100 border border-rose-100 dark:border-rose-800 px-4 py-3 flex items-start gap-3 mobile-card">
-          <span className="mt-0.5 text-base">⚠️</span>
-          <div className="text-sm leading-relaxed">
-            <p className="font-bold">同步失败</p>
-            <p className="text-rose-600 dark:text-rose-100/80 break-words">{fatalError}</p>
-          </div>
+      {activeFamilyId && session && (
+        <div className="hidden lg:block lg:sticky lg:top-0 lg:h-screen">
+          <Sidebar
+            activeTab={activeTab}
+            onChangeTab={goTab}
+            isAdmin={isAdmin}
+            currentProfile={currentProfile}
+            onToggleProfileSwitcher={() => setShowProfileSwitcher(true)}
+            language={language}
+          />
         </div>
       )}
-
-      <div className="hidden lg:block lg:sticky lg:top-0 lg:h-screen">
-        <Sidebar
-          activeTab={activeTab}
-          onChangeTab={goTab}
-          isAdmin={isAdmin}
-          currentProfile={currentProfile}
-          onToggleProfileSwitcher={() => setShowProfileSwitcher(true)}
-          language={language}
-        />
-      </div>
 
       <main 
         ref={mainContentRef}
@@ -1560,165 +1538,188 @@ function AppContent() {
             </div>
           </div>
         )}
-        <HeaderBar
-          activeTab={activeTab}
-          currentProfile={currentProfile}
-          profiles={state.profiles}
-          isAdmin={isAdmin}
-          theme={theme}
-          language={language}
-          onToggleTheme={toggleTheme}
-          onChangeLanguage={handleChangeLanguage}
-          onPrint={() => printReport(state)}
-          onLogout={handleLogout}
-          onTransfer={() => setShowTransferModal(true)}
-          onWishlist={() => setShowWishlistModal(true)}
-          onSwitchProfile={(id) => setState(s => ({ ...s, currentProfileId: id }))}
-          chatUnreadCount={unreadChatCount}
-          onToggleChat={() => setShowChat(prev => !prev)}
-          onRefresh={() => refreshFamily()}
-          isSyncing={isSyncing}
-          onOpenSearch={() => setShowSearchModal(true)}
-        />
 
-        <Routes>
-          <Route
-            path="/"
-            element={
-              activeFamilyId ? (
-                <Navigate to={`/${activeFamilyId}/dashboard`} replace />
-              ) : (
-                <AuthGate />
-              )
-            }
+        {activeFamilyId && fatalError && (
+          <div className="mx-3 sm:mx-0 mb-4 rounded-2xl bg-rose-50 dark:bg-rose-900/40 text-rose-700 dark:text-rose-100 border border-rose-100 dark:border-rose-800 px-4 py-3 flex items-start gap-3 mobile-card">
+            <span className="mt-0.5 text-base">⚠️</span>
+            <div className="text-sm leading-relaxed">
+              <p className="font-bold">同步失败</p>
+              <p className="text-rose-600 dark:text-rose-100/80 break-words">{fatalError}</p>
+            </div>
+          </div>
+        )}
+
+        {authReady && (
+          <HeaderBar
+            activeTab={activeTab}
+            currentProfile={currentProfile}
+            profiles={state.profiles}
+            isAdmin={isAdmin}
+            theme={theme}
+            language={language}
+            onToggleTheme={toggleTheme}
+            onChangeLanguage={handleChangeLanguage}
+            onPrint={() => printReport(state)}
+            onLogout={handleLogout}
+            onTransfer={() => setShowTransferModal(true)}
+            onWishlist={() => setShowWishlistModal(true)}
+            onSwitchProfile={(id) => setState(s => ({ ...s, currentProfileId: id }))}
+            chatUnreadCount={unreadChatCount}
+            onToggleChat={() => setShowChat(prev => !prev)}
+            onRefresh={() => refreshFamily()}
+            isSyncing={isSyncing}
+            onOpenSearch={() => setShowSearchModal(true)}
           />
-          <Route path="/reset" element={<PasswordResetPage />} />
-          <Route
-            path="/:syncId"
-            element={
-              resolvedFamilyId ? (
-                <Navigate to={`/${resolvedFamilyId}/dashboard`} replace />
-              ) : (
-                <AuthGate />
-              )
-            }
-          />
-          <Route
-            path="/:syncId/dashboard"
-            element={
-              <DashboardSection
-                currentProfile={currentProfile}
-                profiles={state.profiles}
-                rewards={state.rewards}
-                tasks={state.tasks}
-                onGoEarn={() => goTab("earn")}
-                onGoRedeem={() => goTab("redeem")}
-                onGoHistory={() => goTab("history")}
-                onRedeem={(payload: any) => setPendingAction(payload)}
-                onSelectTask={(payload: any) => setPendingAction(payload)}
-                language={language}
-              />
-            }
-          />
-          <Route
-            path="/:syncId/earn"
-            element={
-              <EarnSection
-                tasks={state.tasks}
-                onSelectTask={(payload: any) => setPendingAction(payload)}
-                currentProfile={currentProfile}
-                language={language}
-              />
-            }
-          />
-          <Route
-            path="/:syncId/redeem"
-            element={
-              <RedeemSection
-                rewards={state.rewards}
-                balance={currentProfile.balance}
-                onRedeem={(payload: any) => setPendingAction(payload)}
-                isAdmin={isAdmin}
-                onApproveWishlist={handleApproveWishlist}
-                onRejectWishlist={handleRejectWishlist}
-                profiles={state.profiles}
-                onAddWish={() => setShowWishlistModal(true)}
-                currentProfile={currentProfile}
-                language={language}
-              />
-            }
-          />
-          <Route
-            path="/:syncId/history"
-            element={
-              <HistorySection
-                history={currentProfile.history}
-                isAdmin={isAdmin}
-                onDeleteTransactions={handleDeleteTransactions}
-                language={language}
-              />
-            }
-          />
-          <Route
-            path="/:syncId/settings"
-            element={
-              isAdmin ? (
-                <SettingsSection
-                  profiles={state.profiles}
-                  tasks={filteredTasks}
-                  rewards={filteredRewards}
-                  taskFilter={taskFilter}
-                  rewardFilter={rewardFilter}
-                  onTaskFilterChange={setTaskFilter}
-                  onRewardFilterChange={setRewardFilter}
-                  onEdit={(payload) => setEditingItem(payload)}
-                  onDelete={(type, item) => crudAction(type, "delete", item)}
-                  onPrint={() => printReport(state)}
-                  onProfileNameChange={(id: string, name: string) => handleProfileNameChange(id, name)}
-                  onUpdateProfileAvatar={(id: string, avatarUrl: string | null) =>
-                    handleUpdateProfileAvatar(id, avatarUrl)
-                  }
-                  onAddProfile={(name, role, balance, avatarUrl) =>
-                    handleAddProfile(name, role, balance, avatarUrl)
-                  }
-                  onDeleteProfile={(id: string) => handleDeleteProfile(id)}
-                  onAdjustBalance={(profileId: string, payload: any) => handleAdjustBalance(profileId, payload)}
-                  currentSyncId={resolveFamilyId()}
-                  currentProfileId={state.currentProfileId ?? undefined}
-                  onSendSystemNotification={sendSystemNotification}
-                  onApproveWishlist={handleApproveWishlist}
-                  onRejectWishlist={handleRejectWishlist}
-                  language={language}
-                />
-              ) : (
-                <Navigate to={`/${resolveFamilyId()}/dashboard`} replace />
-              )
-            }
-          />
-          <Route
-            path="/:syncId/achievements"
-            element={
-              <AchievementCenter 
-                currentProfile={currentProfile} 
-                familyId={activeFamilyId || ""} 
-                onRefresh={() => refreshFamily()}
-                language={language}
-              />
-            }
-          />
-          <Route path="/:syncId/doc" element={<DocsPage />} />
-          <Route path="*" element={<Navigate to={`/${resolveFamilyId()}/dashboard`} replace />} />
-        </Routes>
+        )}
+
+        {authReady && (
+          <Routes>
+            <Route
+              path="/"
+              element={
+                session ? (
+                  activeFamilyId ? (
+                    <Navigate to="/dashboard" replace />
+                  ) : (
+                    <div className="flex items-center justify-center p-20 min-h-[60vh] text-gray-500 font-bold">正在准备您的家庭环境...</div>
+                  )
+                ) : (
+                  <AuthGate />
+                )
+              }
+            />
+            <Route path="/reset" element={<PasswordResetPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                session ? (
+                  <DashboardSection
+                    currentProfile={currentProfile}
+                    profiles={state.profiles}
+                    rewards={state.rewards}
+                    tasks={state.tasks}
+                    onGoEarn={() => goTab("earn")}
+                    onGoRedeem={() => goTab("redeem")}
+                    onGoHistory={() => goTab("history")}
+                    onRedeem={(payload: any) => setPendingAction(payload)}
+                    onSelectTask={(payload: any) => setPendingAction(payload)}
+                    language={language}
+                  />
+                ) : <AuthGate />
+              }
+            />
+            <Route
+              path="/earn"
+              element={
+                session ? (
+                  <EarnSection
+                    tasks={state.tasks}
+                    onSelectTask={(payload: any) => setPendingAction(payload)}
+                    currentProfile={currentProfile}
+                    language={language}
+                  />
+                ) : <AuthGate />
+              }
+            />
+            <Route
+              path="/redeem"
+              element={
+                session ? (
+                  <RedeemSection
+                    rewards={state.rewards}
+                    balance={currentProfile.balance}
+                    onRedeem={(payload: any) => setPendingAction(payload)}
+                    isAdmin={isAdmin}
+                    onApproveWishlist={handleApproveWishlist}
+                    onRejectWishlist={handleRejectWishlist}
+                    profiles={state.profiles}
+                    onAddWish={() => setShowWishlistModal(true)}
+                    currentProfile={currentProfile}
+                    language={language}
+                  />
+                ) : <AuthGate />
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                session ? (
+                  <HistorySection
+                    history={currentProfile.history}
+                    isAdmin={isAdmin}
+                    onDeleteTransactions={handleDeleteTransactions}
+                    language={language}
+                  />
+                ) : <AuthGate />
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                session ? (
+                  isAdmin ? (
+                    <SettingsSection
+                      profiles={state.profiles}
+                      tasks={filteredTasks}
+                      rewards={filteredRewards}
+                      taskFilter={taskFilter}
+                      rewardFilter={rewardFilter}
+                      onTaskFilterChange={setTaskFilter}
+                      onRewardFilterChange={setRewardFilter}
+                      onEdit={(payload) => setEditingItem(payload)}
+                      onDelete={(type, item) => crudAction(type, "delete", item)}
+                      onPrint={() => printReport(state)}
+                      onProfileNameChange={(id: string, name: string) => handleProfileNameChange(id, name)}
+                      onUpdateProfileAvatar={(id: string, avatarUrl: string | null) =>
+                        handleUpdateProfileAvatar(id, avatarUrl)
+                      }
+                      onAddProfile={(name, role, balance, avatarUrl) =>
+                        handleAddProfile(name, role, balance, avatarUrl)
+                      }
+                      onDeleteProfile={(id: string) => handleDeleteProfile(id)}
+                      onAdjustBalance={(profileId: string, payload: any) => handleAdjustBalance(profileId, payload)}
+                      currentSyncId={state.syncId}
+                      currentProfileId={state.currentProfileId ?? undefined}
+                      onSendSystemNotification={sendSystemNotification}
+                      onApproveWishlist={handleApproveWishlist}
+                      onRejectWishlist={handleRejectWishlist}
+                      language={language}
+                    />
+                  ) : (
+                    <Navigate to="/dashboard" replace />
+                  )
+                ) : <AuthGate />
+              }
+            />
+            <Route
+              path="/achievements"
+              element={
+                session ? (
+                  <AchievementCenter 
+                    currentProfile={currentProfile} 
+                    familyId={activeFamilyId || ""} 
+                    onRefresh={() => refreshFamily()}
+                    language={language}
+                  />
+                ) : <AuthGate />
+              }
+            />
+            <Route path="/doc" element={<DocsPage />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        )}
       </main>
 
-      <MobileNav
-        activeTab={activeTab}
-        onChangeTab={goTab}
-        isAdmin={isAdmin}
-        language={language}
-      />
+      {authReady && session && activeFamilyId && (
+        <MobileNav
+          activeTab={activeTab}
+          onChangeTab={goTab}
+          isAdmin={isAdmin}
+          language={language}
+        />
+      )}
 
-      {activeFamilyId && (
+      {authReady && session && activeFamilyId && (
         <ChatWidget
           currentProfile={currentProfile}
           familyId={activeFamilyId || ""}
@@ -1730,14 +1731,16 @@ function AppContent() {
         />
       )}
 
-      <ProfileSwitcherModal
-        open={showProfileSwitcher}
-        profiles={state.profiles}
-        currentProfileId={state.currentProfileId ?? ""}
-        onSelect={(id) => handleSwitchProfile(id)}
-        onClose={() => setShowProfileSwitcher(false)}
-        language={language}
-      />
+      {authReady && session && activeFamilyId && (
+        <ProfileSwitcherModal
+          open={showProfileSwitcher}
+          profiles={state.profiles}
+          currentProfileId={state.currentProfileId ?? ""}
+          onSelect={(id) => handleSwitchProfile(id)}
+          onClose={() => setShowProfileSwitcher(false)}
+          language={language}
+        />
+      )}
 
       {editingItem && isAdmin && (
         <EditModal
@@ -1795,8 +1798,6 @@ function AppContent() {
         onTransfer={() => setShowTransferModal(true)}
         onSwitchProfile={(id) => setState(s => ({ ...s, currentProfileId: id }))}
       />
-      </>
-      )}
     </div>
   );
 }

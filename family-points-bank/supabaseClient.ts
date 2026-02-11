@@ -20,12 +20,25 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
             c = c.substring(1);
           }
           if (c.indexOf(name) === 0) {
-            const value = c.substring(name.length, c.length);
+            let value = c.substring(name.length, c.length);
             try {
-              return decodeURIComponent(value);
+              value = decodeURIComponent(value);
             } catch (e) {
-              return value;
+              // inconsistent encoding, use raw
             }
+            
+            // Handle Supabase SSR's base64 prefix
+            if (value.startsWith('base64-')) {
+              try {
+                const base64 = value.substring(7);
+                return atob(base64);
+              } catch (e) {
+                console.error('Failed to decode base64 cookie', e);
+                return null;
+              }
+            }
+            
+            return value;
           }
         }
         return null;

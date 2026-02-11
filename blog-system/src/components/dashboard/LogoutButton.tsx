@@ -15,55 +15,15 @@ export function LogoutButton() {
     
     if (loading) return
     
-    setLoading(true)
-    
     try {
       const supabase = createClient()
+      await supabase.auth.signOut()
       
-      // 先清除本地存储
-      if (typeof window !== 'undefined') {
-        // 清除 Supabase 相关的存储
-        const keysToRemove: string[] = []
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i)
-          if (key && (key.includes('supabase') || key.includes('sb-'))) {
-            keysToRemove.push(key)
-          }
-        }
-        keysToRemove.forEach(key => localStorage.removeItem(key))
-        
-        // 清除 sessionStorage
-        sessionStorage.clear()
-      }
-      
-      // 执行退出
-      const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        console.error('Logout error:', error)
-      }
-      
-      // 清除所有认证相关的 cookies
-      if (typeof document !== 'undefined') {
-        const cookies = document.cookie.split(';')
-        cookies.forEach(cookie => {
-          const eqPos = cookie.indexOf('=')
-          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
-          if (name.includes('supabase') || name.includes('sb-') || name.includes('auth')) {
-            // 清除 cookie（尝试多种方式）
-            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
-            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.familybank.chat`
-            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=familybank.chat`
-          }
-        })
-      }
-      
-      // 直接跳转，不等待 router
-      window.location.href = '/'
+      // Force a full page reload to the unified auth page to clear all state
+      window.location.href = '/auth/unified'
     } catch (error) {
       console.error('Logout error:', error)
-      // 即使出错也强制跳转
-      window.location.href = '/'
+      window.location.href = '/auth/unified'
     }
   }
 
