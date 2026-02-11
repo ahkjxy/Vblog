@@ -20,12 +20,13 @@ export async function middleware(request: NextRequest) {
           const isProduction = process.env.NODE_ENV === 'production'
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value)
-            response.cookies.set(name, value, isProduction ? {
+            response.cookies.set(name, value, {
               ...options,
-              domain: '.familybank.chat',
+              domain: isProduction ? '.familybank.chat' : options.domain,
               sameSite: 'lax',
-              secure: true,
-            } : options)
+              secure: isProduction,
+              httpOnly: false, // Explicitly allow client-side access
+            })
           })
         },
       },

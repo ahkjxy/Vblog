@@ -16,14 +16,15 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              // 生产环境设置跨域 Cookie
-              const cookieOptions = isProduction ? {
+              // 统一 Cookie 设置逻辑
+              const cookieOptions = {
                 ...options,
-                domain: '.familybank.chat',
+                domain: isProduction ? '.familybank.chat' : options.domain,
                 sameSite: 'lax' as const,
-                secure: true,
+                secure: isProduction,
+                httpOnly: false, // Explicitly allow client-side access
                 maxAge: 31536000, // 1年
-              } : options
+              }
               
               cookieStore.set(name, value, cookieOptions)
             })
