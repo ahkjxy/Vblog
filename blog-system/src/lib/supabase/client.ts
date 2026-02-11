@@ -30,16 +30,7 @@ export function createClient(): SupabaseClient {
   const isProduction = process.env.NODE_ENV === 'production'
   
   // 使用标准的 createBrowserClient，不手动重写 cookie 逻辑
-  // 仅配置 cookieOptions 以支持生产环境的跨域
-  supabaseInstance = createBrowserClient(supabaseUrl, supabaseAnonKey, {
-    cookieOptions: {
-      domain: isProduction ? '.familybank.chat' : undefined,
-      path: '/',
-      sameSite: 'lax',
-      secure: isProduction,
-      maxAge: 31536000,
-    }
-  })
+  supabaseInstance = createBrowserClient(supabaseUrl, supabaseAnonKey)
   
   return supabaseInstance
 }
