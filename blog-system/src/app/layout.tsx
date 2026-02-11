@@ -73,11 +73,36 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
 };
 
-export default function RootLayout({
+import { createClient } from "@/lib/supabase/server";
+
+// ... existing imports
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let userProfile = null;
+  if (user) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('name, avatar_url, avatar_color, role')
+      .eq('id', user.id)
+      .maybeSingle();
+      
+    userProfile = {
+      id: user.id,
+      name: data?.name || user.email?.split('@')[0] || '用户',
+      email: user.email || '',
+      avatar_url: data?.avatar_url,
+      avatar_color: data?.avatar_color,
+      role: data?.role || 'author'
+    };
+  }
+
   return (
     <html lang="zh-CN">
       <head>
@@ -87,7 +112,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ToastProvider>
-          <UserProvider>
+          <UserProvider initialUser={userProfile}>
             {children}
           </UserProvider>
         </ToastProvider>
