@@ -106,15 +106,23 @@ export default async function HomePage() {
         .limit(1)
             .maybeSingle()
           
+          // 处理 profiles 类型
+          let authorName = '匿名'
+          if (latestPosts.profiles) {
+            if (Array.isArray(latestPosts.profiles)) {
+              authorName = (latestPosts.profiles[0] as { name?: string })?.name || '匿名'
+            } else {
+              authorName = (latestPosts.profiles as { name?: string })?.name || '匿名'
+            }
+          }
+          
           latestPost = {
             title: latestPosts.title,
             slug: latestPosts.slug,
             published_at: latestPosts.published_at,
             view_count: latestPosts.view_count || 0,
             comment_count: commentCount || 0,
-            author_name: Array.isArray(latestPosts.profiles) 
-              ? latestPosts.profiles[0]?.name 
-              : latestPosts.profiles?.name || '匿名',
+            author_name: authorName,
             latest_comment_at: latestComment?.created_at || null,
             latest_comment_author: latestComment?.author_name || null
           }
