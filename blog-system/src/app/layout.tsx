@@ -4,6 +4,7 @@ import "./globals.css";
 import { WebsiteJsonLd, OrganizationJsonLd } from "@/components/JsonLd";
 import { AdsenseScript } from "@/components/ads";
 import { UserProvider } from "@/contexts/UserContext";
+import { ToastProvider } from "@/components/ui";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -85,9 +86,11 @@ export default function RootLayout({
         <AdsenseScript />
       </head>
       <body className={inter.className}>
-        <UserProvider>
-          {children}
-        </UserProvider>
+        <ToastProvider>
+          <UserProvider>
+            {children}
+          </UserProvider>
+        </ToastProvider>
       </body>
     </html>
   );
