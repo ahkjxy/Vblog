@@ -7,7 +7,12 @@ let supabaseInstance: SupabaseClient | null = null
 export function createClient(): SupabaseClient {
   // 只能在浏览器环境中调用
   if (typeof window === 'undefined') {
-    throw new Error('createClient can only be called in browser environment')
+    // 在服务端渲染期间被调用时，返回一个临时客户端或抛出错误
+    // 但为了 safety，这里我们允许它创建一个新的 ephemeral client
+    return createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
   }
 
   // 如果已经创建过实例，直接返回
@@ -24,8 +29,8 @@ export function createClient(): SupabaseClient {
 
   const isProduction = process.env.NODE_ENV === 'production'
   
-  // 配置 Cookie 存储，支持跨域同步
-  // 使用 @supabase/ssr 内置的 cookie 处理，只配置 domain
+  // 使用标准的 createBrowserClient，不手动重写 cookie 逻辑
+  // 仅配置 cookieOptions 以支持生产环境的跨域
   supabaseInstance = createBrowserClient(supabaseUrl, supabaseAnonKey, {
     cookieOptions: {
       domain: isProduction ? '.familybank.chat' : undefined,
