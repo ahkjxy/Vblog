@@ -25,67 +25,15 @@ export function createClient(): SupabaseClient {
   const isProduction = process.env.NODE_ENV === 'production'
   
   // 配置 Cookie 存储，支持跨域同步
+  // 使用 @supabase/ssr 内置的 cookie 处理，只配置 domain
   supabaseInstance = createBrowserClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get(name: string) {
-        if (typeof document === 'undefined') return null
-        const cookieName = `${name}=`
-        const ca = document.cookie.split(';')
-        for (let i = 0; i < ca.length; i++) {
-          let c = ca[i]
-          while (c.charAt(0) === ' ') {
-            c = c.substring(1)
-          }
-          if (c.indexOf(cookieName) === 0) {
-            let value = c.substring(cookieName.length, c.length)
-            try {
-              value = decodeURIComponent(value)
-            } catch (e) {
-              // use raw value
-            }
-
-            // Handle Supabase SSR's base64 prefix
-            if (value.startsWith('base64-')) {
-              try {
-                const base64 = value.substring(7)
-                return atob(base64)
-              } catch (e) {
-                console.error('Failed to decode base64 cookie', e)
-                return null
-              }
-            }
-            return value
-          }
-        }
-        return null
-      },
-      set(name: string, value: string, options: any) {
-        // 设置 Cookie，生产环境使用跨域 domain
-        // 注意：subdomain 下设置 domain=.familybank.chat 可被主域和子域访问
-        const domain = isProduction ? 'domain=.familybank.chat;' : ''
-        const maxAge = 'max-age=31536000' // 1年
-        const sameSite = 'SameSite=Lax'
-        const secure = isProduction ? 'Secure' : ''
-        const path = 'path=/'
-        
-        document.cookie = `${name}=${value}; ${domain}${maxAge}; ${sameSite}; ${secure}; ${path}`
-      },
-      remove(name: string) {
-        // 删除 Cookie (尝试删除多个可能的 domain/path 组合)
-        const domains = [
-          isProduction ? '.familybank.chat' : '',
-          window.location.hostname
-        ]
-        const paths = ['/', '/auth', '/dashboard']
-        
-        domains.forEach(domain => {
-          const domainAttr = domain ? `domain=${domain};` : ''
-          paths.forEach(path => {
-            document.cookie = `${name}=; ${domainAttr} path=${path}; expires=Thu, 01 Jan 1970 00:00:00 GMT`
-          })
-        })
-      },
-    },
+    cookieOptions: {
+      domain: isProduction ? '.familybank.chat' : undefined,
+      path: '/',
+      sameSite: 'lax',
+      secure: isProduction,
+      maxAge: 31536000,
+    }
   })
   
   return supabaseInstance

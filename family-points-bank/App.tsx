@@ -1670,7 +1670,6 @@ function AppContent() {
                   <AchievementCenter 
                     currentProfile={currentProfile} 
                     familyId={activeFamilyId || ""} 
-                    onRefresh={() => refreshFamily()}
                     language={language}
                   />
                 ) : <AuthGate />

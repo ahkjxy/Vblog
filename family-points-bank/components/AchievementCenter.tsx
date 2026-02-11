@@ -1,20 +1,41 @@
+import { useEffect, useState } from "react";
 import { Profile } from "../types";
 import { BadgeSection } from "./BadgeSection";
 import { Icon } from "./Icon";
 import { Language, useTranslation } from "../i18n/translations";
+import { supabase } from "../supabaseClient";
 
 interface AchievementCenterProps {
   currentProfile: Profile;
   familyId: string;
-  onRefresh?: () => Promise<void>;
   language?: Language;
 }
 
-export function AchievementCenter({ currentProfile, familyId, onRefresh, language = 'zh' }: AchievementCenterProps) {
+export function AchievementCenter({ currentProfile, familyId, language = 'zh' }: AchievementCenterProps) {
   const { t, replace } = useTranslation(language);
-  const badgeCount = currentProfile.badges?.length || 0;
+  const [badgeCount, setBadgeCount] = useState(0);
   const level = currentProfile.level || 1;
   const balance = currentProfile.balance || 0;
+
+  // Fetch actual badge count from database
+  const fetchBadgeCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from("badges")
+        .select("*", { count: 'exact', head: true })
+        .eq("profile_id", currentProfile.id);
+      
+      if (!error && count !== null) {
+        setBadgeCount(count);
+      }
+    } catch (error) {
+      console.error("Failed to fetch badge count:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchBadgeCount();
+  }, [currentProfile.id]);
 
   return (
     <div className="space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -86,7 +107,9 @@ export function AchievementCenter({ currentProfile, familyId, onRefresh, languag
       <BadgeSection 
         profile={currentProfile}
         familyId={familyId}
-        onBadgeClaimed={() => {}}
+        onBadgeClaimed={() => {
+          fetchBadgeCount(); // Refresh badge count when badges are claimed
+        }}
         language={language}
       />
     </div>
