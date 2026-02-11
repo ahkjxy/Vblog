@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { MessageCircle, X, Send, Mail, ExternalLink, Sparkles, HelpCircle, LogIn } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/contexts/UserContext'
+import { useToast } from '@/components/ui'
 
 interface Message {
   id: string
@@ -64,6 +65,7 @@ export const openCustomerSupport = () => {
 
 export function CustomerSupport() {
   const { user } = useUser()
+  const { error: showError } = useToast()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {
