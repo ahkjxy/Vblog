@@ -1,0 +1,146 @@
+import Link from 'next/link'
+import { Heart, Github, Twitter, Mail, Sparkles, ExternalLink } from 'lucide-react'
+import { PublicWelfareNotice } from '@/components/PublicWelfareNotice'
+
+export function Footer() {
+  return (
+    <footer className="relative border-t border-gray-100 mt-auto bg-gradient-to-br from-[#FDFCFD] via-[#FFF5F9] to-[#EAF6FF] overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#FF4D94]/10 to-[#7C4DFF]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-[#7C4DFF]/10 to-[#FF4D94]/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+      
+      <div className="relative container mx-auto px-6 py-16">
+        {/* Public Welfare Notice */}
+        <div className="mb-12">
+          <PublicWelfareNotice variant="footer" />
+        </div>
+
+        {/* Main Footer Content */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-12 mb-12">
+          {/* Brand Section */}
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center shadow-lg">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-2xl font-black bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] bg-clip-text text-transparent">
+                元气银行
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 leading-relaxed mb-6 max-w-sm">
+              家庭积分管理系统，让激励变得简单高效。通过游戏化的方式帮助家庭成员养成良好习惯，让孩子在快乐中成长。
+            </p>
+            <a
+              href="https://www.familybank.chat"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-2xl font-black text-sm hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+            >
+              <span>立即体验</span>
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          </div>
+          
+          {/* Links Sections */}
+          <div>
+            <h4 className="font-black mb-4 text-sm text-gray-900 flex items-center gap-2 uppercase tracking-wider">
+              <div className="w-1 h-4 bg-gradient-to-b from-[#FF4D94] to-[#7C4DFF] rounded-full"></div>
+              产品
+            </h4>
+            <ul className="space-y-3 text-sm text-gray-600">
+              <li><Link href="/blog" className="hover:text-[#FF4D94] transition-colors flex items-center gap-2 group font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[#FF4D94] transition-colors"></span>
+                文章
+              </Link></li>
+              <li><Link href="/categories" className="hover:text-[#FF4D94] transition-colors flex items-center gap-2 group font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[#FF4D94] transition-colors"></span>
+                分类
+              </Link></li>
+              <li><Link href="/tags" className="hover:text-[#FF4D94] transition-colors flex items-center gap-2 group font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[#FF4D94] transition-colors"></span>
+                标签
+              </Link></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-black mb-4 text-sm text-gray-900 flex items-center gap-2 uppercase tracking-wider">
+              <div className="w-1 h-4 bg-gradient-to-b from-[#FF4D94] to-[#7C4DFF] rounded-full"></div>
+              资源
+            </h4>
+            <ul className="space-y-3 text-sm text-gray-600">
+              <li><Link href="/docs" className="hover:text-[#FF4D94] transition-colors flex items-center gap-2 group font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[#FF4D94] transition-colors"></span>
+                文档
+              </Link></li>
+              <li><Link href="/api" className="hover:text-[#FF4D94] transition-colors flex items-center gap-2 group font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[#FF4D94] transition-colors"></span>
+                API
+              </Link></li>
+              <li><Link href="/support" className="hover:text-[#FF4D94] transition-colors flex items-center gap-2 group font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[#FF4D94] transition-colors"></span>
+                支持
+              </Link></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-black mb-4 text-sm text-gray-900 flex items-center gap-2 uppercase tracking-wider">
+              <div className="w-1 h-4 bg-gradient-to-b from-[#FF4D94] to-[#7C4DFF] rounded-full"></div>
+              公司
+            </h4>
+            <ul className="space-y-3 text-sm text-gray-600">
+              <li><Link href="/about" className="hover:text-[#FF4D94] transition-colors flex items-center gap-2 group font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[#FF4D94] transition-colors"></span>
+                关于
+              </Link></li>
+              <li><Link href="/contact" className="hover:text-[#FF4D94] transition-colors flex items-center gap-2 group font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[#FF4D94] transition-colors"></span>
+                联系
+              </Link></li>
+              <li><Link href="/privacy" className="hover:text-[#FF4D94] transition-colors flex items-center gap-2 group font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[#FF4D94] transition-colors"></span>
+                隐私政策
+              </Link></li>
+            </ul>
+          </div>
+        </div>
+        
+        {/* Bottom Bar */}
+        <div className="pt-8 border-t border-purple-100 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>© {new Date().getFullYear()} 元气银行</span>
+            <span>·</span>
+            <span className="flex items-center gap-1">
+              Made with <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500" /> in China
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <a 
+              href="#" 
+              className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-600 hover:text-[#FF4D94] hover:border-[#FF4D94]/30 hover:shadow-lg transition-all"
+              aria-label="Twitter"
+            >
+              <Twitter className="w-4 h-4" />
+            </a>
+            <a 
+              href="#" 
+              className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-600 hover:text-[#FF4D94] hover:border-[#FF4D94]/30 hover:shadow-lg transition-all"
+              aria-label="GitHub"
+            >
+              <Github className="w-4 h-4" />
+            </a>
+            <a 
+              href="#" 
+              className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-600 hover:text-[#FF4D94] hover:border-[#FF4D94]/30 hover:shadow-lg transition-all"
+              aria-label="Email"
+            >
+              <Mail className="w-4 h-4" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  )
+}

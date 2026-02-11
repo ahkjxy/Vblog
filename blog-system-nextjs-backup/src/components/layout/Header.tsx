@@ -1,0 +1,337 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useUser } from '@/contexts/UserContext'
+import { Logo } from '@/components/Logo'
+import { LayoutDashboard, LogOut, ChevronDown, Sparkles, BookOpen, FolderOpen, Tag, Menu, X, Calendar } from 'lucide-react'
+
+export function Header() {
+  const { user, logout } = useUser()
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+
+  // 点击外部关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isDropdownOpen])
+
+  // 退出登录
+  const handleLogout = async () => {
+    await logout()
+    setIsDropdownOpen(false)
+    setIsMobileMenuOpen(false)
+  }
+
+  // 关闭移动菜单
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false)
+  }
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-gray-100/50 bg-white/90 backdrop-blur-xl shadow-sm">
+      <div className="container mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 md:gap-3 group">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] rounded-xl md:rounded-2xl blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
+            <div className="relative w-9 h-9 md:w-11 md:h-11 rounded-xl md:rounded-2xl bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center text-white p-1.5 md:p-2 shadow-lg group-hover:scale-105 transition-transform">
+              <Logo className="w-full h-full" />
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-base md:text-xl font-black tracking-tight bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] bg-clip-text text-transparent">
+              元气银行
+            </span>
+            <span className="text-[10px] md:text-xs text-gray-500 font-bold hidden sm:block uppercase tracking-wider">Family Bank</span>
+          </div>
+        </Link>
+        
+        {/* Desktop Navigation */}
+        <nav className="hidden lg:flex items-center gap-2">
+          <Link 
+            href="/blog" 
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-gray-700 hover:text-[#FF4D94] hover:bg-[#FF4D94]/5 rounded-2xl transition-all"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>社区讨论</span>
+          </Link>
+          <Link 
+            href="/categories" 
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-gray-700 hover:text-[#FF4D94] hover:bg-[#FF4D94]/5 rounded-2xl transition-all"
+          >
+            <FolderOpen className="w-4 h-4" />
+            <span>分类</span>
+          </Link>
+          <Link 
+            href="/tags" 
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-gray-700 hover:text-[#FF4D94] hover:bg-[#FF4D94]/5 rounded-2xl transition-all"
+          >
+            <Tag className="w-4 h-4" />
+            <span>标签</span>
+          </Link>
+          <Link 
+            href="/changelog" 
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-gray-700 hover:text-[#FF4D94] hover:bg-[#FF4D94]/5 rounded-2xl transition-all"
+          >
+            <Calendar className="w-4 h-4" />
+            <span>更新日志</span>
+          </Link>
+          
+          <div className="w-px h-6 bg-gray-200 mx-2"></div>
+          
+          <a 
+            href="https://www.familybank.chat" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-[#FF4D94] hover:bg-[#FF4D94]/5 rounded-2xl transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>元气银行</span>
+          </a>
+          
+          <div className="w-px h-6 bg-gray-200 mx-2"></div>
+          
+          {user ? (
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all group"
+              >
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.name}
+                    className="w-8 h-8 rounded-full border-2 border-purple-200 group-hover:border-purple-400 transition-colors"
+                  />
+                ) : user.avatar_color ? (
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center shadow-md border-2 border-purple-200 group-hover:border-purple-400 transition-colors"
+                    style={{ backgroundColor: user.avatar_color }}
+                  >
+                    <span className="text-white text-sm font-bold">
+                      {user.name.slice(-1)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center shadow-md">
+                    <span className="text-white text-sm font-bold">
+                      {user.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <span className="text-sm font-semibold text-gray-800">{user.name}</span>
+                <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-purple-100 py-2 animate-slide-up overflow-hidden">
+                  {/* User Info Header */}
+                  <div className="px-4 py-4 bg-gradient-to-br from-[#FF4D94]/5 to-[#7C4DFF]/5 border-b border-gray-100">
+                    <p className="text-sm font-bold text-gray-900">{user.name}</p>
+                      {user.role && (
+                        <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-white rounded-full text-xs font-bold">
+                          <Sparkles className="w-3 h-3 text-[#FF4D94]" />
+                          <span className="text-[#FF4D94]">
+                            {user.role === 'admin' ? '管理员' : user.role === 'editor' ? '编辑' : '作者'}
+                          </span>
+                        </div>
+                      )}
+                  </div>
+                  
+                  {/* Menu Items */}
+                  <div className="py-2">
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setIsDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-[#FF4D94]/5 hover:text-[#FF4D94] transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-[#FF4D94]/10 flex items-center justify-center">
+                        <LayoutDashboard className="w-4 h-4 text-[#FF4D94]" />
+                      </div>
+                      <span>进入 Blog 后台</span>
+                    </Link>
+                    
+                    <a
+                      href="https://www.familybank.chat/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-[#FF4D94]/5 hover:text-[#FF4D94] transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-[#FF4D94]/10 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-[#FF4D94]" />
+                      </div>
+                      <span>进入元气银行后台</span>
+                    </a>
+                    
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                        <LogOut className="w-4 h-4 text-red-600" />
+                      </div>
+                      <span>退出登录</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link 
+              href="/auth/unified" 
+              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-2xl font-black hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>登录</span>
+            </Link>
+          )}
+        </nav>
+
+        {/* Mobile Menu Button */}
+        <div className="flex items-center gap-2 lg:hidden">
+          {user && (
+            <Link 
+              href="/dashboard"
+              className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center"
+            >
+              <LayoutDashboard className="w-4 h-4 text-purple-600" />
+            </Link>
+          )}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 hover:bg-purple-100 transition-colors"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden border-t border-purple-100 bg-white animate-slide-up">
+          <nav className="container mx-auto px-4 py-4 space-y-1">
+            <Link 
+              href="/blog"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:text-[#FF4D94] hover:bg-[#FF4D94]/5 rounded-2xl transition-all"
+            >
+              <BookOpen className="w-5 h-5" />
+              <span>社区讨论</span>
+            </Link>
+            <Link 
+              href="/categories"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:text-[#FF4D94] hover:bg-[#FF4D94]/5 rounded-2xl transition-all"
+            >
+              <FolderOpen className="w-5 h-5" />
+              <span>分类</span>
+            </Link>
+            <Link 
+              href="/tags"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:text-[#FF4D94] hover:bg-[#FF4D94]/5 rounded-2xl transition-all"
+            >
+              <Tag className="w-5 h-5" />
+              <span>标签</span>
+            </Link>
+            <Link 
+              href="/changelog"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 hover:text-[#FF4D94] hover:bg-[#FF4D94]/5 rounded-2xl transition-all"
+            >
+              <Calendar className="w-5 h-5" />
+              <span>更新日志</span>
+            </Link>
+            
+            <div className="h-px bg-gray-200 my-2"></div>
+            
+            <a 
+              href="https://www.familybank.chat" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#FF4D94] hover:bg-[#FF4D94]/5 rounded-2xl transition-all"
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>元气银行</span>
+            </a>
+            
+            {user ? (
+              <>
+                <div className="h-px bg-gray-200 my-2"></div>
+                <div className="px-4 py-3 bg-gradient-to-br from-[#FF4D94]/5 to-[#7C4DFF]/5 rounded-xl">
+                  <div className="flex items-center gap-3 mb-3">
+                    {user.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt={user.name}
+                        className="w-10 h-10 rounded-full border-2 border-purple-200"
+                      />
+                    ) : user.avatar_color ? (
+                      <div 
+                        className="w-10 h-10 rounded-full flex items-center justify-center shadow-md border-2 border-purple-200"
+                        style={{ backgroundColor: user.avatar_color }}
+                      >
+                        <span className="text-white text-sm font-bold">
+                          {user.name.slice(-1)}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md">
+                        <span className="text-white text-sm font-bold">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{user.name}</p>
+                      {user.role && (
+                        <p className="text-xs text-[#FF4D94] font-bold">
+                          {user.role === 'admin' ? '管理员' : user.role === 'editor' ? '编辑' : '作者'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>退出登录</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="h-px bg-gray-200 my-2"></div>
+                <Link 
+                  href="/auth/unified"
+                  onClick={closeMobileMenu}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-2xl font-black"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>登录</span>
+                </Link>
+              </>
+            )}
+          </nav>
+        </div>
+      )}
+    </header>
+  )
+}
