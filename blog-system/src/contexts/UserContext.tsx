@@ -30,16 +30,30 @@ export function UserProvider({
 }) {
   const [user, setUser] = useState<UserProfile | null>(initialUser || null)
   const [loading, setLoading] = useState(!initialUser)
-  const supabase = createClient()
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null)
+
+  // 在客户端初始化 Supabase
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const client = createClient()
+        setSupabase(client)
+      } catch (error) {
+        console.error('Failed to create Supabase client:', error)
+      }
+    }
+  }, [])
 
   // 获取用户信息
   const fetchUser = async () => {
+    if (!supabase) return
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session?.user) {
         setUser(null)
+        setLoading(false)
         return
       }
 
@@ -78,6 +92,7 @@ export function UserProvider({
 
   // 刷新用户信息
   const refreshUser = async () => {
+    if (!supabase) return
     setLoading(true)
     await fetchUser()
   }
@@ -90,15 +105,60 @@ export function UserProvider({
     setUser(null)
   }
 
-  // 初始化：只执行一次
+  // 初始化：在 supabase 初始化后执行
   useEffect(() => {
+    if (!supabase) return
+
     // 总是获取最新的用户信息
-    fetchUser()
+    const loadUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!session?.user) {
+          setUser(null)
+          setLoading(false)
+          return
+        }
+
+        const authUser = session.user
+
+        // 获取用户 profile
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('name, avatar_url, avatar_color, role')
+          .eq('id', authUser.id)
+          .maybeSingle()
+
+        if (userProfile) {
+          setUser({
+            id: authUser.id,
+            name: userProfile.name || authUser.email?.split('@')[0] || '用户',
+            email: authUser.email || '',
+            avatar_url: userProfile.avatar_url,
+            avatar_color: userProfile.avatar_color,
+            role: userProfile.role || 'author'
+          })
+        } else {
+          setUser({
+            id: authUser.id,
+            name: authUser.email?.split('@')[0] || '用户',
+            email: authUser.email || '',
+            role: 'author'
+          })
+        }
+      } catch (error) {
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadUser()
 
     // 监听认证状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string) => {
       if (event === 'SIGNED_IN') {
-        await fetchUser()
+        await loadUser()
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
         setLoading(false)
@@ -108,7 +168,7 @@ export function UserProvider({
     return () => {
       subscription.unsubscribe()
     }
-  }, []) // 空依赖数组，只执行一次
+  }, [supabase]) // 依赖 supabase，确保在客户端初始化后才执行
 
   return (
     <UserContext.Provider value={{ user, loading, refreshUser, logout }}>
