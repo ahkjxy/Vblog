@@ -1,279 +1,449 @@
 <script setup lang="ts">
-import { 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  Search, 
-  X,
-  Loader2,
-  Tag as TagIcon,
-  Hash,
-  Sparkles
-} from 'lucide-vue-next'
+import { Plus, Edit2, Trash2, Tag as TagIcon } from 'lucide-vue-next'
 
 definePageMeta({
-  layout: 'dashboard',
-  middleware: 'auth'
+  middleware: 'auth',
+  layout: 'dashboard'
 })
 
 const client = useSupabaseClient()
-const { profile } = useAuth()
-const { generateSlug, formatDate } = useUtils()
 
-// 权限检查
-onMounted(() => {
-  if (profile.value && profile.value.role !== 'admin') {
-    useRouter().push('/dashboard')
-  }
-})
-
-const { data: tags, refresh } = await useAsyncData('dashboard-tags-list', async () => {
-  const { data, error } = await client.from('tags').select('*').order('created_at', { ascending: false })
-  if (error) return []
-  return data || []
-})
-
-const searchQuery = ref('')
-const filteredTags = computed(() => {
-  if (!tags.value) return []
-  return tags.value.filter(tag => 
-    tag.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    tag.slug.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
-
-// Modal State
-const isModalOpen = ref(false)
-const modalType = ref<'create' | 'edit'>('create')
-const isSubmitting = ref(false)
-const editedId = ref<string | null>(null)
+const tags = ref<any[]>([])
+const loading = ref(true)
+const isCreateModalOpen = ref(false)
+const isEditModalOpen = ref(false)
+const isDeleteDialogOpen = ref(false)
+const selectedTag = ref<any>(null)
 const formData = ref({
   name: '',
   slug: ''
 })
+const isSubmitting = ref(false)
+const slugError = ref('')
+const deleteWarning = ref('')
 
-const openModal = (type: 'create' | 'edit', tag?: any) => {
-  modalType.value = type
-  if (type === 'edit' && tag) {
-    editedId.value = tag.id
-    formData.value = {
-      name: tag.name,
-      slug: tag.slug || ''
-    }
-  } else {
-    editedId.value = null
-    formData.value = { name: '', slug: '' }
-  }
-  isModalOpen.value = true
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('zh-CN')
 }
 
-const handleNameChange = () => {
-  if (modalType.value === 'create' || !formData.value.slug) {
-    formData.value.slug = generateSlug(formData.value.name)
-  }
-}
-
-const handleSubmit = async () => {
-  if (!formData.value.name) return
-  isSubmitting.value = true
-  
+// 加载标签列表
+const loadTags = async () => {
+  loading.value = true
   try {
-    if (modalType.value === 'create') {
-      const { error } = await client.from('tags').insert(formData.value)
-      if (error) throw error
-    } else {
-      const { error } = await client.from('tags').update(formData.value).eq('id', editedId.value)
-      if (error) throw error
+    const { data, error } = await client
+      .from('tags')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    tags.value = data || []
+  } catch (err) {
+    console.error(err)
+    alert('加载标签失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 生成 slug
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+// 检查 slug 是否重复
+const checkSlugUnique = async (slug: string, excludeId?: string): Promise<boolean> => {
+  try {
+    let query = client
+      .from('tags')
+      .select('id')
+      .eq('slug', slug)
+
+    if (excludeId) {
+      query = query.neq('id', excludeId)
     }
-    isModalOpen.value = false
-    refresh()
-  } catch (err: any) {
-    alert('保存失败: ' + err.message)
+
+    const { data, error } = await query.single()
+
+    if (error && error.code !== 'PGRST116') {
+      throw error
+    }
+
+    return !data
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+// 处理名称变化
+const handleNameChange = (name: string) => {
+  formData.value.name = name
+  formData.value.slug = generateSlug(name)
+  slugError.value = ''
+}
+
+// 打开创建模态框
+const openCreateModal = () => {
+  formData.value = { name: '', slug: '' }
+  slugError.value = ''
+  isCreateModalOpen.value = true
+}
+
+// 打开编辑模态框
+const openEditModal = (tag: any) => {
+  selectedTag.value = tag
+  formData.value = {
+    name: tag.name,
+    slug: tag.slug
+  }
+  slugError.value = ''
+  isEditModalOpen.value = true
+}
+
+// 打开删除对话框
+const openDeleteDialog = async (tag: any) => {
+  selectedTag.value = tag
+  
+  // 检查是否有关联的文章
+  const { count } = await client
+    .from('post_tags')
+    .select('*', { count: 'exact', head: true })
+    .eq('tag_id', tag.id)
+
+  if (count && count > 0) {
+    deleteWarning.value = `此标签下有 ${count} 篇文章，删除后这些文章将失去该标签。`
+  } else {
+    deleteWarning.value = ''
+  }
+
+  isDeleteDialogOpen.value = true
+}
+
+// 创建标签
+const handleCreate = async () => {
+  if (!formData.value.name.trim()) {
+    alert('请输入标签名称')
+    return
+  }
+
+  if (!formData.value.slug.trim()) {
+    alert('请输入 Slug')
+    return
+  }
+
+  isSubmitting.value = true
+
+  try {
+    // 检查 slug 唯一性
+    const isUnique = await checkSlugUnique(formData.value.slug)
+    if (!isUnique) {
+      slugError.value = '此 Slug 已存在'
+      isSubmitting.value = false
+      return
+    }
+
+    const { error } = await client.from('tags').insert({
+      name: formData.value.name.trim(),
+      slug: formData.value.slug.trim()
+    })
+
+    if (error) throw error
+
+    alert('标签创建成功')
+    isCreateModalOpen.value = false
+    loadTags()
+  } catch (err) {
+    console.error(err)
+    alert('创建标签失败')
   } finally {
     isSubmitting.value = false
   }
 }
 
-const handleDelete = async (tag: any) => {
-  if (!confirm(`确定要删除标签 "#${tag.name}" 吗？此操作不可撤销。`)) return
-  const { error } = await client.from('tags').delete().eq('id', tag.id)
-  if (error) alert('删除失败: ' + error.message)
-  else refresh()
+// 更新标签
+const handleUpdate = async () => {
+  if (!selectedTag.value || !formData.value.name.trim() || !formData.value.slug.trim()) {
+    alert('请填写必填字段')
+    return
+  }
+
+  isSubmitting.value = true
+
+  try {
+    // 检查 slug 唯一性
+    const isUnique = await checkSlugUnique(formData.value.slug, selectedTag.value.id)
+    if (!isUnique) {
+      slugError.value = '此 Slug 已存在'
+      isSubmitting.value = false
+      return
+    }
+
+    const { error } = await client
+      .from('tags')
+      .update({
+        name: formData.value.name.trim(),
+        slug: formData.value.slug.trim()
+      })
+      .eq('id', selectedTag.value.id)
+
+    if (error) throw error
+
+    alert('标签更新成功')
+    isEditModalOpen.value = false
+    loadTags()
+  } catch (err) {
+    console.error(err)
+    alert('更新标签失败')
+  } finally {
+    isSubmitting.value = false
+  }
 }
+
+// 删除标签
+const handleDelete = async () => {
+  if (!selectedTag.value) return
+
+  try {
+    const { error } = await client
+      .from('tags')
+      .delete()
+      .eq('id', selectedTag.value.id)
+
+    if (error) throw error
+
+    alert('标签删除成功')
+    isDeleteDialogOpen.value = false
+    loadTags()
+  } catch (err) {
+    console.error(err)
+    alert('删除标签失败')
+  }
+}
+
+onMounted(() => {
+  loadTags()
+})
+
+useSeoMeta({
+  title: '标签管理 - Dashboard'
+})
 </script>
 
 <template>
-  <div class="space-y-8 pb-12">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-      <div>
-        <h1 class="text-3xl sm:text-4xl font-black bg-gradient-to-r from-brand-pink to-brand-purple bg-clip-text text-transparent mb-2 tracking-tight">
-          内容标签云
-        </h1>
-        <p class="text-gray-500 font-medium font-mono text-xs uppercase tracking-widest">Organizing and discovery through semantic markers</p>
-      </div>
-      
-      <button 
-        @click="openModal('create')"
-        class="group flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-brand-pink to-brand-purple text-white rounded-[24px] font-black text-xs uppercase tracking-widest shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all"
+  <div>
+    <div class="flex items-center justify-between mb-8">
+      <h1 class="text-3xl font-black bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] bg-clip-text text-transparent">
+        标签管理
+      </h1>
+      <button
+        @click="openCreateModal"
+        class="flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-colors bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white hover:shadow-xl hover:scale-105 active:scale-95"
       >
-        <Plus class="w-5 h-5 transition-transform group-hover:rotate-90" />
-        定义新标签
+        <Plus class="w-5 h-5" />
+        新建标签
       </button>
     </div>
 
-    <!-- Toolbar Area -->
-    <div class="bg-white rounded-[40px] border border-gray-100 p-6 sm:p-8 shadow-xl">
-       <div class="max-w-md relative group">
-          <Search class="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-brand-pink transition-colors" />
-          <input 
-            v-model="searchQuery"
-            type="text" 
-            placeholder="搜索标签内容..." 
-            class="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-brand-pink/5 transition-all shadow-sm focus:bg-white"
-          />
-       </div>
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center h-64">
+      <div class="w-16 h-16 border-4 border-[#FF4D94] border-t-transparent rounded-full animate-spin"></div>
     </div>
 
-    <!-- Tags Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-       <div v-if="filteredTags.length === 0" class="col-span-full bg-white rounded-[40px] border border-gray-100 p-20 text-center space-y-4">
-          <div class="w-20 h-20 bg-gray-50 rounded-[28px] flex items-center justify-center text-gray-200 mx-auto shadow-inner">
-             <Hash class="w-10 h-10" />
-          </div>
-          <p class="text-sm font-black text-gray-400 uppercase tracking-widest">没有发现该路径下的标记</p>
-       </div>
-
-       <div 
-         v-for="tag in filteredTags" 
-         :key="tag.id"
-         class="bg-white rounded-[32px] border border-gray-100 p-6 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all group overflow-hidden relative"
-       >
-          <div class="flex items-start justify-between mb-4">
-             <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-pink/5 to-brand-purple/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Hash class="w-6 h-6 text-brand-purple" />
-             </div>
-             
-             <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button 
-                  @click="openModal('edit', tag)"
-                  class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all shadow-sm"
-                >
-                   <Edit2 class="w-3.5 h-3.5" />
-                </button>
-                <button 
-                  @click="handleDelete(tag)"
-                  class="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
-                >
-                   <Trash2 class="w-3.5 h-3.5" />
-                </button>
-             </div>
-          </div>
-
-          <h3 class="text-lg font-black text-gray-900 mb-1 group-hover:text-brand-pink transition-colors"># {{ tag.name }}</h3>
-          <p class="text-[10px] font-mono text-gray-400 font-bold uppercase tracking-widest mb-4">/tag/{{ tag.slug }}</p>
-          
-          <div class="flex items-center justify-between pt-4 border-t border-gray-50">
-             <span class="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em]">{{ formatDate(tag.created_at) }}</span>
-             <span class="flex items-center gap-1 text-[9px] font-black text-brand-purple uppercase tracking-[0.2em]">
-                System Marker
-                <Sparkles class="w-2.5 h-2.5" />
-             </span>
-          </div>
-          
-          <!-- Decorative Background Color -->
-          <div class="absolute -right-8 -bottom-8 w-24 h-24 bg-brand-pink/5 rounded-full blur-2xl group-hover:scale-150 transition-transform"></div>
-       </div>
-    </div>
-
-    <!-- Premium Modal -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div v-if="isModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md">
-         <div class="bg-white rounded-[40px] max-w-lg w-full flex flex-col shadow-2xl overflow-hidden animate-scale-in">
-            <!-- Modal Header -->
-            <div class="p-8 border-b border-gray-100 flex items-center justify-between bg-white relative">
-               <div class="flex items-center gap-4 relative z-10">
-                  <div class="w-12 h-12 bg-gray-900 rounded-2xl flex items-center justify-center text-white shadow-xl">
-                     <Hash class="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 class="text-2xl font-black text-gray-900">{{ modalType === 'create' ? '注册新标记' : '重新定义标记' }}</h2>
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Semantic labeling for discovery</p>
-                  </div>
-               </div>
-               <button @click="isModalOpen = false" class="text-gray-400 hover:text-brand-pink transition-colors relative z-10">
-                  <X class="w-6 h-6" />
-               </button>
-            </div>
-
-            <!-- Modal Body -->
-            <div class="p-10 space-y-8">
-               <div class="space-y-3">
-                  <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">标签名称</label>
-                  <input 
-                    v-model="formData.name" 
-                    @input="handleNameChange"
-                    type="text" 
-                    class="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-brand-pink/5 transition-all text-gray-900" 
-                    placeholder="例如：科技, 旅行, 美食..." 
-                  />
-               </div>
-
-               <div class="space-y-3">
-                  <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">路由 ID (SLUG)</label>
-                  <div class="relative">
-                     <span class="absolute left-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-300">/tag/</span>
-                     <input 
-                       v-model="formData.slug" 
-                       type="text" 
-                       class="w-full pl-20 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-brand-purple/5 transition-all text-brand-purple" 
-                     />
-                  </div>
-               </div>
-               
-               <div class="p-6 bg-gray-50 rounded-3xl border border-gray-100">
-                  <p class="text-[11px] font-bold text-gray-500 leading-relaxed italic">
-                    小贴士：标签能够帮助用户通过共同的话题发现更多精彩内容。保持标签的简洁性和一致性。
-                  </p>
-               </div>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="p-8 border-t border-gray-100 flex items-center justify-between bg-white px-10">
-               <button 
-                 @click="isModalOpen = false"
-                 class="px-8 py-4 bg-gray-50 text-gray-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-all font-mono"
-               >
-                  CANCEL
-               </button>
-               <button 
-                 @click="handleSubmit"
-                 :disabled="isSubmitting || !formData.name"
-                 class="px-12 py-4 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:shadow-2xl hover:bg-brand-pink hover:scale-105 active:scale-95 transition-all disabled:opacity-30"
-               >
-                  <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
-                  <span v-else>UPDATE TAG</span>
-               </button>
-            </div>
-         </div>
+    <!-- Empty State -->
+    <div v-else-if="tags.length === 0" class="bg-white rounded-3xl border border-gray-100 p-12 text-center">
+      <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#FF4D94]/10 to-[#7C4DFF]/10 flex items-center justify-center mx-auto mb-6">
+        <TagIcon class="w-10 h-10 text-[#FF4D94]" />
       </div>
-    </Transition>
+      <h3 class="text-2xl font-black text-gray-900 mb-2">暂无标签</h3>
+      <p class="text-sm text-gray-600 mb-6 font-medium">创建第一个标签来标记您的文章</p>
+      <button
+        @click="openCreateModal"
+        class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-2xl font-black hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+      >
+        <Plus class="w-5 h-5" />
+        新建标签
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div v-else class="bg-white rounded-2xl border border-gray-100 shadow-lg overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-gradient-to-r from-[#FF4D94]/5 to-[#7C4DFF]/5 border-b border-gray-100">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-black text-gray-600 uppercase tracking-wider">名称</th>
+            <th class="px-6 py-3 text-left text-xs font-black text-gray-600 uppercase tracking-wider">Slug</th>
+            <th class="px-6 py-3 text-left text-xs font-black text-gray-600 uppercase tracking-wider">创建时间</th>
+            <th class="px-6 py-3 text-right text-xs font-black text-gray-600 uppercase tracking-wider">操作</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr v-for="tag in tags" :key="tag.id" class="hover:bg-gradient-to-r hover:from-[#FF4D94]/5 hover:to-[#7C4DFF]/5 transition-all">
+            <td class="px-6 py-4 font-black text-gray-900">{{ tag.name }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600 font-mono">{{ tag.slug }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600 font-medium">{{ formatDate(tag.created_at) }}</td>
+            <td class="px-6 py-4">
+              <div class="flex items-center justify-end gap-2">
+                <button
+                  @click="openEditModal(tag)"
+                  class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  title="编辑"
+                >
+                  <Edit2 class="w-4 h-4" />
+                </button>
+                <button
+                  @click="openDeleteDialog(tag)"
+                  class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="删除"
+                >
+                  <Trash2 class="w-4 h-4" />
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Create Modal -->
+    <div v-if="isCreateModalOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl">
+        <div class="p-6 border-b border-gray-100">
+          <h2 class="text-2xl font-black text-gray-900">新建标签</h2>
+        </div>
+        <div class="p-6 space-y-4">
+          <div>
+            <label class="block text-sm font-black text-gray-700 mb-2">
+              名称 <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="formData.name"
+              @input="handleNameChange(formData.name)"
+              type="text"
+              placeholder="输入标签名称"
+              class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF4D94]/20 focus:border-[#FF4D94] transition-all font-medium"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-black text-gray-700 mb-2">
+              Slug <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="formData.slug"
+              type="text"
+              placeholder="url-friendly-slug"
+              :class="[
+                'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all font-mono text-sm',
+                slugError ? 'border-red-300 focus:ring-red-500' : 'border-gray-200 focus:ring-[#FF4D94]/20 focus:border-[#FF4D94]'
+              ]"
+            />
+            <p v-if="slugError" class="mt-1 text-sm text-red-600 font-medium">{{ slugError }}</p>
+          </div>
+        </div>
+        <div class="p-6 border-t border-gray-100 flex items-center justify-end gap-3">
+          <button
+            @click="isCreateModalOpen = false"
+            :disabled="isSubmitting"
+            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 font-bold"
+          >
+            取消
+          </button>
+          <button
+            @click="handleCreate"
+            :disabled="isSubmitting"
+            class="px-4 py-2 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-xl hover:shadow-xl transition-all disabled:opacity-50 font-bold"
+          >
+            {{ isSubmitting ? '创建中...' : '创建' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div v-if="isEditModalOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl">
+        <div class="p-6 border-b border-gray-100">
+          <h2 class="text-2xl font-black text-gray-900">编辑标签</h2>
+        </div>
+        <div class="p-6 space-y-4">
+          <div>
+            <label class="block text-sm font-black text-gray-700 mb-2">
+              名称 <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="formData.name"
+              @input="handleNameChange(formData.name)"
+              type="text"
+              placeholder="输入标签名称"
+              class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF4D94]/20 focus:border-[#FF4D94] transition-all font-medium"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-black text-gray-700 mb-2">
+              Slug <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="formData.slug"
+              type="text"
+              placeholder="url-friendly-slug"
+              :class="[
+                'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all font-mono text-sm',
+                slugError ? 'border-red-300 focus:ring-red-500' : 'border-gray-200 focus:ring-[#FF4D94]/20 focus:border-[#FF4D94]'
+              ]"
+            />
+            <p v-if="slugError" class="mt-1 text-sm text-red-600 font-medium">{{ slugError }}</p>
+          </div>
+        </div>
+        <div class="p-6 border-t border-gray-100 flex items-center justify-end gap-3">
+          <button
+            @click="isEditModalOpen = false"
+            :disabled="isSubmitting"
+            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 font-bold"
+          >
+            取消
+          </button>
+          <button
+            @click="handleUpdate"
+            :disabled="isSubmitting"
+            class="px-4 py-2 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-xl hover:shadow-xl transition-all disabled:opacity-50 font-bold"
+          >
+            {{ isSubmitting ? '保存中...' : '保存' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Dialog -->
+    <div v-if="isDeleteDialogOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl">
+        <div class="p-6 border-b border-gray-100">
+          <h2 class="text-2xl font-black text-gray-900">删除标签</h2>
+        </div>
+        <div class="p-6">
+          <p class="text-gray-700 font-medium">
+            {{ deleteWarning || `确定要删除标签"${selectedTag?.name}"吗？此操作无法撤销。` }}
+          </p>
+        </div>
+        <div class="p-6 border-t border-gray-100 flex items-center justify-end gap-3">
+          <button
+            @click="isDeleteDialogOpen = false"
+            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-bold"
+          >
+            取消
+          </button>
+          <button
+            @click="handleDelete"
+            class="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-bold"
+          >
+            删除
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.animate-scale-in {
-  animation: scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-@keyframes scale-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-</style>

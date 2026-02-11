@@ -45,6 +45,7 @@ const showEmojiPicker = ref(false)
 const replyingTo = ref<{ id: string; name: string } | null>(null)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const emojiPickerRef = ref<HTMLElement | null>(null)
+const currentUserName = ref('')
 
 const EMOJIS = [
   '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂',
@@ -160,8 +161,22 @@ const handleSubmit = async () => {
   }
 }
 
+// 获取当前用户名称
+const loadCurrentUserName = async () => {
+  if (!user.value) return
+  
+  const { data: profile } = await client
+    .from('profiles')
+    .select('name')
+    .eq('id', user.value.id)
+    .maybeSingle()
+  
+  currentUserName.value = profile?.name || user.value.email?.split('@')[0] || '用户'
+}
+
 onMounted(() => {
   loadComments()
+  loadCurrentUserName()
 })
 </script>
 
@@ -212,7 +227,7 @@ onMounted(() => {
 
       <div class="flex items-center justify-between pt-2">
         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-          {{ user ? `以 ${user.email?.split('@')[0]} 登录` : '仅支持已审核内容显示' }}
+          {{ user ? `以 ${currentUserName}的家庭 登录` : '仅支持已审核内容显示' }}
         </p>
         <button 
           type="submit" 
@@ -247,10 +262,10 @@ onMounted(() => {
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between mb-1.5">
                 <div class="flex items-center gap-2">
-                  <span class="text-sm font-black text-gray-900">{{ comment.profiles?.name || comment.author_name }}</span>
+                  <span class="text-sm font-black text-gray-900">{{ (comment.profiles?.name || comment.author_name) + '的家庭' }}</span>
                   <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ formatDate(comment.created_at) }}</span>
                 </div>
-                <button @click="handleReply(comment.id, comment.profiles?.name || comment.author_name)" class="text-[10px] font-black text-brand-pink uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">回复</button>
+                <button @click="handleReply(comment.id, (comment.profiles?.name || comment.author_name) + '的家庭')" class="text-[10px] font-black text-brand-pink uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">回复</button>
               </div>
               <p class="text-sm text-gray-600 leading-relaxed font-medium mb-4 whitespace-pre-wrap">{{ comment.content }}</p>
 
@@ -263,7 +278,7 @@ onMounted(() => {
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1">
-                      <span class="text-xs font-black text-gray-900">{{ reply.profiles?.name || reply.author_name }}</span>
+                      <span class="text-xs font-black text-gray-900">{{ (reply.profiles?.name || reply.author_name) + '的家庭' }}</span>
                       <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ formatDate(reply.created_at) }}</span>
                     </div>
                     <p class="text-xs text-gray-600 leading-relaxed font-medium">{{ reply.content }}</p>

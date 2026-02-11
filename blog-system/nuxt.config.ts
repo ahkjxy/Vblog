@@ -37,6 +37,9 @@ export default defineNuxtConfig({
       siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://blog.familybank.chat',
       familyBankUrl: process.env.NEXT_PUBLIC_FAMILY_BANK_URL || 'https://www.familybank.chat',
       adsenseClientId: process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID,
+      adsenseBannerSlot: process.env.NEXT_PUBLIC_ADSENSE_BANNER_SLOT,
+      adsenseSidebarSlot: process.env.NEXT_PUBLIC_ADSENSE_SIDEBAR_SLOT,
+      adsenseArticleSlot: process.env.NEXT_PUBLIC_ADSENSE_ARTICLE_SLOT,
     }
   },
 

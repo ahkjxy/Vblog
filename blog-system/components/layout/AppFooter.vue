@@ -97,10 +97,10 @@ const footerLinks = {
           </span>
         </div>
         <div class="flex items-center gap-6">
-          <a href="https://beian.miit.gov.cn/" target="_blank" class="hover:text-brand-pink transition-colors flex items-center gap-1.5">
-            <ShieldCheck class="w-4 h-4" />
-            粤ICP备2024254xxx号
-          </a>
+          <div class="flex items-center gap-1.5 text-gray-500">
+            <BookOpen class="w-4 h-4" />
+            <span>让家庭教育更有趣</span>
+          </div>
         </div>
       </div>
     </div>

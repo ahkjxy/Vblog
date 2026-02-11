@@ -1,239 +1,252 @@
 <script setup lang="ts">
-import { 
-  LayoutDashboard, 
-  FileText, 
-  MessageSquare, 
-  FolderOpen, 
-  Tag, 
-  Users, 
-  Image as ImageIcon, 
-  Settings, 
-  LogOut, 
-  Menu, 
-  X, 
-  Home,
-  Bell,
-  ChevronRight,
-  Search,
-  Heart,
-  ShieldCheck
+import {
+  Home, LayoutDashboard, FileText, Image, FolderOpen, Tag,
+  MessageSquare, MessageCircle, Users, Settings, LogOut, Menu, X
 } from 'lucide-vue-next'
 
-const { user, profile } = useAuth()
 const client = useSupabaseClient()
-const config = useRuntimeConfig()
+const user = useSupabaseUser()
+const route = useRoute()
 
-const isSidebarOpen = ref(true)
-const isMobileMenuOpen = ref(false)
+// 移动端菜单状态
+const mobileMenuOpen = ref(false)
 
-const toggleSidebar = () => {
-  isSidebarOpen.value = !isSidebarOpen.value
+// 获取用户信息
+const { data: userProfile } = await useAsyncData('user-profile', async () => {
+  if (!user.value) return null
+  
+  const { data } = await client
+    .from('profiles')
+    .select('*')
+    .eq('id', user.value.id)
+    .single()
+  
+  return data
+})
+
+// 检查是否是超级管理员
+const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
+const isSuperAdmin = computed(() => 
+  userProfile.value?.role === 'admin' && userProfile.value?.family_id === SUPER_ADMIN_FAMILY_ID
+)
+
+const userName = computed(() => 
+  userProfile.value?.name || user.value?.email?.split('@')[0] || '用户'
+)
+
+const userAvatar = computed(() => userProfile.value?.avatar_url)
+
+const getRoleLabel = () => {
+  if (isSuperAdmin.value) return '超级管理员'
+  if (userProfile.value?.role === 'admin') return '家长'
+  if (userProfile.value?.role === 'editor') return '编辑'
+  return '作者'
 }
 
-const navItems = [
-  { group: '核心', items: [
-    { name: '概览', href: '/dashboard', icon: LayoutDashboard },
-    { name: '文章管理', href: '/dashboard/posts', icon: FileText },
-    { name: '评论审核', href: '/dashboard/comments', icon: MessageSquare },
-  ]},
-  { group: '内容组织', items: [
-    { name: '分类管理', href: '/dashboard/categories', icon: FolderOpen },
-    { name: '标签管理', href: '/dashboard/tags', icon: Tag },
-    { name: '媒体库', href: '/dashboard/media', icon: ImageIcon },
-  ]},
-  { group: '系统', items: [
-    { name: '用户管理', href: '/dashboard/users', icon: Users },
-    { name: '系统设置', href: '/dashboard/settings', icon: Settings },
-  ]}
-]
+// 导航菜单
+const navItems = computed(() => {
+  const items = [
+    { href: '/dashboard', icon: LayoutDashboard, label: '概览' },
+    { href: '/dashboard/posts', icon: FileText, label: '文章' },
+    { href: '/dashboard/media', icon: Image, label: '媒体库' },
+  ]
 
+  if (isSuperAdmin.value) {
+    items.push(
+      { href: '/dashboard/categories', icon: FolderOpen, label: '分类' },
+      { href: '/dashboard/tags', icon: Tag, label: '标签' },
+      { href: '/dashboard/comments', icon: MessageSquare, label: '评论' },
+      { href: '/dashboard/users', icon: Users, label: '用户' },
+      { href: '/dashboard/settings', icon: Settings, label: '设置' }
+    )
+  }
+
+  return items
+})
+
+// 判断是否激活
+const isActive = (href: string) => {
+  if (href === '/dashboard') {
+    return route.path === '/dashboard'
+  }
+  return route.path.startsWith(href)
+}
+
+// 退出登录
 const handleLogout = async () => {
   await client.auth.signOut()
-  window.location.href = `${config.public.siteUrl}/auth/unified`
+  navigateTo('/auth/unified')
 }
+
+// 关闭移动端菜单
+watch(() => route.path, () => {
+  mobileMenuOpen.value = false
+})
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#F8F9FD] flex">
-    <!-- Desktop Sidebar -->
-    <aside 
-      class="hidden lg:flex flex-col bg-white border-r border-gray-100 transition-all duration-300 z-50"
-      :class="isSidebarOpen ? 'w-72' : 'w-24'"
-    >
-      <div class="p-8 pb-4 flex items-center justify-between">
-        <NuxtLink to="/" class="flex items-center gap-3 group overflow-hidden">
-          <div class="w-10 h-10 flex-shrink-0 bg-gradient-to-br from-brand-pink to-brand-purple rounded-xl flex items-center justify-center text-white shadow-lg">
-            <Logo class="w-6 h-6" />
-          </div>
-          <span v-if="isSidebarOpen" class="text-xl font-black bg-gradient-to-r from-brand-pink to-brand-purple bg-clip-text text-transparent truncate whitespace-nowrap">
-            元气银行
-          </span>
-        </NuxtLink>
-      </div>
-
-      <nav class="flex-1 px-4 py-8 space-y-8 overflow-y-auto custom-scrollbar">
-        <div v-for="group in navItems" :key="group.group">
-          <p v-if="isSidebarOpen" class="px-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">
-            {{ group.group }}
-          </p>
-          <div class="space-y-1">
-            <NuxtLink 
-              v-for="item in group.items" 
-              :key="item.href"
-              :to="item.href"
-              class="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm font-black transition-all group"
-              :class="$route.path === item.href ? 'bg-brand-pink/10 text-brand-pink shadow-sm' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'"
-            >
-              <component :is="item.icon" class="w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110" />
-              <span v-if="isSidebarOpen" class="truncate capitalize">{{ item.name }}</span>
-            </NuxtLink>
-          </div>
+  <div class="min-h-screen bg-gradient-to-br from-[#FDFCFD] via-[#FFF5F9] to-[#EAF6FF]">
+    <!-- Top Bar - Desktop -->
+    <div class="hidden lg:block fixed top-0 right-0 left-72 bg-white/90 backdrop-blur-xl border-b border-gray-100 z-40 shadow-sm">
+      <div class="flex items-center justify-between px-6 lg:px-8 py-4">
+        <div class="text-sm font-bold text-gray-600">
+          欢迎回来，<span class="text-[#FF4D94] font-black">{{ userName + '的家庭' }}</span>
         </div>
-      </nav>
-
-      <div class="p-4 mt-auto">
-        <button 
-          @click="handleLogout"
-          class="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-black text-red-500 hover:bg-red-50 transition-all group"
-        >
-          <LogOut class="w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110" />
-          <span v-if="isSidebarOpen">退出登录</span>
-        </button>
-      </div>
-
-      <!-- Toggle Button -->
-      <button 
-        @click="toggleSidebar"
-        class="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-100 rounded-lg shadow-md flex items-center justify-center text-gray-400 hover:text-brand-pink transition-colors"
-      >
-        <ChevronRight class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': isSidebarOpen }" />
-      </button>
-    </aside>
-
-    <!-- Main Content -->
-    <div class="flex-1 flex flex-col min-w-0">
-      <!-- Top Header -->
-      <header class="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40">
-        <!-- Search -->
-        <div class="hidden md:flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-2xl border border-gray-100 w-96 group focus-within:border-brand-pink/30 focus-within:bg-white transition-all">
-          <Search class="w-4 h-4 text-gray-400 group-focus-within:text-brand-pink" />
-          <input type="text" placeholder="全局搜索..." class="bg-transparent text-sm font-bold border-none outline-none w-full text-gray-700 placeholder-gray-400" />
-        </div>
-
-        <button @click="isMobileMenuOpen = true" class="lg:hidden p-2 text-gray-500">
-          <Menu class="w-6 h-6" />
-        </button>
-
-        <div class="flex items-center gap-2 sm:gap-6">
-          <NuxtLink to="/" class="hidden sm:flex items-center gap-2 text-xs font-black text-gray-400 hover:text-brand-pink tracking-widest uppercase px-4 py-2 rounded-xl hover:bg-brand-pink/5 transition-all">
-            <Home class="w-4 h-4" />
-            查看首页
-          </NuxtLink>
-          
-          <button class="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-brand-purple transition-all relative">
-            <Bell class="w-5 h-5" />
-            <span class="absolute top-2 right-2 w-2 h-2 bg-brand-pink rounded-full border-2 border-white"></span>
-          </button>
-
-          <div class="h-8 w-px bg-gray-100 mx-2"></div>
-
-          <div class="flex items-center gap-3 pl-2">
-            <div class="hidden sm:block text-right">
-              <div class="text-sm font-black text-gray-900 leading-none mb-1">{{ profile?.name || user?.email?.split('@')[0] }}</div>
-              <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ profile?.role === 'admin' ? '超级管理员' : '家庭成员' }}</div>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-3 px-4 py-2 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all">
+            <div v-if="userAvatar" class="w-9 h-9 rounded-xl border-2 border-gray-100 shadow-sm overflow-hidden">
+              <img 
+                :src="userAvatar" 
+                :alt="userName"
+                class="w-full h-full object-cover"
+              />
             </div>
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-pink to-brand-purple p-0.5">
-              <div class="w-full h-full rounded-lg bg-white overflow-hidden flex items-center justify-center font-black text-brand-pink shadow-inner">
-                <img v-if="profile?.avatar_url" :src="profile.avatar_url" class="w-full h-full object-cover" />
-                <span v-else>{{ (profile?.name || user?.email)?.[0].toUpperCase() }}</span>
+            <div v-else class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center shadow-sm border-2 border-white">
+              <span class="text-white text-sm font-black">
+                {{ userName.charAt(0).toUpperCase() }}
+              </span>
+            </div>
+            <div class="flex flex-col">
+              <div class="text-sm font-black text-gray-900">{{ userName + '的家庭' }}</div>
+              <div :class="['text-xs font-bold', isSuperAdmin ? 'text-[#FF4D94]' : 'text-gray-500']">
+                {{ getRoleLabel() }}
               </div>
             </div>
           </div>
+          <button
+            @click="handleLogout"
+            class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-gray-100 hover:border-red-200 hover:bg-red-50 text-gray-700 hover:text-red-600 transition-all text-sm font-bold"
+          >
+            <LogOut class="w-4 h-4" />
+            <span>退出</span>
+          </button>
         </div>
-      </header>
-
-      <!-- Content Area -->
-      <main class="flex-1 p-4 sm:p-8 lg:p-12 overflow-y-auto">
-        <slot />
-        
-        <!-- Dashboard Footer -->
-        <footer class="mt-20 pt-8 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-6 text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest pb-8">
-          <div class="flex items-center gap-2">
-            <span>© 2026 元气银行</span>
-            <span class="w-1 h-1 rounded-full bg-gray-200"></span>
-            <span class="flex items-center gap-1">
-              Made with <Heart class="w-3 h-3 text-brand-pink fill-brand-pink" /> by 
-              <a href="https://www.familybank.chat" target="_blank" class="text-gray-600 hover:text-brand-pink transition-colors">元气银行团队</a>
-            </span>
-          </div>
-          <div class="flex items-center gap-6">
-            <a href="https://beian.miit.gov.cn/" target="_blank" class="hover:text-brand-pink transition-colors flex items-center gap-2">
-              <ShieldCheck class="w-4 h-4" />
-              粤ICP备2024254xxx号
-            </a>
-          </div>
-        </footer>
-      </main>
+      </div>
     </div>
 
-    <!-- Mobile Menu Overlay -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
-      <div v-if="isMobileMenuOpen" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 lg:hidden" @click="isMobileMenuOpen = false">
-        <div class="w-72 h-full bg-white animate-slide-right p-6 pt-12 flex flex-col" @click.stop>
-          <div class="flex items-center justify-between mb-12">
-            <Logo class="w-8 h-8 text-brand-pink" />
-            <button @click="isMobileMenuOpen = false" class="p-2 bg-gray-50 rounded-lg">
-              <X class="w-5 h-5 text-gray-400" />
+    <div class="flex">
+      <!-- Sidebar - Desktop -->
+      <aside class="hidden lg:flex lg:flex-col w-72 bg-white/95 backdrop-blur-xl border-r border-gray-100 min-h-screen fixed left-0 top-0 shadow-xl">
+        <!-- Logo Section -->
+        <div class="p-6 border-b border-gray-100 flex-shrink-0">
+          <NuxtLink to="/dashboard" class="flex items-center gap-3 group">
+            <div class="relative">
+              <div class="absolute inset-0 bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] rounded-2xl blur-md opacity-30 group-hover:opacity-50 transition-opacity"></div>
+              <div class="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center text-white p-2.5 shadow-lg group-hover:scale-105 transition-transform">
+                <Logo class="w-full h-full" />
+              </div>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-lg font-black bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] bg-clip-text text-transparent tracking-tight">元气银行</span>
+              <span class="text-xs text-gray-500 font-bold uppercase tracking-wider">管理后台</span>
+            </div>
+          </NuxtLink>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex-1 overflow-y-auto p-5">
+          <nav class="space-y-1.5">
+            <NuxtLink
+              v-for="item in navItems"
+              :key="item.href"
+              :to="item.href"
+              :class="[
+                'group flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-sm font-bold relative overflow-hidden',
+                isActive(item.href)
+                  ? 'bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white shadow-lg shadow-[#FF4D94]/20'
+                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-[#FF4D94]/5 hover:to-[#7C4DFF]/5 hover:text-[#FF4D94]'
+              ]"
+            >
+              <component
+                :is="item.icon"
+                :class="[
+                  'w-5 h-5 relative z-10 transition-colors',
+                  isActive(item.href) ? 'text-white' : 'text-gray-500 group-hover:text-[#FF4D94]'
+                ]"
+              />
+              <span class="relative z-10">{{ item.label }}</span>
+              <div v-if="isActive(item.href)" class="absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-white/40 rounded-l-full"></div>
+            </NuxtLink>
+          </nav>
+        </div>
+
+        <!-- Bottom Actions -->
+        <div class="p-5 border-t border-gray-100 space-y-2 flex-shrink-0">
+          <a 
+            href="https://www.familybank.chat/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white transition-all text-sm font-black hover:shadow-xl hover:scale-105 active:scale-95"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span>家庭积分系统</span>
+          </a>
+          <NuxtLink 
+            to="/" 
+            class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-gradient-to-r hover:from-[#FF4D94]/5 hover:to-[#7C4DFF]/5 transition-all text-sm font-bold text-gray-700 hover:text-[#FF4D94] border border-gray-100 hover:border-[#FF4D94]/30"
+          >
+            <Home class="w-5 h-5" />
+            <span>返回首页</span>
+          </NuxtLink>
+        </div>
+      </aside>
+
+      <!-- Mobile Header -->
+      <div class="lg:hidden fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-b border-gray-100 z-50 shadow-sm">
+        <div class="flex items-center justify-between px-4 py-3">
+          <NuxtLink to="/dashboard" class="flex items-center gap-2">
+            <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center text-white p-2 shadow-lg">
+              <Logo class="w-full h-full" />
+            </div>
+            <span class="text-base font-black bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] bg-clip-text text-transparent tracking-tight">元气银行</span>
+          </NuxtLink>
+          <button
+            @click="mobileMenuOpen = !mobileMenuOpen"
+            class="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+          >
+            <Menu v-if="!mobileMenuOpen" class="w-6 h-6 text-gray-700" />
+            <X v-else class="w-6 h-6 text-gray-700" />
+          </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div v-if="mobileMenuOpen" class="border-t border-gray-100 bg-white">
+          <nav class="p-4 space-y-1">
+            <NuxtLink
+              v-for="item in navItems"
+              :key="item.href"
+              :to="item.href"
+              :class="[
+                'flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-sm font-bold',
+                isActive(item.href)
+                  ? 'bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white'
+                  : 'text-gray-700 hover:bg-gray-50'
+              ]"
+            >
+              <component :is="item.icon" class="w-5 h-5" />
+              <span>{{ item.label }}</span>
+            </NuxtLink>
+          </nav>
+          <div class="p-4 border-t border-gray-100">
+            <button
+              @click="handleLogout"
+              class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all text-sm font-bold"
+            >
+              <LogOut class="w-4 h-4" />
+              <span>退出登录</span>
             </button>
-          </div>
-          <!-- Mobile Links -->
-          <div class="flex-1 space-y-2">
-             <NuxtLink 
-                v-for="item in navItems.flatMap(g => g.items)" 
-                :key="item.href"
-                :to="item.href"
-                class="flex items-center gap-4 px-4 py-4 rounded-2xl text-sm font-black text-gray-500 hover:bg-brand-pink/5 hover:text-brand-pink transition-all"
-                @click="isMobileMenuOpen = false"
-              >
-                <component :is="item.icon" class="w-5 h-5" />
-                {{ item.name }}
-              </NuxtLink>
           </div>
         </div>
       </div>
-    </Transition>
 
-    <CustomerSupport />
+      <!-- Main content -->
+      <main class="flex-1 lg:ml-72 lg:mt-[73px] p-4 sm:p-6 lg:p-8 pt-20 lg:pt-8">
+        <div class="max-w-7xl mx-auto">
+          <slot />
+        </div>
+      </main>
+    </div>
   </div>
 </template>
-
-<style>
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #E5E7EB;
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #D1D5DB;
-}
-
-@keyframes slide-right {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-.animate-slide-right {
-  animation: slide-right 0.3s ease-out;
-}
-</style>

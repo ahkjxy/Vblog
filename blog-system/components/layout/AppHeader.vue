@@ -107,10 +107,10 @@ const handleLogout = async () => {
               </div>
               <div v-else class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center shadow-md">
                 <span class="text-white text-xs md:text-sm font-bold">
-                  {{ (profile?.name || user.user_metadata?.name || user.email)?.charAt(0).toUpperCase() }}
+                  {{ ((profile?.name || user.user_metadata?.name || user.email)?.charAt(0).toUpperCase()) }}
                 </span>
               </div>
-              <span class="text-sm font-semibold text-gray-800">{{ profile?.name || user.user_metadata?.name || user.email?.split('@')[0] }}</span>
+              <span class="text-sm font-semibold text-gray-800">{{ (profile?.name || user.user_metadata?.name || user.email?.split('@')[0]) + '的家庭' }}</span>
               <ChevronDown class="w-4 h-4 text-gray-500 transition-transform" :class="{ 'rotate-180': isDropdownOpen }" />
             </button>
 

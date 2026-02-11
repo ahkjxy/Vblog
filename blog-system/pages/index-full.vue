@@ -278,7 +278,7 @@ useSeoMeta({
                                 </span>
                               </div>
                               <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                                <span class="font-bold">{{ category.latestPost.author_name + '的家庭' }}</span>
+                                <span class="font-bold">{{ category.latestPost.author_name }}</span>
                                 <span>•</span>
                                 <span class="flex items-center gap-1">
                                   <MessageCircle class="w-3 h-3" />
@@ -335,11 +335,11 @@ useSeoMeta({
                     >
                       <div class="flex items-start gap-4">
                         <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center text-white text-sm font-black shadow-md">
-                         {{ comment.author_name?.charAt(0) || '?' }}
+                          {{ comment.author_name?.charAt(0) || '?' }}
                         </div>
                         <div class="flex-1 min-w-0">
                           <div class="flex items-center gap-2 mb-2">
-                            <span class="text-sm font-black text-gray-900">{{ comment.author_name + '的家庭' || '匿名' }}</span>
+                            <span class="text-sm font-black text-gray-900">{{ comment.author_name || '匿名' }}</span>
                             <span class="text-xs text-gray-400">•</span>
                             <span class="text-xs font-bold text-gray-500">{{ formatDate(comment.created_at) }}</span>
                           </div>

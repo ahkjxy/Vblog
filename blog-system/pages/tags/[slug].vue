@@ -1,168 +1,194 @@
 <script setup lang="ts">
-import { Calendar, Eye, ArrowRight, Tag as TagIcon, FileText } from 'lucide-vue-next'
+import { Calendar, Eye, ArrowRight, ArrowLeft } from 'lucide-vue-next'
 
 const route = useRoute()
-const client = useSupabaseClient()
-const { formatDate, formatAuthorName } = useUtils()
 const slug = route.params.slug as string
 
-interface Tag {
-  id: string
-  name: string
-  slug: string
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
-interface Post {
-  id: string
-  title: string
-  slug: string
-  excerpt: string
-  published_at: string
-  view_count: number
-  profiles: {
-    name: string
-    avatar_url: string | null
-  } | null
+const formatAuthorName = (profile: any) => {
+  return profile?.name ? `${profile.name}的家庭` : '匿名家庭'
 }
 
-const { data } = await useAsyncData<{ tag: Tag, posts: Post[] }>(`tag-${slug}`, async () => {
-  const { data: tagData } = await client
-    .from('tags')
-    .select('*')
-    .eq('slug', slug)
-    .single()
-
-  if (!tagData) throw createError({ statusCode: 404, statusMessage: '标签未找到' })
-
-  const { data: postTagsData } = await client
-    .from('post_tags')
-    .select('post_id')
-    .eq('tag_id', tagData.id)
-
-  const postTags = (postTagsData as any[]) || []
-  const postIds = postTags.map((pt: any) => pt.post_id) || []
-
-  const { data: postsData } = await client
-    .from('posts')
-    .select(`
-      id,
-      title,
-      slug,
-      excerpt,
-      published_at,
-      view_count,
-      status,
-      review_status,
-      profiles!posts_author_id_fkey(name, avatar_url)
-    `)
-    .in('id', postIds)
-    .eq('status', 'published')
-    .eq('review_status', 'approved')
-    .order('published_at', { ascending: false })
-
-  return { 
-    tag: tagData as Tag, 
-    posts: (postsData as any[] || []).map(p => ({
-      ...p,
-      profiles: p.profiles || null
-    })) as Post[] 
+// 获取标签及文章列表
+const { data: tagData, error } = await useAsyncData(
+  `tag-${slug}`,
+  async () => {
+    const client = useSupabaseClient()
+    
+    // 获取标签信息
+    const { data: tag, error: tagError } = await client
+      .from('tags')
+      .select('*')
+      .eq('slug', slug)
+      .single()
+    
+    if (tagError || !tag) {
+      throw createError({ statusCode: 404, statusMessage: '标签未找到' })
+    }
+    
+    // 获取该标签下的文章ID
+    const { data: postTags } = await client
+      .from('post_tags')
+      .select('post_id')
+      .eq('tag_id', tag.id)
+    
+    const postIds = postTags?.map(pt => pt.post_id) || []
+    
+    if (postIds.length === 0) {
+      return {
+        tag,
+        posts: []
+      }
+    }
+    
+    // 获取文章列表
+    const { data: posts } = await client
+      .from('posts')
+      .select('id, title, slug, excerpt, published_at, view_count, profiles!posts_author_id_fkey(name, avatar_url)')
+      .in('id', postIds)
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+    
+    return {
+      tag,
+      posts: posts || []
+    }
   }
-})
+)
 
-if (!data.value) {
+if (error.value) {
   throw createError({ statusCode: 404, statusMessage: '标签未找到' })
 }
 
-useSeoMeta({
-  title: `#${data.value.tag.name} - 标签 | 元气银行博客`,
-  description: `浏览标签 #${data.value.tag.name} 下的所有文章`
-})
-
-const getGradient = (index: number) => {
-  const gradients = [
-    { from: 'from-purple-500', to: 'to-pink-500' },
-    { from: 'from-pink-500', to: 'to-rose-500' },
-    { from: 'from-purple-600', to: 'to-indigo-500' },
-    { from: 'from-fuchsia-500', to: 'to-pink-500' },
-  ]
-  return gradients[index % gradients.length]
+// SEO
+if (tagData.value?.tag) {
+  useSeoMeta({
+    title: `#${tagData.value.tag.name} - 标签`,
+    description: `浏览标签 #${tagData.value.tag.name} 下的所有文章`
+  })
 }
+
+const gradients = [
+  { from: 'from-purple-500', to: 'to-pink-500' },
+  { from: 'from-pink-500', to: 'to-rose-500' },
+  { from: 'from-purple-600', to: 'to-indigo-500' },
+  { from: 'from-fuchsia-500', to: 'to-pink-500' },
+]
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#FDFCFD] pb-24">
+  <div v-if="tagData" class="min-h-screen bg-gradient-to-br from-[#FDFCFD] via-[#FFF5F9] to-[#EAF6FF]">
     <!-- Hero -->
-    <header class="bg-gradient-to-br from-[#FF4D94]/5 via-[#7C4DFF]/5 to-white border-b border-gray-100 pt-20 pb-16">
-      <div class="container mx-auto px-4">
-        <div v-if="data" class="max-w-6xl mx-auto">
-          <NuxtLink to="/tags" class="inline-flex items-center gap-2 text-sm text-[#FF4D94] hover:text-[#7C4DFF] mb-6 font-black uppercase tracking-widest transition-colors">
-            ← 返回标签列表
+    <div class="bg-gradient-to-br from-[#FF4D94]/5 via-[#7C4DFF]/5 to-white border-b border-gray-100">
+      <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
+        <div class="max-w-7xl mx-auto">
+          <NuxtLink 
+            to="/tags"
+            class="inline-flex items-center gap-2 text-xs sm:text-sm text-[#FF4D94] hover:text-[#7C4DFF] mb-6 font-bold"
+          >
+            <ArrowLeft class="w-4 h-4" />
+            返回标签列表
           </NuxtLink>
-          <div class="flex items-center gap-4 mb-4">
-             <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#FF4D94] shadow-sm border border-[#FF4D94]/10">
-               <TagIcon class="w-6 h-6" />
-             </div>
-             <h1 class="text-4xl md:text-6xl font-black bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] bg-clip-text text-transparent tracking-tight">
-               #{{ data.tag.name }}
-             </h1>
-          </div>
-          <p class="text-lg md:text-xl text-gray-600 font-medium tracking-tight">
-            共 <span class="text-[#FF4D94] font-black">{{ data.posts.length }}</span> 篇文章
+          <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-4 sm:mb-6 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] bg-clip-text text-transparent tracking-tight">
+            #{{ tagData.tag.name }}
+          </h1>
+          <p class="text-sm sm:text-base md:text-lg text-gray-600 font-medium">
+            共 {{ tagData.posts.length }} 篇文章
           </p>
         </div>
       </div>
-    </header>
+    </div>
 
     <!-- Posts List -->
-    <div v-if="data" class="container mx-auto px-4 mt-16 max-w-6xl">
-      <div v-if="data.posts.length > 0" class="space-y-8">
-        <article v-for="(post, index) in data.posts" :key="post.id" class="group bg-white rounded-[32px] p-6 md:p-10 hover:shadow-2xl transition-all border border-gray-100 hover:border-[#FF4D94]/30 relative overflow-hidden">
-          <div :class="`h-1.5 w-24 rounded-full bg-gradient-to-r ${getGradient(index).from} ${getGradient(index).to} mb-8` "></div>
-          
-          <NuxtLink :to="`/blog/${post.slug}`">
-            <h2 class="text-2xl md:text-3xl font-black mb-6 group-hover:text-[#FF4D94] transition-colors leading-tight tracking-tight">
-              {{ post.title }}
-            </h2>
-          </NuxtLink>
-          <p v-if="post.excerpt" class="text-gray-600 mb-10 line-clamp-2 md:line-clamp-3 leading-relaxed font-medium text-base md:text-lg">
-            {{ post.excerpt }}
-          </p>
-
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pt-8 border-t border-gray-100">
-            <div class="flex flex-wrap items-center gap-6 text-sm text-gray-500">
-              <div class="flex items-center gap-3">
-                <div v-if="post.profiles?.avatar_url" class="w-10 h-10 rounded-full ring-4 ring-gray-50 overflow-hidden">
-                  <img :src="post.profiles.avatar_url" :alt="post.profiles.name" class="w-full h-full object-cover" />
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
+      <div class="max-w-7xl mx-auto">
+        <div v-if="tagData.posts.length > 0" class="space-y-6">
+          <article 
+            v-for="(post, index) in tagData.posts" 
+            :key="post.id" 
+            class="group bg-white rounded-3xl p-6 sm:p-8 hover:shadow-2xl transition-all border border-gray-100 hover:border-[#FF4D94]/30"
+          >
+            <div 
+              :class="[
+                'h-1 w-16 sm:w-20 rounded-full bg-gradient-to-r mb-4 sm:mb-6',
+                `${gradients[index % gradients.length].from} ${gradients[index % gradients.length].to}`
+              ]"
+            ></div>
+            
+            <NuxtLink :to="`/blog/${post.slug}`">
+              <h2 class="text-xl sm:text-2xl md:text-3xl font-black mb-4 group-hover:text-[#FF4D94] transition-colors leading-tight tracking-tight">
+                {{ post.title }}
+              </h2>
+            </NuxtLink>
+            <p v-if="post.excerpt" class="text-sm sm:text-base md:text-lg text-gray-600 mb-6 sm:mb-8 line-clamp-2 leading-relaxed font-medium">
+              {{ post.excerpt }}
+            </p>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-gray-100">
+              <div class="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600">
+                <div class="flex items-center gap-3">
+                  <div v-if="post.profiles?.avatar_url" class="w-10 h-10 rounded-full ring-2 ring-gray-100 overflow-hidden">
+                    <img 
+                      :src="post.profiles.avatar_url" 
+                      :alt="post.profiles.name"
+                      class="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div 
+                    v-else
+                    :class="[
+                      'w-10 h-10 rounded-xl flex items-center justify-center shadow-sm',
+                      `bg-gradient-to-br ${gradients[index % gradients.length].from} ${gradients[index % gradients.length].to}`
+                    ]"
+                  >
+                    <span class="text-white font-black text-sm">
+                      {{ post.profiles?.name?.charAt(0).toUpperCase() || 'U' }}
+                    </span>
+                  </div>
+                  <span class="font-black text-gray-900">{{ formatAuthorName(post.profiles) }}</span>
                 </div>
-                <div v-else :class="`w-10 h-10 rounded-xl bg-gradient-to-br ${getGradient(index).from} ${getGradient(index).to} flex items-center justify-center shadow-lg text-white font-black` ">
-                  {{ post.profiles?.name?.[0].toUpperCase() || 'U' }}
+                <div class="flex items-center gap-2">
+                  <Calendar class="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span class="font-medium">{{ formatDate(post.published_at) }}</span>
                 </div>
-                <span class="font-black text-gray-900">{{ formatAuthorName(post.profiles) }}</span>
+                <div class="flex items-center gap-2 bg-[#FF4D94]/5 px-3 py-1.5 rounded-xl border border-[#FF4D94]/10">
+                  <Eye class="w-3 h-3 sm:w-4 sm:h-4 text-[#FF4D94]" />
+                  <span class="font-black text-[#FF4D94]">{{ post.view_count }}</span>
+                </div>
               </div>
-              <div class="flex items-center gap-2 font-bold uppercase tracking-wider text-[11px]">
-                <Calendar class="w-4 h-4 text-[#FF4D94]" />
-                {{ formatDate(post.published_at) }}
-              </div>
-              <div class="flex items-center gap-2 bg-[#FF4D94]/5 px-3 py-1.5 rounded-xl border border-[#FF4D94]/10 font-black text-[#FF4D94]">
-                <Eye class="w-4 h-4" />
-                {{ post.view_count }}
-              </div>
+              <NuxtLink 
+                :to="`/blog/${post.slug}`"
+                class="flex items-center gap-2 text-[#FF4D94] hover:text-[#7C4DFF] font-black text-xs sm:text-sm group-hover:gap-3 transition-all"
+              >
+                阅读全文
+                <ArrowRight class="w-4 h-4" />
+              </NuxtLink>
             </div>
-            <NuxtLink :to="`/blog/${post.slug}`" class="flex items-center gap-2 text-[#FF4D94] hover:text-[#7C4DFF] font-black text-sm uppercase tracking-widest group-hover:gap-3 transition-all">
-              开始阅读 <ArrowRight class="w-5 h-5" />
+          </article>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else class="text-center py-16 sm:py-24 bg-white rounded-3xl border-2 border-dashed border-[#FF4D94]/20">
+          <div class="max-w-md mx-auto px-4">
+            <div class="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-[#FF4D94]/10 to-[#7C4DFF]/10 rounded-3xl flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-lg">
+              <svg class="w-10 h-10 sm:w-12 sm:h-12 text-[#FF4D94]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-black mb-4 text-gray-900">暂无文章</h3>
+            <p class="text-sm sm:text-base text-gray-600 mb-8 sm:mb-10 font-medium">该标签下还没有文章</p>
+            <NuxtLink 
+              to="/blog"
+              class="inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-2xl hover:shadow-xl transition-all font-black text-sm sm:text-base hover:scale-105 active:scale-95"
+            >
+              浏览所有文章
+              <ArrowRight class="w-4 h-4 sm:w-5 sm:h-5" />
             </NuxtLink>
           </div>
-        </article>
-      </div>
-      <div v-else class="text-center py-24 bg-white rounded-[48px] border-2 border-dashed border-[#FF4D94]/10 text-sm font-bold">
-          <div class="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-8">
-             <FileText class="w-10 h-10 text-gray-200" />
-          </div>
-          <h3 class="text-2xl font-black text-gray-900 mb-4">暂无相关文章</h3>
-          <p class="text-gray-500 font-medium mb-10">这个话题还没有人发布内容...</p>
-          <NuxtLink to="/blog" class="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-2xl font-black shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all">
-            浏览全站文章 <ArrowRight class="w-5 h-5" />
-          </NuxtLink>
+        </div>
       </div>
     </div>
   </div>

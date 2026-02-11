@@ -1,336 +1,642 @@
 <script setup lang="ts">
-import { 
-  Users, 
-  Shield, 
-  Trash2, 
-  Mail, 
-  Search, 
-  Filter, 
-  MoreVertical,
-  ChevronRight,
-  AtSign,
-  AlertTriangle,
-  Loader2,
-  X,
-  Check
-} from 'lucide-vue-next'
+import { Users as UsersIcon, Search, Shield, Trash2, Mail } from 'lucide-vue-next'
 
 definePageMeta({
-  layout: 'dashboard',
-  middleware: 'auth'
+  middleware: 'auth',
+  layout: 'dashboard'
 })
 
 const client = useSupabaseClient()
-const { user: currentUser, profile } = useAuth()
-const { formatDate } = useUtils()
+const user = useSupabaseUser()
 
-// 权限检查
-onMounted(() => {
-  if (profile.value && profile.value.role !== 'admin') {
-    useRouter().push('/dashboard')
-  }
-})
-
-interface UserProfile {
+interface User {
   id: string
-  name: string | null
-  avatar_url: string | null
+  name: string
   email: string
-  role: string
+  role: 'admin' | 'child'
+  avatar_url: string | null
+  avatar_color: string | null
+  bio: string | null
+  family_id: string | null
   created_at: string
+  families?: {
+    id: string
+    name: string
+  }
+  is_super_admin?: boolean
 }
 
-const { data: users, refresh } = await useAsyncData<UserProfile[]>('dashboard-users-list', async () => {
-  // 获取所有 profile，并尝试关联对应的 auth.users 的 email (如果权限允许)
-  // 在 Supabase 中，普通用户无法直接查询 auth.users 表。
-  // 我们依赖 profiles 表中的数据，如果 profiles 表没有 email 字段，我们可能只能显示 profiles
-  const { data: profiles, error } = await client
+const users = ref<User[]>([])
+const filteredUsers = ref<User[]>([])
+const loading = ref(true)
+const searchQuery = ref('')
+const isRoleDialogOpen = ref(false)
+const isDeleteDialogOpen = ref(false)
+const isBatchDeleteDialogOpen = ref(false)
+const selectedUser = ref<User | null>(null)
+const selectedUserIds = ref<Set<string>>(new Set())
+const newRole = ref<'admin' | 'child'>('admin')
+const isSuperAdmin = ref(false)
+
+// 检查权限
+const { data: profile } = await useAsyncData('user-profile', async () => {
+  if (!user.value) return null
+  const { data } = await client
     .from('profiles')
-    .select('*')
-    .order('created_at', { ascending: false })
-  
-  if (error) {
-    console.error('获取用户列表失败:', error)
-    return []
-  }
-  return (profiles as any[]) || []
+    .select('role, family_id')
+    .eq('id', user.value.id)
+    .single()
+  return data
 })
 
-const searchQuery = ref('')
-const roleFilter = ref('all')
-const selectedUserIds = ref(new Set<string>())
+const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
+isSuperAdmin.value = profile.value?.role === 'admin' && profile.value?.family_id === SUPER_ADMIN_FAMILY_ID
 
-const filteredUsers = computed(() => {
-  if (!users.value) return []
-  return users.value.filter(user => {
-    const matchesSearch = !searchQuery.value || 
-      (user.name || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      (user.email || '').toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchesRole = roleFilter.value === 'all' || user.role === roleFilter.value
-    return matchesSearch && matchesRole
+// 加载用户列表
+const loadUsers = async () => {
+  try {
+    if (!isSuperAdmin.value) {
+      loading.value = false
+      return
+    }
+
+    const { data, error } = await client
+      .from('profiles')
+      .select(`
+        *,
+        families:family_id (
+          id,
+          name
+        )
+      `)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    
+    // 获取邮箱映射
+    let emailMap: Record<string, string> = {}
+    try {
+      const emailResponse = await fetch('/api/users/emails')
+      if (emailResponse.ok) {
+        const result = await emailResponse.json()
+        emailMap = result.emailMap || {}
+      }
+    } catch (emailError) {
+      console.error('Error fetching emails:', emailError)
+    }
+    
+    // 合并数据
+    const usersWithEmail = (data || []).map((u: any) => {
+      const isSuperAdminUser = u.family_id === SUPER_ADMIN_FAMILY_ID
+      
+      return {
+        ...u,
+        email: emailMap[u.id] || '',
+        is_super_admin: isSuperAdminUser
+      }
+    })
+    
+    users.value = usersWithEmail
+  } catch (err) {
+    console.error('加载用户列表失败:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 搜索和过滤
+watch([users, searchQuery], () => {
+  let result = users.value
+
+  if (searchQuery.value) {
+    result = result.filter(u =>
+      u.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      u.families?.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+  }
+
+  filteredUsers.value = result
+})
+
+// 按家庭分组
+const groupedByFamily = computed(() => {
+  const groups = filteredUsers.value.reduce((acc, u) => {
+    const familyId = u.family_id || 'no-family'
+    const familyName = u.families?.name || '未分配家庭'
+    
+    if (!acc[familyId]) {
+      acc[familyId] = {
+        familyId,
+        familyName,
+        isSuperAdmin: u.is_super_admin || false,
+        users: []
+      }
+    }
+    
+    acc[familyId].users.push(u)
+    return acc
+  }, {} as Record<string, { familyId: string; familyName: string; isSuperAdmin: boolean; users: User[] }>)
+
+  return Object.values(groups).sort((a, b) => {
+    if (a.isSuperAdmin) return -1
+    if (b.isSuperAdmin) return 1
+    return a.familyName.localeCompare(b.familyName, 'zh-CN')
   })
 })
 
-const isRoleModalOpen = ref(false)
-const selectedUser = ref<any>(null)
-const newRole = ref('')
-
-const openRoleModal = (user: any) => {
-  selectedUser.value = user
-  newRole.value = user.role
-  isRoleModalOpen.value = true
+// 打开角色更改对话框
+const openRoleDialog = (u: User) => {
+  selectedUser.value = u
+  newRole.value = u.role
+  isRoleDialogOpen.value = true
 }
 
-const handleUpdateRole = async () => {
+// 更新用户角色
+const handleRoleUpdate = async () => {
   if (!selectedUser.value) return
-  const { error } = await client
-    .from('profiles')
-    .update({ role: newRole.value })
-    .eq('id', selectedUser.value.id)
-  
-  if (error) alert('更新失败: ' + error.message)
-  else {
-    isRoleModalOpen.value = false
-    refresh()
+
+  try {
+    const { error } = await client
+      .from('profiles')
+      .update({ role: newRole.value })
+      .eq('id', selectedUser.value.id)
+
+    if (error) throw error
+    isRoleDialogOpen.value = false
+    await loadUsers()
+  } catch (err) {
+    console.error('更新角色失败:', err)
   }
 }
 
-const handleDeleteUser = async (id: string, name: string) => {
-  if (id === currentUser.value?.id) {
-    alert('不能删除当前登录账号')
+// 删除用户
+const handleDeleteUser = async () => {
+  if (!selectedUser.value) return
+
+  if (selectedUser.value.id === user.value?.id) {
+    isDeleteDialogOpen.value = false
     return
   }
-  if (!confirm(`确定要删除用户 "${name}" 吗？此操作将永久移除该用户的所有资料。`)) return
-  
-  const { error } = await client.from('profiles').delete().eq('id', id)
-  if (error) alert('删除失败: ' + error.message)
-  else refresh()
+
+  try {
+    const { error } = await client
+      .from('profiles')
+      .delete()
+      .eq('id', selectedUser.value.id)
+
+    if (error) throw error
+    isDeleteDialogOpen.value = false
+    await loadUsers()
+  } catch (err) {
+    console.error('删除用户失败:', err)
+  }
 }
 
+// 切换用户选择
+const toggleUserSelection = (userId: string) => {
+  const newSet = new Set(selectedUserIds.value)
+  if (newSet.has(userId)) {
+    newSet.delete(userId)
+  } else {
+    newSet.add(userId)
+  }
+  selectedUserIds.value = newSet
+}
+
+// 全选/取消全选
 const toggleSelectAll = () => {
   if (selectedUserIds.value.size === filteredUsers.value.length) {
-    selectedUserIds.value.clear()
+    selectedUserIds.value = new Set()
   } else {
     selectedUserIds.value = new Set(filteredUsers.value.map(u => u.id))
   }
 }
+
+// 批量删除用户
+const handleBatchDelete = async () => {
+  if (selectedUserIds.value.size === 0) return
+
+  if (selectedUserIds.value.has(user.value?.id || '')) {
+    return
+  }
+
+  try {
+    const idsToDelete = Array.from(selectedUserIds.value)
+    
+    const { error } = await client
+      .from('profiles')
+      .delete()
+      .in('id', idsToDelete)
+
+    if (error) throw error
+    isBatchDeleteDialogOpen.value = false
+    selectedUserIds.value = new Set()
+    await loadUsers()
+  } catch (err) {
+    console.error('批量删除失败:', err)
+  }
+}
+
+// 格式化日期
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
+}
+
+onMounted(() => {
+  loadUsers()
+})
 </script>
 
 <template>
-  <div class="space-y-8 pb-12">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-      <div>
-        <h1 class="text-3xl sm:text-4xl font-black bg-gradient-to-r from-brand-pink to-brand-purple bg-clip-text text-transparent mb-2 tracking-tight">
-          全量用户矩阵
-        </h1>
-        <p class="text-gray-500 font-medium font-mono text-xs uppercase tracking-widest">Global user management and system access control</p>
-      </div>
-      
-      <div class="flex items-center gap-3">
-         <div class="px-6 py-3 bg-white rounded-2xl border border-gray-100 flex items-center gap-3 shadow-sm">
-            <Users class="w-5 h-5 text-brand-purple" />
-            <span class="text-lg font-black text-gray-900">{{ users?.length || 0 }}</span>
-            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Users</span>
-         </div>
-      </div>
+  <div>
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+        用户管理
+      </h1>
+      <p class="text-gray-600">管理所有博客用户和家庭</p>
     </div>
 
-    <!-- Filter Toolbar -->
-    <div class="bg-white rounded-[40px] border border-gray-100 p-6 sm:p-8 shadow-xl space-y-6">
-       <div class="flex flex-col md:flex-row gap-4 items-center">
-          <div class="flex-1 relative w-full">
-             <Search class="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 focus-within:text-brand-pink transition-colors" />
-             <input 
-               v-model="searchQuery"
-               type="text" 
-               placeholder="通过名称、邮箱或 ID 搜索用户..." 
-               class="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-brand-pink/5 transition-all focus:bg-white"
-             />
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center h-64">
+      <div class="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+    </div>
+
+    <!-- No Permission -->
+    <div v-else-if="!isSuperAdmin" class="bg-white rounded-2xl p-12 text-center border border-gray-100">
+      <Shield class="w-16 h-16 text-gray-300 mx-auto mb-4" />
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">权限不足</h3>
+      <p class="text-gray-600">只有超级管理员可以访问用户管理页面</p>
+    </div>
+
+    <template v-else>
+      <!-- Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-2xl p-6 border border-gray-100">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+              <UsersIcon class="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div class="text-2xl font-bold">{{ users.length }}</div>
+              <div class="text-sm text-gray-600">注册用户总数</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-gray-100">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <Mail class="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <div class="text-2xl font-bold">{{ filteredUsers.length }}</div>
+              <div class="text-sm text-gray-600">当前显示用户</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search and Batch Actions -->
+      <div class="bg-white rounded-2xl p-4 mb-6 border border-gray-100">
+        <div class="relative mb-4">
+          <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索用户名、邮箱、家庭名称..."
+            class="w-full pl-12 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
+        </div>
+        
+        <!-- Batch Actions -->
+        <div v-if="filteredUsers.length > 0" class="flex items-center justify-between pt-4 border-t">
+          <div class="flex items-center gap-3">
+            <input
+              type="checkbox"
+              :checked="selectedUserIds.size === filteredUsers.length && filteredUsers.length > 0"
+              @change="toggleSelectAll"
+              class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+            />
+            <span class="text-sm text-gray-600">
+              {{ selectedUserIds.size > 0 ? `已选 ${selectedUserIds.size} 个用户` : '全选' }}
+            </span>
           </div>
           
-          <select 
-            v-model="roleFilter"
-            class="w-full md:w-48 px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black text-gray-700 appearance-none focus:ring-4 focus:ring-brand-pink/5 transition-all"
+          <div v-if="selectedUserIds.size > 0" class="flex gap-2">
+            <button
+              @click="selectedUserIds = new Set()"
+              class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              取消选择
+            </button>
+            <button
+              @click="isBatchDeleteDialogOpen = true"
+              :disabled="selectedUserIds.has(user?.id || '')"
+              :class="[
+                'px-4 py-2 text-sm rounded-lg transition-colors',
+                selectedUserIds.has(user?.id || '')
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-red-50 text-red-600 hover:bg-red-100'
+              ]"
+            >
+              <Trash2 class="w-4 h-4 inline-block mr-1" />
+              批量删除 ({{ selectedUserIds.size }})
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users Table - Grouped by Family -->
+      <div v-if="filteredUsers.length === 0" class="bg-white rounded-2xl p-12 text-center border border-gray-100">
+        <UsersIcon class="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">未找到用户</h3>
+        <p class="text-gray-600">{{ searchQuery ? '尝试调整搜索条件' : '系统中还没有用户' }}</p>
+      </div>
+
+      <div v-else class="space-y-6">
+        <div
+          v-for="group in groupedByFamily"
+          :key="group.familyId"
+          class="bg-white rounded-2xl border border-gray-100 overflow-hidden"
+        >
+          <!-- Family Header -->
+          <div
+            :class="[
+              'px-6 py-4 border-b flex items-center justify-between',
+              group.isSuperAdmin 
+                ? 'bg-gradient-to-r from-purple-50 to-pink-50' 
+                : 'bg-gray-50'
+            ]"
           >
-             <option value="all">所有职能</option>
-             <option value="admin">超级管理员</option>
-             <option value="user">普通用户</option>
-          </select>
-
-          <button @click="refresh" class="px-6 py-4 bg-gray-50 text-brand-purple rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-all">
-             同步数据
-          </button>
-       </div>
-    </div>
-
-    <!-- Users Table Container -->
-    <div class="bg-white rounded-[40px] border border-gray-100 shadow-xl overflow-hidden relative">
-       <!-- Bulk Action Bar -->
-       <Transition name="slide">
-          <div v-if="selectedUserIds.size > 0" class="absolute top-0 left-0 right-0 z-30 bg-gray-900 text-white p-4 flex items-center justify-between shadow-2xl">
-             <div class="flex items-center gap-6 px-4">
-                <span class="text-xs font-black uppercase tracking-widest">Selected: {{ selectedUserIds.size }} Users</span>
-             </div>
-             <div class="flex items-center gap-2">
-                <button class="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Export</button>
-                <button class="px-6 py-2 bg-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Batch Deactivate</button>
-                <button @click="selectedUserIds.clear()" class="p-2 hover:text-brand-pink"><X class="w-5 h-5" /></button>
-             </div>
+            <div class="flex items-center gap-3">
+              <div
+                :class="[
+                  'w-10 h-10 rounded-full flex items-center justify-center font-bold text-white',
+                  group.isSuperAdmin
+                    ? 'bg-gradient-to-br from-purple-600 to-pink-600'
+                    : 'bg-gradient-to-br from-blue-500 to-cyan-500'
+                ]"
+              >
+                {{ group.familyName.charAt(0) }}
+              </div>
+              <div>
+                <h3 class="font-bold text-lg text-gray-900">{{ group.familyName }}</h3>
+                <p class="text-sm text-gray-500">{{ group.users.length }} 位成员</p>
+              </div>
+              <span
+                v-if="group.isSuperAdmin"
+                class="ml-2 px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200"
+              >
+                ⭐ 超级管理员家庭
+              </span>
+            </div>
           </div>
-       </Transition>
 
-       <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-             <thead>
-                <tr class="bg-gray-50/50">
-                   <th class="pl-10 pr-4 py-8 w-16">
-                      <button @click="toggleSelectAll" class="w-6 h-6 rounded border-2 flex items-center justify-center transition-all" :class="selectedUserIds.size > 0 ? 'bg-brand-pink border-brand-pink text-white' : 'border-gray-200'">
-                         <Check v-if="selectedUserIds.size > 0" class="w-4 h-4" />
-                      </button>
-                   </th>
-                   <th class="px-6 py-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">身份识别 / IDENTITY</th>
-                   <th class="px-6 py-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] hidden md:table-cell">数字坐标 / COORDINATES</th>
-                   <th class="px-6 py-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">系统权限 / CLEARANCE</th>
-                   <th class="px-6 py-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-right pr-10">核心指令 / COMMANDS</th>
+          <!-- Users Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50/50 border-b">
+                <tr>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-gray-600 w-12">
+                    <input
+                      type="checkbox"
+                      :checked="group.users.length > 0 && group.users.every(u => selectedUserIds.has(u.id))"
+                      @change="() => {
+                        const allSelected = group.users.every(u => selectedUserIds.has(u.id))
+                        const newSet = new Set(selectedUserIds)
+                        group.users.forEach(u => {
+                          if (allSelected) {
+                            newSet.delete(u.id)
+                          } else {
+                            newSet.add(u.id)
+                          }
+                        })
+                        selectedUserIds = newSet
+                      }"
+                      class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                    />
+                  </th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">用户</th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">邮箱</th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">角色</th>
+                  <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">注册时间</th>
+                  <th class="px-6 py-3 text-right text-sm font-medium text-gray-600">操作</th>
                 </tr>
-             </thead>
-             <tbody class="divide-y divide-gray-50">
-                <tr v-if="filteredUsers.length === 0" class="hover:bg-gray-50/30 transition-colors">
-                   <td colspan="5" class="px-10 py-32 text-center text-gray-300 font-bold uppercase tracking-[0.3em] text-[10px]">
-                      GRID EMPTY: NO USERS FOUND IN THIS SECTOR
-                   </td>
-                </tr>
-                <tr 
-                  v-for="user in filteredUsers" 
-                  :key="user.id"
-                  class="hover:bg-gray-50/50 transition-all group"
-                  :class="{ 'bg-brand-pink/[0.02]': selectedUserIds.has(user.id) }"
+              </thead>
+              <tbody class="divide-y">
+                <tr
+                  v-for="u in group.users"
+                  :key="u.id"
+                  class="hover:bg-gray-50 transition-colors"
                 >
-                   <td class="pl-10 pr-4 py-6">
-                      <button 
-                         @click="selectedUserIds.has(user.id) ? selectedUserIds.delete(user.id) : selectedUserIds.add(user.id)"
-                         :class="['w-6 h-6 rounded border-2 flex items-center justify-center transition-all', selectedUserIds.has(user.id) ? 'bg-brand-pink border-brand-pink text-white rotate-0' : 'bg-white border-gray-100 opacity-60 group-hover:opacity-100']"
+                  <td class="px-6 py-4">
+                    <input
+                      type="checkbox"
+                      :checked="selectedUserIds.has(u.id)"
+                      @change="toggleUserSelection(u.id)"
+                      class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                    />
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                      <img
+                        v-if="u.avatar_url"
+                        :src="u.avatar_url"
+                        :alt="u.name"
+                        class="w-10 h-10 rounded-full ring-2 ring-gray-100"
+                      />
+                      <div
+                        v-else-if="u.avatar_color"
+                        class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ring-2 ring-gray-100"
+                        :style="{ backgroundColor: u.avatar_color }"
                       >
-                         <Check v-if="selectedUserIds.has(user.id)" class="w-4 h-4" />
-                      </button>
-                   </td>
-                   <td class="px-6 py-6">
-                      <div class="flex items-center gap-5">
-                         <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-50 p-0.5 shadow-sm overflow-hidden flex items-center justify-center font-black text-brand-pink text-xl group-hover:scale-105 transition-transform duration-500">
-                            <img v-if="user.avatar_url" :src="user.avatar_url" class="w-full h-full object-cover" />
-                            <span v-else>{{ user.name?.[0]?.toUpperCase() || '?' }}</span>
-                         </div>
-                         <div>
-                            <h4 class="font-black text-gray-900 leading-none mb-1 group-hover:text-brand-pink transition-colors">{{ user.name }}</h4>
-                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest hidden sm:block">CID: {{ user.id.slice(0, 8) }}...</p>
-                         </div>
+                        {{ u.name.slice(-1) }}
                       </div>
-                   </td>
-                   <td class="px-6 py-6 hidden md:table-cell">
-                      <div class="flex flex-col gap-1">
-                         <div class="flex items-center gap-2 text-sm font-bold text-gray-600">
-                            <Mail class="w-3.5 h-3.5 text-gray-300" />
-                            {{ user.email || 'No Linked Email' }}
-                         </div>
-                         <div class="flex items-center gap-2 text-[10px] font-bold text-gray-300 uppercase tracking-widest">
-                            Joined {{ formatDate(user.created_at) }}
-                         </div>
+                      <div
+                        v-else
+                        class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold"
+                      >
+                        {{ u.name.charAt(0).toUpperCase() }}
                       </div>
-                   </td>
-                   <td class="px-6 py-6">
-                      <span :class="['px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-2', 
-                        user.role === 'admin' ? 'bg-brand-purple/5 text-brand-purple border border-brand-purple/10' : 'bg-brand-pink/5 text-brand-pink border border-brand-pink/10']">
-                         <Shield v-if="user.role === 'admin'" class="w-3 h-3" />
-                         {{ user.role === 'admin' ? 'SUPER ADMIN' : 'CONTRIBUTOR' }}
+                      <div>
+                        <div class="font-medium text-gray-900">{{ u.name }}</div>
+                        <div v-if="u.bio" class="text-sm text-gray-500 truncate max-w-xs">
+                          {{ u.bio }}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-2 text-sm">
+                      <Mail class="w-4 h-4 text-gray-400" />
+                      <span v-if="u.role === 'child'" class="text-gray-400 italic">无邮箱</span>
+                      <span v-else-if="u.email" class="text-gray-600">{{ u.email }}</span>
+                      <span v-else class="text-gray-400 text-xs font-mono">
+                        ID: {{ u.id.slice(0, 8) }}...
                       </span>
-                   </td>
-                   <td class="px-6 py-6 text-right pr-10">
-                      <div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                         <button 
-                           @click="openRoleModal(user)"
-                           class="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all shadow-sm"
-                           title="权限设置"
-                         >
-                            <Shield class="w-4 h-4" />
-                         </button>
-                         <button 
-                           v-if="user.id !== currentUser?.id"
-                           @click="handleDeleteUser(user.id, user.name)"
-                           class="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
-                           title="强制移除"
-                         >
-                            <Trash2 class="w-4 h-4" />
-                         </button>
-                      </div>
-                   </td>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span
+                      v-if="u.is_super_admin"
+                      class="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200"
+                    >
+                      ⭐ 超级管理员
+                    </span>
+                    <span
+                      v-else-if="u.role === 'admin'"
+                      class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"
+                    >
+                      家长
+                    </span>
+                    <span
+                      v-else
+                      class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium"
+                    >
+                      孩子
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-600">
+                    {{ formatDate(u.created_at) }}
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center justify-end gap-2">
+                      <button
+                        @click="openRoleDialog(u)"
+                        class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="更改角色"
+                      >
+                        <Shield class="w-4 h-4" />
+                      </button>
+                      <button
+                        @click="() => {
+                          selectedUser = u
+                          isDeleteDialogOpen = true
+                        }"
+                        :disabled="u.id === user?.id"
+                        :class="[
+                          'p-2 rounded-lg transition-colors',
+                          u.id === user?.id
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-red-600 hover:bg-red-50'
+                        ]"
+                        :title="u.id === user?.id ? '不能删除自己' : '删除用户'"
+                      >
+                        <Trash2 class="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-             </tbody>
-          </table>
-       </div>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Role Change Modal -->
+    <div
+      v-if="isRoleDialogOpen && selectedUser"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      @click.self="isRoleDialogOpen = false"
+    >
+      <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">更改用户角色</h3>
+        <div class="space-y-4">
+          <p class="text-gray-700">
+            为用户 <strong>{{ selectedUser.name }}</strong> 选择角色：
+          </p>
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+            <p class="font-medium mb-1">提示：</p>
+            <p>当前系统只支持 admin（家长）角色。</p>
+          </div>
+          <select
+            v-model="newRole"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            <option value="admin">家长 (Admin)</option>
+            <option value="child">孩子 (Child)</option>
+          </select>
+        </div>
+        <div class="flex gap-3 mt-6">
+          <button
+            @click="isRoleDialogOpen = false"
+            class="flex-1 px-4 py-3 border border-gray-300 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+          >
+            取消
+          </button>
+          <button
+            @click="handleRoleUpdate"
+            class="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-pink-700 transition-colors"
+          >
+            确认更改
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Role Modal -->
-    <Transition name="fade">
-       <div v-if="isRoleModalOpen && selectedUser" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md" @click="isRoleModalOpen = false">
-          <div class="bg-white rounded-[40px] max-w-lg w-full p-10 shadow-2xl animate-scale-in relative border border-gray-100" @click.stop>
-             <div class="space-y-8 text-center">
-                <div class="w-20 h-20 bg-gradient-to-br from-brand-pink/10 to-brand-purple/10 rounded-[32px] flex items-center justify-center text-brand-pink mx-auto">
-                   <Shield class="w-10 h-10" />
-                </div>
-                
-                <div>
-                   <h2 class="text-2xl font-black text-gray-900 mb-2">调整系统权限</h2>
-                   <p class="text-xs font-medium text-gray-500">正在修改创作者 <span class="font-black text-brand-pink">{{ selectedUser.name }}</span> 的全局访问级别</p>
-                </div>
+    <!-- Delete Confirmation -->
+    <div
+      v-if="isDeleteDialogOpen && selectedUser"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      @click.self="isDeleteDialogOpen = false"
+    >
+      <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">删除用户</h3>
+        <p class="text-gray-600 mb-6">
+          {{ selectedUser.id === user?.id
+            ? '不能删除自己'
+            : `确定要删除用户"${selectedUser.name}"吗？此操作将删除该用户的所有数据，且无法撤销。`
+          }}
+        </p>
+        <div class="flex gap-3">
+          <button
+            @click="isDeleteDialogOpen = false"
+            class="flex-1 px-4 py-3 border border-gray-300 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+          >
+            取消
+          </button>
+          <button
+            @click="handleDeleteUser"
+            class="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors"
+          >
+            删除
+          </button>
+        </div>
+      </div>
+    </div>
 
-                <div class="space-y-4">
-                   <div 
-                      @click="newRole = 'admin'"
-                      :class="['p-6 rounded-[32px] border-4 transition-all cursor-pointer text-left flex items-start gap-4', newRole === 'admin' ? 'border-brand-purple bg-brand-purple/5' : 'border-gray-50 bg-gray-50/50 hover:border-gray-100']"
-                   >
-                      <div :class="['w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0', newRole === 'admin' ? 'border-brand-purple bg-brand-purple text-white' : 'border-gray-200 bg-white']">
-                         <div v-if="newRole === 'admin'" class="w-2 h-2 rounded-full bg-white"></div>
-                      </div>
-                      <div>
-                        <h4 class="font-black text-gray-900 uppercase tracking-widest text-xs">Super Admin (超级管理员)</h4>
-                        <p class="text-[10px] text-gray-400 font-bold mt-1">完全权限：审核文章、管理分类、用户及系统设置</p>
-                      </div>
-                   </div>
-
-                   <div 
-                      @click="newRole = 'user'"
-                      :class="['p-6 rounded-[32px] border-4 transition-all cursor-pointer text-left flex items-start gap-4', newRole === 'user' ? 'border-brand-pink bg-brand-pink/5' : 'border-gray-50 bg-gray-50/50 hover:border-gray-100']"
-                   >
-                      <div :class="['w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0', newRole === 'user' ? 'border-brand-pink bg-brand-pink text-white' : 'border-gray-200 bg-white']">
-                         <div v-if="newRole === 'user'" class="w-2 h-2 rounded-full bg-white"></div>
-                      </div>
-                      <div>
-                        <h4 class="font-black text-gray-900 uppercase tracking-widest text-xs">Contributor (投稿作者)</h4>
-                        <p class="text-[10px] text-gray-400 font-bold mt-1">创作权限：发布文章、管理评论，但内容需经过审核</p>
-                      </div>
-                   </div>
-                </div>
-
-                <div class="pt-6 flex gap-4">
-                   <button @click="isRoleModalOpen = false" class="flex-1 py-4 bg-gray-50 text-gray-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-100 transition-all">放弃修改</button>
-                   <button @click="handleUpdateRole" class="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-brand-purple transition-all">确认提权/降权</button>
-                </div>
-             </div>
-          </div>
-       </div>
-    </Transition>
+    <!-- Batch Delete Confirmation -->
+    <div
+      v-if="isBatchDeleteDialogOpen"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      @click.self="isBatchDeleteDialogOpen = false"
+    >
+      <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">批量删除用户</h3>
+        <p class="text-gray-600 mb-6">
+          确定要删除选中的 {{ selectedUserIds.size }} 个用户吗？此操作将删除这些用户的所有数据，且无法撤销。
+        </p>
+        <div class="flex gap-3">
+          <button
+            @click="isBatchDeleteDialogOpen = false"
+            class="flex-1 px-4 py-3 border border-gray-300 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+          >
+            取消
+          </button>
+          <button
+            @click="handleBatchDelete"
+            class="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors"
+          >
+            批量删除
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.animate-scale-in {
-  animation: scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-@keyframes scale-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-.slide-enter-active, .slide-leave-active { transition: transform 0.3s; }
-.slide-enter-from, .slide-leave-to { transform: translateY(-100%); }
-</style>
