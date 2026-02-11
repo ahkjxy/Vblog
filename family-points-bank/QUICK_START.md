@@ -79,8 +79,8 @@ const [showWishlistModal, setShowWishlistModal] = useState(false);
 4. **添加路由**
 ```typescript
 <Route
-  path="/:syncId/achievements"
-  element={<AchievementCenter currentProfile={currentProfile} familyId={resolvedFamilyId} />}
+  path="/achievements"
+  element={<AchievementCenter currentProfile={currentProfile} familyId={activeFamilyId} />}
 />
 ```
 
@@ -107,7 +107,7 @@ const [showWishlistModal, setShowWishlistModal] = useState(false);
 - 自动检测并授予徽章
 - 28 种预设徽章类型
 - 连续完成、积分里程碑、任务成就等
-- 访问路径：`/:syncId/achievements`
+- 访问路径：`/achievements`
 
 ### 2. 积分转赠 💝
 - 成员之间可以转赠积分

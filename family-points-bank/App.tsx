@@ -315,34 +315,6 @@ function AppContent() {
     const userId = sess.user.id;
     let targetFamilyId = "";
 
-    if (targetFamilyId) {
-      const { error: upsertError } = await supabase
-        .from("family_members")
-        .upsert(
-          { family_id: targetFamilyId, user_id: userId, role: "owner" },
-          { onConflict: "family_id,user_id" }
-        );
-      
-      // 检测家庭已被删除的情况（外键约束失败）
-      if (upsertError && (upsertError as any).code === "23503") {
-        // 家庭已被删除，清除本地数据并跳转到登录页
-        await supabase.auth.signOut();
-        setSession(null);
-        setFatalError(null);
-        setState({
-          currentProfileId: null,
-          profiles: [],
-          tasks: [],
-          rewards: [],
-          syncId: "",
-        });
-        navigate("/", { replace: true });
-        return "";
-      }
-      
-      if (upsertError) throw upsertError;
-    }
-
     // Always try to load from membership first
     const { data: memberships } = await supabase
       .from("family_members")

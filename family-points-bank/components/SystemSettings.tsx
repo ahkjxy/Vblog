@@ -168,7 +168,7 @@ export function SystemSettings({
       description: text.clearCacheDesc,
       onConfirm: () => {
         try {
-          const keysToKeep = ['theme', 'language', 'syncId'];
+          const keysToKeep = ['theme', 'language', 'fpb_language'];
           const allKeys = Object.keys(localStorage);
           allKeys.forEach(key => {
             if (!keysToKeep.includes(key)) {
