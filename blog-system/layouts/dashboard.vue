@@ -26,6 +26,10 @@ const config = useRuntimeConfig()
 const isSidebarOpen = ref(true)
 const isMobileMenuOpen = ref(false)
 
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value
+}
+
 const navItems = [
   { group: '核心', items: [
     { name: '概览', href: '/dashboard', icon: LayoutDashboard },
@@ -99,7 +103,7 @@ const handleLogout = async () => {
 
       <!-- Toggle Button -->
       <button 
-        @click="isSidebarOpen = !isSidebarOpen"
+        @click="toggleSidebar"
         class="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-100 rounded-lg shadow-md flex items-center justify-center text-gray-400 hover:text-brand-pink transition-colors"
       >
         <ChevronRight class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': isSidebarOpen }" />

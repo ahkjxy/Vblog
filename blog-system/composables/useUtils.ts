@@ -3,11 +3,8 @@ import { pinyin } from 'pinyin-pro'
 export const useUtils = () => {
   const formatDate = (date: string | null | undefined) => {
     if (!date) return ''
-    return new Date(date).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
+    const d = new Date(date)
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
   }
 
   const formatAuthorName = (profile: any) => {
