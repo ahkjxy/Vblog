@@ -45,9 +45,6 @@ export const useResourceHints = () => {
 
   // 预加载关键资源
   const preloadCriticalResources = () => {
-    // 预加载字体
-    addPreload('https://fonts.gstatic.com', 'font', 'font/woff2')
-    
     // 预连接到 Supabase
     const supabaseUrl = useRuntimeConfig().public.supabaseUrl
     if (supabaseUrl) {
