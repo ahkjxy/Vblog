@@ -1,5 +1,5 @@
 // Service Worker for caching with auto-update
-const CACHE_VERSION = `v${Date.now()}` // 使用时间戳自动生成版本号
+const CACHE_VERSION = `v1.01` // 使用时间戳自动生成版本号
 const CACHE_NAME = `familybank-blog-${CACHE_VERSION}`
 const STATIC_CACHE = [
   '/',
