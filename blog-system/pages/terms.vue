@@ -13,7 +13,7 @@ import {
 } from 'lucide-vue-next'
 
 useSeoMeta({
-  title: '服务协议 | 元气银行',
+  title: '服务协议',
   description: '阅读元气银行的服务协议，了解您在使用我们服务时的权利和义务。'
 })
 

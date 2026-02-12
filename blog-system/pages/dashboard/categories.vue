@@ -230,7 +230,7 @@ onMounted(() => {
 })
 
 useSeoMeta({
-  title: '分类管理 - Dashboard'
+  title: '分类管理'
 })
 </script>
 

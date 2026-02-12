@@ -47,15 +47,6 @@ function generateSlug(text: string) {
     .replace(/^-+|-+$/g, '')
 }
 
-// 自动生成 slug
-const handleTitleChange = (newTitle: string) => {
-  form.value.title = newTitle
-  // 只有当 slug 为空或者是之前自动生成的时候才更新
-  if (!form.value.slug || form.value.slug === generateSlug(form.value.title)) {
-    form.value.slug = generateSlug(newTitle)
-  }
-}
-
 // 自动生成摘要
 const generateExcerpt = () => {
   // 从 Markdown 内容提取文本
@@ -185,7 +176,7 @@ const handleSubmit = async () => {
 }
 
 useSeoMeta({
-  title: '新建文章 - Dashboard'
+  title: '新建文章'
 })
 </script>
 
@@ -212,8 +203,8 @@ useSeoMeta({
           id="title"
           type="text"
           required
-          :value="form.title"
-          @input="handleTitleChange(($event.target as HTMLInputElement).value)"
+          v-model="form.title"
+          @input="form.slug = generateSlug(form.title)"
           class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
           placeholder="输入文章标题"
         />

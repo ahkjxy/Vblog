@@ -14,7 +14,7 @@ const { data: homeData, pending } = await useAsyncData('home-data', () => useHom
 
 // SEO 优化
 useSeoMeta({
-  title: '首页 - 元气银行社区',
+  title: '首页',
   description: '家长们分享家庭教育经验、讨论积分管理技巧、交流习惯养成心得的互动社区平台。加入元气银行社区，与数千家长一起探讨科学育儿方法。',
 })
 </script>

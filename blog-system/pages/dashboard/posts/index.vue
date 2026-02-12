@@ -6,6 +6,10 @@ definePageMeta({
   layout: 'dashboard'
 })
 
+useSeoMeta({
+  title: '文章管理'
+})
+
 const client = useSupabaseClient()
 const user = useSupabaseUser()
 

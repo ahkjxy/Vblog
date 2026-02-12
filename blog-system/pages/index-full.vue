@@ -13,6 +13,7 @@ const formatDate = (dateString: string) => {
 const { data: homeData, pending } = await useAsyncData('home-data', () => useHomeData())
 
 useSeoMeta({
+  titleTemplate: '', // 禁用 titleTemplate，直接使用完整标题
   title: '元气银行社区',
   description: '家长们分享家庭教育经验、讨论积分管理技巧、交流习惯养成心得的互动社区平台。'
 })

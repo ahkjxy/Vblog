@@ -12,7 +12,7 @@ import {
 } from 'lucide-vue-next'
 
 useSeoMeta({
-  title: '免责声明 | 元气银行',
+  title: '免责声明',
   description: '阅读元气银行的免责声明，了解我们平台内容的局限性。'
 })
 

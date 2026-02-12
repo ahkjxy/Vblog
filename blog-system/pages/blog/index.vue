@@ -45,6 +45,7 @@ const { data: totalStats } = await useAsyncData('forum-total-stats', async () =>
     .from('posts')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'published')
+    .eq('review_status', 'approved')
   return { totalPosts: count || 0 }
 })
 
@@ -88,6 +89,7 @@ const { data: forumData, pending } = await useAsyncData(
       .from('posts')
       .select('id, title, slug, excerpt, published_at, view_count, profiles!posts_author_id_fkey(name, avatar_url), post_categories(categories(name, slug))', { count: 'exact' })
       .eq('status', 'published')
+      .eq('review_status', 'approved')
 
     if (postIds.length > 0) {
       query = query.in('id', postIds)
@@ -187,7 +189,7 @@ watch(() => route.fullPath, () => {
 })
 
 useSeoMeta({
-  title: '社区讨论 - 元气银行社区',
+  title: '社区讨论',
   description: '浏览元气银行社区的所有讨论主题，家长们分享的家庭教育经验、积分管理技巧、习惯养成心得。',
 })
 </script>

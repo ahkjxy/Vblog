@@ -2,7 +2,7 @@
 import { Globe, Shield, Database, LayoutDashboard, ArrowRight, Sparkles } from 'lucide-vue-next'
 
 useSeoMeta({
-  title: 'API 文档 | 元气银行',
+  title: 'API 文档',
   description: '详细了解元气银行提供的公共 API 和后端能力。'
 })
 

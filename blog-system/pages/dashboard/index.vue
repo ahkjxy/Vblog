@@ -21,6 +21,54 @@ const formatAuthorName = (profile: any) => {
   return profile?.name ? `${profile.name}的家庭` : '匿名家庭'
 }
 
+// 快捷审核文章
+const approving = ref<string | null>(null)
+const rejecting = ref<string | null>(null)
+
+const quickApprove = async (postId: string) => {
+  approving.value = postId
+  try {
+    await client
+      .from('posts')
+      .update({
+        status: 'published',
+        published_at: new Date().toISOString(),
+        review_status: 'approved',
+        reviewed_by: user.value!.id,
+        reviewed_at: new Date().toISOString()
+      })
+      .eq('id', postId)
+    
+    // 刷新数据
+    refreshNuxtData('dashboard-data')
+  } catch (error) {
+    console.error('审核失败:', error)
+  } finally {
+    approving.value = null
+  }
+}
+
+const quickReject = async (postId: string) => {
+  rejecting.value = postId
+  try {
+    await client
+      .from('posts')
+      .update({
+        review_status: 'rejected',
+        reviewed_by: user.value!.id,
+        reviewed_at: new Date().toISOString()
+      })
+      .eq('id', postId)
+    
+    // 刷新数据
+    refreshNuxtData('dashboard-data')
+  } catch (error) {
+    console.error('拒绝失败:', error)
+  } finally {
+    rejecting.value = null
+  }
+}
+
 // 获取用户信息和数据
 const { data: dashboardData } = await useAsyncData('dashboard-data', async () => {
   if (!user.value) return null
@@ -69,7 +117,7 @@ const { data: dashboardData } = await useAsyncData('dashboard-data', async () =>
   // 获取最近文章
   let recentPostsQuery = client
     .from('posts')
-    .select('id, title, status, updated_at, view_count, profiles!posts_author_id_fkey(name, avatar_url)')
+    .select('id, title, status, review_status, updated_at, view_count, profiles!posts_author_id_fkey(name, avatar_url)')
     .order('updated_at', { ascending: false })
     .limit(5)
 
@@ -84,8 +132,8 @@ const { data: dashboardData } = await useAsyncData('dashboard-data', async () =>
   if (isSuperAdmin) {
     const { data } = await client
       .from('posts')
-      .select('id, title, status, created_at, profiles!posts_author_id_fkey(name, avatar_url)')
-      .eq('status', 'draft')
+      .select('id, title, status, review_status, created_at, profiles!posts_author_id_fkey(name, avatar_url)')
+      .eq('review_status', 'pending')
       .order('created_at', { ascending: false })
       .limit(5)
     pendingPosts = data
@@ -106,7 +154,7 @@ const { data: dashboardData } = await useAsyncData('dashboard-data', async () =>
 })
 
 useSeoMeta({
-  title: 'Dashboard - 元气银行管理后台'
+  title: 'Dashboard'
 })
 </script>
 
@@ -188,6 +236,65 @@ useSeoMeta({
       </div>
     </div>
 
+    <!-- Pending Posts - 只有超级管理员才显示 -->
+    <div v-if="dashboardData.isSuperAdmin && dashboardData.pendingPosts && dashboardData.pendingPosts.length > 0" class="bg-white rounded-3xl border border-orange-200 shadow-lg overflow-hidden">
+      <div class="p-5 sm:p-6 border-b border-orange-100 bg-gradient-to-r from-orange-50 to-yellow-50">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-10 h-10 rounded-2xl bg-orange-100 flex items-center justify-center">
+            <AlertCircle class="w-5 h-5 text-orange-600" />
+          </div>
+          <div>
+            <h2 class="text-xl sm:text-2xl font-black text-gray-900">待审核文章</h2>
+            <p class="text-xs sm:text-sm text-gray-600 font-medium">需要您审核的草稿文章</p>
+          </div>
+        </div>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <div
+          v-for="post in dashboardData.pendingPosts"
+          :key="post.id"
+          class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 hover:bg-orange-50/50 transition-all group"
+        >
+          <div class="flex-1 min-w-0">
+            <h3 class="font-black text-base sm:text-lg text-gray-900 mb-2 line-clamp-2">
+              {{ post.title }}
+            </h3>
+            <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+              <span class="font-black text-[#FF4D94]">
+                {{ formatAuthorName(post.profiles) }}
+              </span>
+              <span class="flex items-center gap-1 font-medium">
+                <Clock class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                {{ formatDate(post.created_at) }}
+              </span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              @click="quickApprove(post.id)"
+              :disabled="approving === post.id || rejecting === post.id"
+              class="flex-1 sm:flex-none px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50 transition-all text-sm"
+            >
+              {{ approving === post.id ? '审核中...' : '通过' }}
+            </button>
+            <button
+              @click="quickReject(post.id)"
+              :disabled="approving === post.id || rejecting === post.id"
+              class="flex-1 sm:flex-none px-4 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 disabled:opacity-50 transition-all text-sm"
+            >
+              {{ rejecting === post.id ? '处理中...' : '拒绝' }}
+            </button>
+            <NuxtLink 
+              :to="`/dashboard/posts/${post.id}/edit`"
+              class="px-4 py-2 border border-gray-300 rounded-xl font-bold hover:bg-gray-50 transition-all text-sm"
+            >
+              查看
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Recent Posts -->
     <div class="bg-white rounded-3xl border border-gray-100 shadow-lg overflow-hidden">
       <div class="p-5 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-[#FF4D94]/5 to-[#7C4DFF]/5">
@@ -231,6 +338,14 @@ useSeoMeta({
               ]">
                 <span :class="['w-1.5 h-1.5 rounded-full', post.status === 'published' ? 'bg-green-500' : 'bg-yellow-500']"></span>
                 {{ post.status === 'published' ? '已发布' : '草稿' }}
+              </span>
+              <span v-if="post.review_status" :class="[
+                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold',
+                post.review_status === 'approved' ? 'bg-green-50 text-green-700 border border-green-200' :
+                post.review_status === 'rejected' ? 'bg-red-50 text-red-700 border border-red-200' :
+                'bg-orange-50 text-orange-700 border border-orange-200'
+              ]">
+                {{ post.review_status === 'approved' ? '✓ 已审核' : post.review_status === 'rejected' ? '✗ 已拒绝' : '⏱ 待审核' }}
               </span>
               <span class="flex items-center gap-1 font-medium">
                 <Eye class="w-3.5 h-3.5 sm:w-4 sm:h-4" />

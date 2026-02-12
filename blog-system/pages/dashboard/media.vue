@@ -6,6 +6,10 @@ definePageMeta({
   layout: 'dashboard'
 })
 
+useSeoMeta({
+  title: '媒体库'
+})
+
 const client = useSupabaseClient()
 const user = useSupabaseUser()
 

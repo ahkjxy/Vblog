@@ -20,7 +20,7 @@ import {
 
 // SEO Meta
 useSeoMeta({
-  title: '更新日志 - 元气银行社区',
+  title: '更新日志',
   description: '查看元气银行系统的最新更新和改进，了解系统的发展历程。'
 })
 

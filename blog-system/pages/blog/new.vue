@@ -235,7 +235,7 @@ const handleSubmit = async () => {
 }
 
 useSeoMeta({
-  title: '发布新主题 - 元气银行社区',
+  title: '发布新主题',
   description: '在元气银行社区发布新的讨论主题，分享您的家庭教育经验和心得。',
 })
 </script>

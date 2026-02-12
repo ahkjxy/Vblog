@@ -82,7 +82,7 @@ if (error.value) {
 // SEO
 if (categoryData.value?.category) {
   useSeoMeta({
-    title: `${categoryData.value.category.name} - 分类`,
+    title: categoryData.value.category.name,
     description: categoryData.value.category.description || `浏览 ${categoryData.value.category.name} 分类下的所有文章`
   })
 }

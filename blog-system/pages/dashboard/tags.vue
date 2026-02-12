@@ -231,7 +231,7 @@ onMounted(() => {
 })
 
 useSeoMeta({
-  title: '标签管理 - Dashboard'
+  title: '标签管理'
 })
 </script>
 

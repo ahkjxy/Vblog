@@ -173,7 +173,7 @@ const handleDelete = async () => {
 }
 
 useSeoMeta({
-  title: '编辑文章 - Dashboard'
+  title: '编辑文章'
 })
 </script>
 

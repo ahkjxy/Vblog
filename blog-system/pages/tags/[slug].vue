@@ -67,7 +67,7 @@ if (error.value) {
 // SEO
 if (tagData.value?.tag) {
   useSeoMeta({
-    title: `#${tagData.value.tag.name} - 标签`,
+    title: `#${tagData.value.tag.name}`,
     description: `浏览标签 #${tagData.value.tag.name} 下的所有文章`
   })
 }

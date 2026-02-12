@@ -29,10 +29,11 @@ const { data: pageData, error } = await useAsyncData(
       `)
       .eq('slug', slug)
       .eq('status', 'published')
+      .eq('review_status', 'approved')
       .maybeSingle()
     
     if (error || !data) {
-      throw createError({ statusCode: 404, statusMessage: '文章未找到' })
+      throw createError({ statusCode: 404, statusMessage: '文章未找到或正在审核中' })
     }
     
     // 增加浏览量
@@ -49,12 +50,14 @@ const { data: pageData, error } = await useAsyncData(
       client.from('posts')
         .select('id, title, slug, view_count')
         .eq('status', 'published')
+        .eq('review_status', 'approved')
         .neq('id', data.id)
         .order('view_count', { ascending: false })
         .limit(5),
       client.from('posts')
         .select('id, title, slug, published_at')
         .eq('status', 'published')
+        .eq('review_status', 'approved')
         .neq('id', data.id)
         .order('published_at', { ascending: false })
         .limit(5)

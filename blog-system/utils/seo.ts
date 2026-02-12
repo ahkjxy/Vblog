@@ -40,7 +40,8 @@ export function generateSeoMeta(config: SeoConfig) {
     tags = []
   } = config
 
-  const fullTitle = title ? `${title} - ${siteName}` : siteName
+  // 不在这里添加 siteName，让 nuxt.config.ts 的 titleTemplate 处理
+  const fullTitle = title || siteName
   const fullUrl = url.startsWith('http') ? url : `${siteUrl}${url}`
   const fullImage = image.startsWith('http') ? image : `${siteUrl}${image}`
 

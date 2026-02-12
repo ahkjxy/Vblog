@@ -6,6 +6,10 @@ definePageMeta({
   layout: 'dashboard'
 })
 
+useSeoMeta({
+  title: '系统设置'
+})
+
 type SettingsTab = 'general' | 'seo' | 'comments'
 
 const activeTab = ref<SettingsTab>('general')

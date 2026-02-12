@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Update SW Cache Version",
+  "description": "Automatically updates the CACHE_VERSION in the service worker file to the current timestamp when sw.js is edited，不能是动态的 要每次填写一个当前时间的固定值",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Update the CACHE_VERSION constant in blog-system/public/sw.js to use the current timestamp (Date.now()) instead of a static version number. This ensures proper cache invalidation on each deployment."
+  },
+  "workspaceFolderName": "Vblog",
+  "shortName": "update-sw-cache-version"
+}

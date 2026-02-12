@@ -43,7 +43,7 @@ const { data: categories, pending } = await useAsyncData('categories', async () 
 })
 
 useSeoMeta({
-  title: '文章分类 - 元气银行社区',
+  title: '文章分类',
   description: '浏览不同主题的文章内容'
 })
 

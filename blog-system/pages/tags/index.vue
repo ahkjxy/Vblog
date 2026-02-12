@@ -28,7 +28,7 @@ const { data: tags, pending } = await useAsyncData('tags', async () => {
 })
 
 useSeoMeta({
-  title: '文章标签 - 元气银行社区',
+  title: '文章标签',
   description: '通过标签快速找到相关主题的文章'
 })
 

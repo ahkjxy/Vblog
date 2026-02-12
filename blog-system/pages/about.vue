@@ -2,7 +2,7 @@
 import { Heart, Sparkles, Zap, Shield, Rocket } from 'lucide-vue-next'
 
 useSeoMeta({
-  title: '关于我们 | 元气银行',
+  title: '关于我们',
   description: '了解元气银行的初衷、愿景和我们的团队。'
 })
 </script>
