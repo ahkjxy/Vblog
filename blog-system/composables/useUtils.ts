@@ -7,6 +7,20 @@ export const useUtils = () => {
     return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
   }
 
+  const formatRelativeDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    
+    if (days === 0) return '今天'
+    if (days === 1) return '昨天'
+    if (days < 7) return `${days}天前`
+    if (days < 30) return `${Math.floor(days / 7)}周前`
+    if (days < 365) return `${Math.floor(days / 30)}个月前`
+    return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+  }
+
   const formatAuthorName = (profile: any) => {
     if (!profile) return '匿名用户'
     const name = Array.isArray(profile) ? profile[0]?.name : profile?.name
@@ -45,6 +59,7 @@ export const useUtils = () => {
 
   return {
     formatDate,
+    formatRelativeDate,
     formatAuthorName,
     generateSlug,
   }

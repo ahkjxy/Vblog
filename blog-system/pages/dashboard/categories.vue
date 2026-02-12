@@ -271,7 +271,8 @@ useSeoMeta({
     </div>
 
     <!-- Table -->
-    <div v-else class="bg-white rounded-2xl border border-gray-100 shadow-lg overflow-hidden">
+    <!-- 桌面端表格 -->
+    <div v-else class="hidden md:block bg-white rounded-2xl border border-gray-100 shadow-lg overflow-hidden">
       <table class="w-full">
         <thead class="bg-gradient-to-r from-[#FF4D94]/5 to-[#7C4DFF]/5 border-b border-gray-100">
           <tr>
@@ -307,6 +308,38 @@ useSeoMeta({
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- 移动端卡片列表 -->
+    <div v-if="!loading && categories.length > 0" class="md:hidden space-y-3">
+      <div
+        v-for="category in categories"
+        :key="category.id"
+        class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"
+      >
+        <div class="mb-3">
+          <h3 class="font-black text-base text-gray-900 mb-1">{{ category.name }}</h3>
+          <p class="text-xs text-gray-500 font-mono">{{ category.slug }}</p>
+        </div>
+        <p v-if="category.description" class="text-sm text-gray-600 mb-3 pb-3 border-b border-gray-100">
+          {{ category.description }}
+        </p>
+        <div class="flex gap-2">
+          <button
+            @click="openEditModal(category)"
+            class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-600 rounded-xl font-bold text-sm transition-all hover:bg-blue-100"
+          >
+            <Edit2 class="w-4 h-4" />
+            编辑
+          </button>
+          <button
+            @click="openDeleteDialog(category)"
+            class="px-4 py-2.5 bg-red-50 text-red-600 rounded-xl font-bold text-sm transition-all hover:bg-red-100"
+          >
+            <Trash2 class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Create Modal -->

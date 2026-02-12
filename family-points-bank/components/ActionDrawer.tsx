@@ -123,7 +123,7 @@ export function ActionDrawer({
               )}
 
               <a
-                href="https://blog.wangliaoyuan.com"
+                href="https://blog.familybank.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-500/10 dark:to-indigo-500/10 hover:from-purple-100 hover:to-indigo-100 dark:hover:from-purple-500/20 dark:hover:to-indigo-500/20 transition-all text-left group border border-purple-100/50 dark:border-purple-500/20 hover:scale-[1.02] active:scale-[0.98]"

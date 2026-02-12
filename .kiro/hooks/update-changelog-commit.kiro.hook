@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "更新日志自动提交",
+  "description": "每次文件更新后，自动更新 CHANGELOG.md 的内容，更新项目页面更新日志的内容，并提交到 git",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "CHANGELOG.md 已更新。请执行以下操作：1) 检查更新内容是否合理 2) 使用 git add CHANGELOG.md 添加文件 3) 使用 git commit -m \"docs: update changelog\" 提交更改"
+  },
+  "workspaceFolderName": "Vblog",
+  "shortName": "update-changelog-commit"
+}

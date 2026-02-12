@@ -13,7 +13,7 @@ import {
 } from 'lucide-vue-next'
 
 useSeoMeta({
-  title: '服务协议 | 元气银行博客',
+  title: '服务协议 | 元气银行',
   description: '阅读元气银行的服务协议，了解您在使用我们服务时的权利和义务。'
 })
 
@@ -139,7 +139,7 @@ const sections = [
                </p>
              </div>
              <div class="flex flex-col gap-4">
-               <a href="mailto:contact@familybank.chat" class="inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-[#FF4D94] rounded-2xl font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all">
+               <a href="mailto:ahkjxy@qq.com" class="inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-[#FF4D94] rounded-2xl font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all">
                  <Mail class="w-5 h-5" />
                  在线咨询
                </a>

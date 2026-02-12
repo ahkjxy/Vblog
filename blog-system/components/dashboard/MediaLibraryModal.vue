@@ -17,7 +17,7 @@ interface MediaFile {
 }
 
 const client = useSupabaseClient()
-const { user } = useAuth()
+const user = useSupabaseUser()
 
 const files = ref<MediaFile[]>([])
 const loading = ref(false)

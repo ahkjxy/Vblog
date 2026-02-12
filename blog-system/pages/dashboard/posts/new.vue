@@ -23,16 +23,17 @@ const selectedTags = ref<string[]>([])
 const saving = ref(false)
 const error = ref<string | null>(null)
 
-// 获取分类和标签
+// 获取分类和标签（使用公共数据 Composable）
+const commonData = useCommonData()
 const { data: taxonomies } = await useAsyncData('new-post-taxonomies', async () => {
-  const [categoriesRes, tagsRes] = await Promise.all([
-    client.from('categories').select('*').order('name'),
-    client.from('tags').select('*').order('name')
+  const [categories, tags] = await Promise.all([
+    commonData.fetchCategories(),
+    commonData.fetchTags()
   ])
 
   return {
-    categories: categoriesRes.data || [],
-    tags: tagsRes.data || []
+    categories,
+    tags
   }
 })
 

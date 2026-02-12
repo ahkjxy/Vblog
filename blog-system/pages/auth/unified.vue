@@ -171,17 +171,17 @@ const handleSendReset = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen w-full flex items-center justify-center bg-[#FDFCFD] sm:px-6 py-12 relative overflow-hidden">
+  <div class="min-h-screen w-full flex items-center justify-center sm:px-6 py-12 relative overflow-hidden" style="background: var(--app-bg);">
     <!-- Abstract Background Orbs -->
     <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#FF4D94]/10 blur-[120px] rounded-full animate-pulse"></div>
     <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#7C4DFF]/10 blur-[100px] rounded-full animate-pulse duration-[4000ms]"></div>
     
-    <div class="w-full sm:max-w-[420px] bg-white sm:bg-white/80 backdrop-blur-3xl sm:rounded-[48px] sm:shadow-[0_32px_100px_-24px_rgba(0,0,0,0.12)] sm:border border-white/50 p-6 sm:p-10 space-y-8 animate-in fade-in zoom-in-95 duration-700 relative z-10">
+    <div class="w-full sm:max-w-[420px] vibrant-card sm:rounded-[48px] sm:shadow-[0_32px_100px_-24px_rgba(0,0,0,0.12)] p-6 sm:p-10 space-y-8 animate-in duration-700 relative z-10">
       <div class="space-y-3 text-center">
         <NuxtLink to="/" class="inline-block">
           <div class="relative inline-block">
             <div class="absolute -inset-4 bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] opacity-30 blur-2xl rounded-full animate-pulse" />
-            <div class="w-16 h-16 bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] rounded-[24px] flex items-center justify-center relative shadow-2xl shadow-[#FF4D94]/30 rotate-3 hover:rotate-0 transition-all duration-500 group overflow-hidden">
+            <div class="w-16 h-16 bg-gradient-to-br from-[#FF4D94] via-[#FF7AB8] to-[#7C4DFF] rounded-[24px] flex items-center justify-center relative shadow-[0_8px_20px_-6px_rgba(255,77,148,0.5)] rotate-3 hover:rotate-0 transition-all duration-500 group overflow-hidden hover:scale-110">
               <div class="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               <Logo class="w-8 h-8 text-white group-hover:scale-110 transition-transform drop-shadow-md" />
             </div>
@@ -189,13 +189,13 @@ const handleSendReset = async () => {
         </NuxtLink>
         
         <div class="mt-2">
-          <p class="text-[10px] font-black uppercase tracking-[0.4em] text-[#FF4D94]">
+          <p class="text-[10px] font-black font-display uppercase tracking-[0.4em] text-[#FF4D94]">
             {{ redirectTarget === 'family' ? '家 庭 系 统' : '元 气 银 行' }}
           </p>
-          <h2 class="text-3xl font-black text-gray-900 tracking-tighter mt-1">
+          <h2 class="text-3xl font-black font-display text-gray-900 dark:text-white tracking-tighter mt-1">
             {{ redirectTarget === 'family' ? '欢迎来到元气银行' : '统一认证中心' }}
           </h2>
-          <p class="text-[11px] font-bold text-gray-400 leading-snug mt-2 max-w-[240px] mx-auto opacity-80">
+          <p class="text-[11px] font-bold text-gray-400 dark:text-gray-500 leading-snug mt-2 max-w-[240px] mx-auto opacity-80">
             {{ redirectTarget === 'family' 
               ? '管理家庭积分，记录成长点滴' 
               : '一个账号，通行所有服务' }}

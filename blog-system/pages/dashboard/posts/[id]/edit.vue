@@ -40,10 +40,11 @@ const { data: editData } = await useAsyncData(`edit-post-${postId}`, async () =>
     throw createError({ statusCode: 403, statusMessage: '您没有权限编辑此文章' })
   }
 
-  // 3. 获取分类和标签
-  const [categoriesRes, tagsRes] = await Promise.all([
-    client.from('categories').select('*').order('name'),
-    client.from('tags').select('*').order('name')
+  // 3. 获取分类和标签（使用公共数据 Composable）
+  const commonData = useCommonData()
+  const [categories, tags] = await Promise.all([
+    commonData.fetchCategories(),
+    commonData.fetchTags()
   ])
 
   // 4. 获取文章的分类和标签
@@ -54,8 +55,8 @@ const { data: editData } = await useAsyncData(`edit-post-${postId}`, async () =>
 
   return {
     post,
-    categories: categoriesRes.data || [],
-    tags: tagsRes.data || [],
+    categories,
+    tags,
     selectedCategories: postCatsRes.data?.map((c: any) => c.category_id) || [],
     selectedTags: postTagsRes.data?.map((t: any) => t.tag_id) || [],
     isSuperAdmin
@@ -177,57 +178,63 @@ useSeoMeta({
 </script>
 
 <template>
-  <div v-if="editData" class="max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold mb-8">编辑文章</h1>
+  <div v-if="editData" class="max-w-5xl mx-auto px-3 sm:px-4 lg:px-0">
+    <!-- Header -->
+    <div class="mb-6 sm:mb-8">
+      <h1 class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] bg-clip-text text-transparent mb-2">
+        编辑文章
+      </h1>
+      <p class="text-sm text-gray-600">修改文章内容并保存</p>
+    </div>
 
-    <form @submit.prevent="handleSubmit" class="space-y-6">
+    <form @submit.prevent="handleSubmit" class="space-y-4 sm:space-y-6">
       <!-- Error Message -->
-      <div v-if="error" class="bg-red-50 text-red-600 p-4 rounded-lg">
+      <div v-if="error" class="bg-red-50 border border-red-200 text-red-600 p-3 sm:p-4 rounded-xl text-sm">
         {{ error }}
       </div>
 
       <!-- Title -->
       <div>
-        <label for="title" class="block text-sm font-medium mb-2">
-          标题
+        <label for="title" class="block text-sm font-bold text-gray-700 mb-2">
+          标题 <span class="text-red-500">*</span>
         </label>
         <input
           id="title"
           type="text"
           required
           v-model="form.title"
-          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+          class="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF4D94]/20 focus:border-[#FF4D94] transition-all text-sm sm:text-base font-medium"
           placeholder="输入文章标题"
         />
       </div>
 
       <!-- Slug -->
       <div>
-        <label for="slug" class="block text-sm font-medium mb-2">
-          URL 别名 (Slug)
+        <label for="slug" class="block text-sm font-bold text-gray-700 mb-2">
+          URL 别名 (Slug) <span class="text-red-500">*</span>
         </label>
         <input
           id="slug"
           type="text"
           required
           v-model="form.slug"
-          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+          class="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF4D94]/20 focus:border-[#FF4D94] transition-all font-mono text-sm"
           placeholder="文章 URL 别名"
         />
-        <p class="text-xs text-gray-500 mt-1">
+        <p class="text-xs text-gray-500 mt-1.5">
           文章 URL 将是: /blog/{{ form.slug || 'your-slug' }}
         </p>
       </div>
 
       <!-- Excerpt -->
       <div>
-        <label for="excerpt" class="block text-sm font-medium mb-2">
+        <label for="excerpt" class="block text-sm font-bold text-gray-700 mb-2">
           摘要
         </label>
         <textarea
           id="excerpt"
           v-model="form.excerpt"
-          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+          class="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF4D94]/20 focus:border-[#FF4D94] transition-all resize-none text-sm sm:text-base font-medium"
           placeholder="输入文章摘要"
           rows="3"
         />
@@ -235,18 +242,18 @@ useSeoMeta({
 
       <!-- Categories -->
       <div v-if="editData.categories.length > 0">
-        <label class="block text-sm font-medium mb-2">
-          分类 <span v-if="selectedCategories.length === 0" class="text-gray-400">(未选择将归入"未分类")</span>
+        <label class="block text-sm font-bold text-gray-700 mb-2">
+          分类 <span v-if="selectedCategories.length === 0" class="text-gray-400 font-normal">(未选择将归入"未分类")</span>
         </label>
         <div class="flex flex-wrap gap-2">
           <label
             v-for="category in editData.categories"
             :key="category.id"
             :class="[
-              'px-4 py-2 rounded-lg border-2 cursor-pointer transition-all',
+              'px-3 sm:px-4 py-2 rounded-xl border-2 cursor-pointer transition-all text-sm font-bold',
               selectedCategories.includes(category.id)
-                ? 'border-purple-500 bg-purple-50 text-purple-700'
-                : 'border-gray-200 hover:border-purple-300'
+                ? 'border-[#FF4D94] bg-[#FF4D94]/10 text-[#FF4D94]'
+                : 'border-gray-200 hover:border-[#FF4D94]/30 text-gray-700'
             ]"
           >
             <input

@@ -12,12 +12,12 @@ const activeTab = ref<SettingsTab>('general')
 const isSaving = ref(false)
 
 // General Settings
-const siteTitle = ref('元气银行博客')
+const siteTitle = ref('元气银行')
 const siteDescription = ref('分享技术与生活')
 const siteUrl = ref('https://example.com')
 
 // SEO Settings
-const metaTitle = ref('元气银行博客')
+const metaTitle = ref('元气银行')
 const metaDescription = ref('分享技术与生活的博客平台')
 const metaKeywords = ref('博客,技术,生活')
 

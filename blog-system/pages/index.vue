@@ -12,9 +12,10 @@ const formatDate = (dateString: string) => {
 // 获取首页数据
 const { data: homeData, pending } = await useAsyncData('home-data', () => useHomeData())
 
+// SEO 优化
 useSeoMeta({
-  title: '元气银行社区',
-  description: '家长们分享家庭教育经验、讨论积分管理技巧、交流习惯养成心得的互动社区平台。'
+  title: '首页 - 元气银行社区',
+  description: '家长们分享家庭教育经验、讨论积分管理技巧、交流习惯养成心得的互动社区平台。加入元气银行社区，与数千家长一起探讨科学育儿方法。',
 })
 </script>
 
@@ -37,14 +38,14 @@ useSeoMeta({
           <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-white/30 rounded-full blur-[100px] animate-pulse" style="animation-delay: 2s"></div>
         </div>
         
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24 lg:py-32 relative z-10">
+        <div class="container mx-auto px-3 sm:px-4 lg:px-8 py-12 sm:py-16 md:py-20 lg:py-32 relative z-10">
           <div class="max-w-5xl mx-auto text-center">
             <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-sm font-bold text-white mb-8 border border-white/30">
               <Sparkles class="w-4 h-4" />
               <span>元气银行社区</span>
             </div>
             
-            <h1 class="text-5xl md:text-7xl font-black mb-6 leading-tight text-white tracking-tight">
+            <h1 class="hero-title text-4xl sm:text-5xl md:text-7xl font-black font-display mb-4 sm:mb-6 leading-tight text-white tracking-tight">
               家庭教育经验
               <br />
               <span class="bg-gradient-to-r from-yellow-200 to-pink-200 bg-clip-text text-transparent">
@@ -53,40 +54,40 @@ useSeoMeta({
             </h1>
 
             
-            <p class="text-xl md:text-2xl text-white/90 mb-12 leading-relaxed max-w-3xl mx-auto">
+            <p class="hero-subtitle text-base sm:text-xl md:text-2xl text-white/90 mb-8 sm:mb-12 leading-relaxed max-w-3xl mx-auto px-4">
               家长们分享家庭教育经验、交流习惯养成心得的互动平台
             </p>
             
-            <div class="flex flex-wrap gap-4 justify-center mb-16">
-              <NuxtLink to="/blog" class="group inline-flex items-center gap-3 px-8 py-4 bg-white text-[#FF4D94] rounded-2xl hover:shadow-2xl transition-all font-black text-lg hover:scale-105 active:scale-95">
-                <BookOpen class="w-5 h-5" />
+            <div class="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 justify-center mb-12 sm:mb-16 px-4">
+              <NuxtLink to="/blog" class="mobile-btn group inline-flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-white text-[#FF4D94] rounded-2xl hover:shadow-2xl transition-all font-black text-base sm:text-lg hover:scale-105 active:scale-95 touch-feedback">
+                <BookOpen class="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>浏览主题</span>
-                <ArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight class="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
               </NuxtLink>
-              <a href="https://www.familybank.chat" target="_blank" rel="noopener noreferrer" class="group inline-flex items-center gap-3 px-8 py-4 bg-white/10 backdrop-blur-md text-white rounded-2xl hover:bg-white/20 transition-all font-black text-lg border-2 border-white/30 hover:border-white/50">
-                <Zap class="w-5 h-5" />
+              <a href="https://www.familybank.chat" target="_blank" rel="noopener noreferrer" class="mobile-btn group inline-flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-md text-white rounded-2xl hover:bg-white/20 transition-all font-black text-base sm:text-lg border-2 border-white/30 hover:border-white/50 touch-feedback">
+                <Zap class="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>立即体验</span>
-                <ArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight class="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
               </a>
             </div>
             
             <!-- Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-              <div class="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 hover:bg-white/15 transition-all group hover:scale-105">
-                <div class="text-4xl md:text-5xl font-black mb-2 text-white">{{ homeData.stats.totalPosts }}</div>
-                <div class="text-sm font-bold text-white/80 uppercase tracking-wider">讨论主题</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto px-4">
+              <div class="mobile-card-spacing bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-white/20 hover:bg-white/15 transition-all group hover:scale-105 touch-feedback">
+                <div class="stat-number text-3xl sm:text-4xl md:text-5xl font-black mb-1 sm:mb-2 text-white">{{ homeData.stats.totalPosts }}</div>
+                <div class="stat-label text-xs sm:text-sm font-bold text-white/80 uppercase tracking-wider">讨论主题</div>
               </div>
-              <div class="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 hover:bg-white/15 transition-all group hover:scale-105">
-                <div class="text-4xl md:text-5xl font-black mb-2 text-white">{{ homeData.stats.totalUsers }}</div>
-                <div class="text-sm font-bold text-white/80 uppercase tracking-wider">社区成员</div>
+              <div class="mobile-card-spacing bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-white/20 hover:bg-white/15 transition-all group hover:scale-105 touch-feedback">
+                <div class="stat-number text-3xl sm:text-4xl md:text-5xl font-black mb-1 sm:mb-2 text-white">{{ homeData.stats.totalUsers }}</div>
+                <div class="stat-label text-xs sm:text-sm font-bold text-white/80 uppercase tracking-wider">社区成员</div>
               </div>
-              <div class="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 hover:bg-white/15 transition-all group hover:scale-105">
-                <div class="text-4xl md:text-5xl font-black mb-2 text-white">{{ homeData.stats.totalComments }}</div>
-                <div class="text-sm font-bold text-white/80 uppercase tracking-wider">评论回复</div>
+              <div class="mobile-card-spacing bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-white/20 hover:bg-white/15 transition-all group hover:scale-105 touch-feedback">
+                <div class="stat-number text-3xl sm:text-4xl md:text-5xl font-black mb-1 sm:mb-2 text-white">{{ homeData.stats.totalComments }}</div>
+                <div class="stat-label text-xs sm:text-sm font-bold text-white/80 uppercase tracking-wider">评论回复</div>
               </div>
-              <div class="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 hover:bg-white/15 transition-all group hover:scale-105">
-                <div class="text-4xl md:text-5xl font-black mb-2 text-white">{{ homeData.stats.totalCategories }}</div>
-                <div class="text-sm font-bold text-white/80 uppercase tracking-wider">讨论板块</div>
+              <div class="mobile-card-spacing bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-white/20 hover:bg-white/15 transition-all group hover:scale-105 touch-feedback">
+                <div class="stat-number text-3xl sm:text-4xl md:text-5xl font-black mb-1 sm:mb-2 text-white">{{ homeData.stats.totalCategories }}</div>
+                <div class="stat-label text-xs sm:text-sm font-bold text-white/80 uppercase tracking-wider">讨论板块</div>
               </div>
             </div>
           </div>
@@ -94,9 +95,9 @@ useSeoMeta({
       </div>
 
       <!-- Main Content -->
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
+      <div class="container mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8 md:py-12 lg:py-16">
         <div class="max-w-7xl mx-auto">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
             <!-- Left Column - Main Content -->
             <div class="lg:col-span-8 space-y-6 lg:space-y-8">
               <!-- Featured Posts Section -->
@@ -450,6 +451,12 @@ useSeoMeta({
                     </div>
                   </NuxtLink>
                 </div>
+              </div>
+              
+              <!-- Google Ad -->
+              <div class="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+                <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 text-center">广告</div>
+                <BannerAd />
               </div>
               
               <!-- Recent Posts -->

@@ -11,25 +11,12 @@
     <!-- 全局组件，如弹窗、加载条等可以放在这里 -->
     <div id="modal-container"></div>
     <CustomerSupport />
+    <BackToTop />
   </div>
 </template>
 
 <script setup lang="ts">
-const { user, profile, fetchProfile } = useAuth()
-
-onMounted(() => {
-  if (user.value) {
-    fetchProfile()
-  }
-})
-
-watch(user, (newUser) => {
-  if (newUser) {
-    fetchProfile()
-  } else {
-    profile.value = null
-  }
-})
+// Layout 不需要额外的逻辑，认证状态由各个组件自己管理
 </script>
 
 <style>

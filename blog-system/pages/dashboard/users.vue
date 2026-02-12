@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Users as UsersIcon, Search, Shield, Trash2, Mail } from 'lucide-vue-next'
+import { Users as UsersIcon, Search, Shield, Trash2, Mail, Copy, Check } from 'lucide-vue-next'
 
 definePageMeta({
   middleware: 'auth',
@@ -8,6 +8,13 @@ definePageMeta({
 
 const client = useSupabaseClient()
 const user = useSupabaseUser()
+
+// 复制状态
+const copiedFamilyId = ref<string | null>(null)
+
+// 分页状态
+const currentPage = ref(1)
+const itemsPerPage = 3
 
 interface User {
   id: string
@@ -145,6 +152,32 @@ const groupedByFamily = computed(() => {
   })
 })
 
+// 分页后的家庭组
+const paginatedGroups = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return groupedByFamily.value.slice(start, end)
+})
+
+// 总页数
+const totalPages = computed(() => {
+  return Math.ceil(groupedByFamily.value.length / itemsPerPage)
+})
+
+// 切换页码
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    // 滚动到顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
+// 搜索时重置页码
+watch(searchQuery, () => {
+  currentPage.value = 1
+})
+
 // 打开角色更改对话框
 const openRoleDialog = (u: User) => {
   selectedUser.value = u
@@ -247,9 +280,23 @@ const formatDate = (dateString: string) => {
   })
 }
 
+// 复制家庭 ID
+const copyFamilyId = async (familyId: string) => {
+  try {
+    await navigator.clipboard.writeText(familyId)
+    copiedFamilyId.value = familyId
+    setTimeout(() => {
+      copiedFamilyId.value = null
+    }, 2000)
+  } catch (err) {
+    console.error('复制失败:', err)
+  }
+}
+
 onMounted(() => {
   loadUsers()
 })
+
 </script>
 
 <template>
@@ -358,47 +405,96 @@ onMounted(() => {
         <p class="text-gray-600">{{ searchQuery ? '尝试调整搜索条件' : '系统中还没有用户' }}</p>
       </div>
 
-      <div v-else class="space-y-6">
-        <div
-          v-for="group in groupedByFamily"
-          :key="group.familyId"
-          class="bg-white rounded-2xl border border-gray-100 overflow-hidden"
-        >
-          <!-- Family Header -->
-          <div
-            :class="[
-              'px-6 py-4 border-b flex items-center justify-between',
-              group.isSuperAdmin 
-                ? 'bg-gradient-to-r from-purple-50 to-pink-50' 
-                : 'bg-gray-50'
-            ]"
-          >
-            <div class="flex items-center gap-3">
-              <div
-                :class="[
-                  'w-10 h-10 rounded-full flex items-center justify-center font-bold text-white',
-                  group.isSuperAdmin
-                    ? 'bg-gradient-to-br from-purple-600 to-pink-600'
-                    : 'bg-gradient-to-br from-blue-500 to-cyan-500'
-                ]"
-              >
-                {{ group.familyName.charAt(0) }}
-              </div>
-              <div>
-                <h3 class="font-bold text-lg text-gray-900">{{ group.familyName }}</h3>
-                <p class="text-sm text-gray-500">{{ group.users.length }} 位成员</p>
-              </div>
-              <span
-                v-if="group.isSuperAdmin"
-                class="ml-2 px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200"
-              >
-                ⭐ 超级管理员家庭
-              </span>
-            </div>
-          </div>
+      <!-- 家庭列表 -->
+      <div v-else>
+        <!-- 调试信息 -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-sm">
+          <p class="text-blue-800">
+            📊 调试信息: 共 {{ groupedByFamily.length }} 个家庭 | 
+            当前第 {{ currentPage }} 页 / 共 {{ totalPages }} 页 | 
+            每页 {{ itemsPerPage }} 个 | 
+            当前显示 {{ paginatedGroups.length }} 个家庭
+          </p>
+        </div>
 
-          <!-- Users Table -->
-          <div class="overflow-x-auto">
+        <!-- 家庭卡片列表 -->
+        <div class="space-y-6">
+          <div
+            v-for="group in paginatedGroups"
+            :key="group.familyId"
+            class="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden shadow-sm"
+          >
+            <!-- 家庭头部 -->
+            <div
+              :class="[
+                'px-6 py-5 border-b-2',
+                group.isSuperAdmin 
+                  ? 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200' 
+                  : 'bg-gray-50 border-gray-200'
+              ]"
+            >
+              <div class="flex items-start gap-4">
+                <!-- 家庭图标 -->
+                <div
+                  :class="[
+                    'w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white text-xl flex-shrink-0 shadow-md',
+                    group.isSuperAdmin
+                      ? 'bg-gradient-to-br from-purple-600 to-pink-600'
+                      : 'bg-gradient-to-br from-blue-500 to-cyan-500'
+                  ]"
+                >
+                  {{ group.familyName.charAt(0) }}
+                </div>
+
+                <!-- 家庭信息 -->
+                <div class="flex-1 min-w-0">
+                  <!-- 家庭名称和标签 -->
+                  <div class="flex items-center gap-3 mb-2">
+                    <h3 class="font-bold text-xl text-gray-900">{{ group.familyName }}</h3>
+                    <span
+                      v-if="group.isSuperAdmin"
+                      class="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200"
+                    >
+                      ⭐ 超级管理员家庭
+                    </span>
+                  </div>
+
+                  <!-- 成员数和家庭 ID -->
+                  <div class="flex flex-wrap items-center gap-3">
+                    <span class="text-sm text-gray-600 font-medium">
+                      👥 {{ group.users.length }} 位成员
+                    </span>
+                    
+                    <span class="text-gray-300">•</span>
+                    
+                    <!-- 家庭 ID 显示区域 -->
+                    <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-1.5 border-2 border-gray-300">
+                      <span class="text-xs text-gray-500 font-semibold">家庭ID:</span>
+                      <code class="text-sm font-mono text-gray-800 font-bold">
+                        {{ group.familyId === 'no-family' ? '未分配' : group.familyId.slice(0, 12) + '...' }}
+                      </code>
+                      <button
+                        v-if="group.familyId !== 'no-family'"
+                        @click="copyFamilyId(group.familyId)"
+                        :class="[
+                          'p-1.5 rounded-md transition-all',
+                          copiedFamilyId === group.familyId 
+                            ? 'bg-green-100 text-green-600' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ]"
+                        :title="copiedFamilyId === group.familyId ? '✓ 已复制！' : '点击复制完整 ID'"
+                      >
+                        <Check v-if="copiedFamilyId === group.familyId" class="w-4 h-4" />
+                        <Copy v-else class="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="overflow-x-auto">
             <table class="w-full">
               <thead class="bg-gray-50/50 border-b">
                 <tr>
@@ -534,6 +630,67 @@ onMounted(() => {
                 </tr>
               </tbody>
             </table>
+          </div>
+          </div>
+        </div>
+
+        <!-- 分页组件 - 始终显示 -->
+        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border-2 border-purple-200 p-5 mt-6">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <!-- 统计信息 -->
+            <div class="text-sm font-semibold text-gray-700">
+              📄 显示第 <span class="text-purple-600">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> - 
+              <span class="text-purple-600">{{ Math.min(currentPage * itemsPerPage, groupedByFamily.length) }}</span> 个家庭，
+              共 <span class="text-purple-600">{{ groupedByFamily.length }}</span> 个
+              <span v-if="totalPages > 1" class="text-gray-500 ml-2">
+                (第 {{ currentPage }}/{{ totalPages }} 页)
+              </span>
+            </div>
+            
+            <!-- 分页按钮 -->
+            <div v-if="totalPages > 1" class="flex items-center gap-2">
+              <button
+                @click="goToPage(currentPage - 1)"
+                :disabled="currentPage === 1"
+                :class="[
+                  'px-4 py-2 rounded-xl text-sm font-bold transition-all',
+                  currentPage === 1
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-purple-100 hover:text-purple-700 shadow-sm'
+                ]"
+              >
+                ← 上一页
+              </button>
+              
+              <div class="flex items-center gap-1">
+                <button
+                  v-for="page in totalPages"
+                  :key="page"
+                  @click="goToPage(page)"
+                  :class="[
+                    'w-10 h-10 rounded-xl text-sm font-bold transition-all',
+                    currentPage === page
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-110'
+                      : 'bg-white text-gray-700 hover:bg-purple-100 hover:text-purple-700'
+                  ]"
+                >
+                  {{ page }}
+                </button>
+              </div>
+              
+              <button
+                @click="goToPage(currentPage + 1)"
+                :disabled="currentPage === totalPages"
+                :class="[
+                  'px-4 py-2 rounded-xl text-sm font-bold transition-all',
+                  currentPage === totalPages
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-purple-100 hover:text-purple-700 shadow-sm'
+                ]"
+              >
+                下一页 →
+              </button>
+            </div>
           </div>
         </div>
       </div>

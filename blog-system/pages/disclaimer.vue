@@ -12,7 +12,7 @@ import {
 } from 'lucide-vue-next'
 
 useSeoMeta({
-  title: '免责声明 | 元气银行博客',
+  title: '免责声明 | 元气银行',
   description: '阅读元气银行的免责声明，了解我们平台内容的局限性。'
 })
 
@@ -22,7 +22,7 @@ const disclaimers = [
     icon: Info,
     from: 'from-blue-500',
     to: 'to-indigo-500',
-    content: '元气银行博客提供的所有内容仅供参考和个人展示。',
+    content: '元气银行提供的所有内容仅供参考和个人展示。',
     items: ['内容具有主观性，因人而异', '不构成权威性的教育指南', '平台致力于分享真实体验，但不保证所有案例的普适性']
   },
   {
@@ -118,7 +118,7 @@ const disclaimers = [
             我们致力于构建一个透明、互助、可靠的家庭社区。如果您发现本站内容有任何法律合规性问题或事实错误，请通过以下渠道告知我们。
           </p>
           <div class="flex flex-wrap justify-center gap-4 pt-4">
-             <a href="mailto:contact@familybank.chat" class="px-10 py-5 bg-gradient-to-r from-brand-pink to-brand-purple text-white rounded-2xl font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+             <a href="mailto:ahkjxy@qq.com" class="px-10 py-5 bg-gradient-to-r from-brand-pink to-brand-purple text-white rounded-2xl font-black text-lg shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
                <Mail class="w-6 h-6" /> 联系法务/反馈
              </a>
              <NuxtLink to="/docs" class="px-10 py-5 bg-gray-50 text-gray-500 rounded-2xl font-black text-lg hover:bg-gray-100 transition-all flex items-center gap-3 border border-gray-100">

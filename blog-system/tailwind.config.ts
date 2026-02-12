@@ -42,4 +42,23 @@ export default {
     },
   },
   plugins: [],
+  // 性能优化
+  future: {
+    hoverOnlyWhenSupported: true, // 只在支持 hover 的设备上启用 hover 效果
+  },
+  // 生产环境优化
+  ...(process.env.NODE_ENV === 'production' && {
+    // 移除未使用的样式
+    purge: {
+      enabled: true,
+      content: [
+        "./components/**/*.{js,vue,ts}",
+        "./layouts/**/*.vue",
+        "./pages/**/*.vue",
+        "./plugins/**/*.{js,ts}",
+        "./app.vue",
+        "./error.vue",
+      ],
+    },
+  }),
 }

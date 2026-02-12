@@ -2,7 +2,7 @@
 import { Send, MessageSquare, Github, Twitter, Calendar } from 'lucide-vue-next'
 
 useSeoMeta({
-  title: '联系我们 | 元气银行博客',
+  title: '联系我们 | 元气银行',
   description: '如果您有任何疑问、建议或需要支持，请通过以下方式联系我们。'
 })
 

@@ -2,7 +2,7 @@
 import { Shield, Eye, Lock, Share2, Cookie, UserCheck, Baby, RefreshCw, Mail } from 'lucide-vue-next'
 
 useSeoMeta({
-  title: '隐私政策 | 元气银行博客',
+  title: '隐私政策 | 元气银行',
   description: '了解元气银行如何收集、使用和保护您的个人信息。'
 })
 
@@ -24,7 +24,20 @@ const sections = [
     items: ['提供和维护服务功能', '通知关于我们服务的变更', '收集分析或有价值的信息']
   },
   {
-    title: '3. 数据安全',
+    title: '3. 广告服务',
+    icon: Share2,
+    from: 'from-green-500',
+    to: 'to-emerald-500',
+    content: '本网站使用 Google AdSense 展示广告以维持运营。',
+    items: [
+      'Google 等第三方供应商使用 Cookie 在本网站投放广告',
+      'Google 使用 DART Cookie 根据用户访问记录投放个性化广告',
+      '用户可访问 Google 广告设置页面选择停用个性化广告',
+      '第三方广告商可能收集您的浏览信息用于广告投放'
+    ]
+  },
+  {
+    title: '4. 数据安全',
     icon: Lock,
     from: 'from-purple-600',
     to: 'to-indigo-500',
@@ -32,12 +45,12 @@ const sections = [
     items: ['SSL 加密传输', '身份验证机制', '数据库访问控制']
   },
   {
-    title: '4. 信息共享',
+    title: '5. 信息共享',
     icon: Share2,
     from: 'from-fuchsia-500',
     to: 'to-pink-500',
     content: '我们不会出售您的数据或在未经同意下与第三方共享。',
-    items: ['不向第三方出售数据', '法律要求的必要披露', '服务需要（如邮箱服务商）']
+    items: ['不向第三方出售数据', '法律要求的必要披露', '服务需要（如邮箱服务商、广告服务商）']
   }
 ]
 </script>
@@ -79,7 +92,7 @@ const sections = [
               <Cookie class="w-7 h-7" />
             </div>
             <div class="flex-1">
-              <h2 class="text-2xl font-black mb-4 text-gray-900">5. Cookie 使用</h2>
+              <h2 class="text-2xl font-black mb-4 text-gray-900">6. Cookie 使用</h2>
               <p class="text-gray-600 mb-4 font-medium">我们使用 Cookie 保持登录状态并提升您的体验。</p>
               <div class="flex flex-wrap gap-2">
                 <span v-for="tag in ['保持登录', '偏好设置', '使用分析', '个性化体验']" :key="tag" class="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold uppercase tracking-wider">
@@ -96,12 +109,70 @@ const sections = [
               <Baby class="w-7 h-7" />
             </div>
             <div class="flex-1">
-              <h2 class="text-2xl font-black mb-4 text-gray-900">6. 儿童隐私</h2>
+              <h2 class="text-2xl font-black mb-4 text-gray-900">7. 儿童隐私</h2>
               <p class="text-gray-600 font-medium leading-relaxed">
                 我们的服务面向家庭使用。家长或监护人负责管理儿童账户和数据。
                 我们不会在未经家长同意的情况下收集 13 岁以下儿童的个人信息。
               </p>
             </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm">
+          <div class="flex items-start gap-6">
+            <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-lg text-white">
+              <UserCheck class="w-7 h-7" />
+            </div>
+            <div class="flex-1">
+              <h2 class="text-2xl font-black mb-4 text-gray-900">8. 用户权利</h2>
+              <p class="text-gray-600 mb-4 font-medium leading-relaxed">
+                您对自己的个人信息拥有以下权利：
+              </p>
+              <ul class="space-y-2 text-gray-700">
+                <li class="flex items-start gap-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></div>
+                  <span class="text-sm font-medium">访问和查看您的个人信息</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></div>
+                  <span class="text-sm font-medium">更正不准确的个人信息</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></div>
+                  <span class="text-sm font-medium">要求删除您的个人信息</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></div>
+                  <span class="text-sm font-medium">选择退出个性化广告（访问 <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener" class="text-indigo-600 hover:text-indigo-700 underline">Google 广告设置</a>）</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></div>
+                  <span class="text-sm font-medium">导出您的数据</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-blue-50 rounded-3xl p-6 sm:p-8 border border-blue-100">
+          <h3 class="text-lg font-black text-blue-900 mb-3">关于第三方广告</h3>
+          <p class="text-blue-800 text-sm font-medium leading-relaxed mb-4">
+            本网站使用 Google AdSense 展示广告。Google 及其合作伙伴可能会使用 Cookie 和其他技术来收集信息，
+            以便根据您的兴趣向您展示相关广告。
+          </p>
+          <p class="text-blue-800 text-sm font-medium leading-relaxed mb-4">
+            您可以通过以下方式管理广告偏好：
+          </p>
+          <div class="space-y-2">
+            <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener" class="block text-sm text-blue-600 hover:text-blue-700 underline font-bold">
+              → Google 广告设置
+            </a>
+            <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener" class="block text-sm text-blue-600 hover:text-blue-700 underline font-bold">
+              → Google 广告政策
+            </a>
+            <a href="https://www.aboutads.info/choices/" target="_blank" rel="noopener" class="block text-sm text-blue-600 hover:text-blue-700 underline font-bold">
+              → 数字广告联盟退出页面
+            </a>
           </div>
         </div>
 

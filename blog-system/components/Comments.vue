@@ -181,9 +181,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm mt-12">
+  <div class="vibrant-card mobile-rounded mobile-spacing overflow-hidden mt-8 sm:mt-12">
     <!-- Header -->
-    <div class="px-6 py-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+    <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-50 dark:border-white/5 flex items-center justify-between bg-gray-50/50 dark:bg-white/5">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-pink to-brand-purple flex items-center justify-center text-white shadow-md">
           <MessageCircle class="w-5 h-5" />

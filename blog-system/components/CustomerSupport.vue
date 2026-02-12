@@ -40,7 +40,19 @@ const FAQ_ITEMS = [
 
 const client = useSupabaseClient()
 const user = useSupabaseUser()
-const { profile } = useAuth()
+
+// 获取用户 profile
+const { data: profile } = await useAsyncData('user-profile-support', async () => {
+  if (!user.value) return null
+  
+  const { data } = await client
+    .from('profiles')
+    .select('id, name, family_id')
+    .eq('id', user.value.id)
+    .single()
+  
+  return data
+})
 
 const isOpen = ref(false)
 const messages = ref<Message[]>([

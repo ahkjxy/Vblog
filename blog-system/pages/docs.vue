@@ -2,7 +2,7 @@
 import { Target, Star, ShoppingBag, History, Settings, Sparkles, ArrowRight, BookOpen } from 'lucide-vue-next'
 
 useSeoMeta({
-  title: '帮助文档 | 元气银行博客',
+  title: '帮助文档 | 元气银行',
   description: '详细了解元气银行的功能、使用方法和技术规范。'
 })
 

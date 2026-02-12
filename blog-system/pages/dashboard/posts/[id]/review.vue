@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle, XCircle, Clock, ShieldCheck, User, Calendar } f
 const route = useRoute()
 const router = useRouter()
 const client = useSupabaseClient()
-const { user, profile } = useAuth()
+const user = useSupabaseUser()
 const { formatDate } = useUtils()
 const postId = route.params.id as string
 
@@ -16,18 +16,26 @@ definePageMeta({
 interface ReviewData {
   post: any
   familyName: string | null
+  profile: any
 }
 
 const { data: reviewData, refresh } = await useAsyncData<ReviewData>(`review-post-${postId}`, async () => {
   if (!user.value) throw createError({ statusCode: 401, statusMessage: '未登录' })
 
-  // 1. 验证超级管理员权限
-  const isSuperAdmin = profile.value?.role === 'admin'
+  // 1. 获取用户 profile
+  const { data: profile } = await client
+    .from('profiles')
+    .select('role')
+    .eq('id', user.value.id)
+    .single()
+
+  // 2. 验证超级管理员权限
+  const isSuperAdmin = profile?.role === 'admin'
   if (!isSuperAdmin) {
     throw createError({ statusCode: 403, statusMessage: '您没有权限进行审核' })
   }
 
-  // 2. 获取文章和作者信息
+  // 3. 获取文章和作者信息
   const { data: post, error } = await client
     .from('posts')
     .select(`
@@ -43,7 +51,7 @@ const { data: reviewData, refresh } = await useAsyncData<ReviewData>(`review-pos
 
   if (error || !post) throw createError({ statusCode: 404, statusMessage: '文章未找到' })
 
-  // 3. 获取家庭名称
+  // 4. 获取家庭名称
   let familyName: string | null = null
   const postData = post as any
   if (postData.profiles?.family_id) {
@@ -55,7 +63,7 @@ const { data: reviewData, refresh } = await useAsyncData<ReviewData>(`review-pos
     familyName = (family as any)?.name || null
   }
 
-  return { post, familyName }
+  return { post, familyName, profile }
 })
 
 const submitting = ref(false)
