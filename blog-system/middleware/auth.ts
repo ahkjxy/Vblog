@@ -2,8 +2,25 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const client = useSupabaseClient()
   const user = useSupabaseUser()
 
-  // 如果没有登录，重定向到登录页
-  if (!user.value) {
+  // 在服务端，尝试从 session 获取用户信息
+  if (import.meta.server) {
+    const { data: { session } } = await client.auth.getSession()
+    if (!session) {
+      return navigateTo('/auth/unified')
+    }
+  } else {
+    // 客户端检查
+    if (!user.value) {
+      return navigateTo('/auth/unified')
+    }
+  }
+
+  // 获取用户 ID
+  const userId = import.meta.server 
+    ? (await client.auth.getSession()).data.session?.user.id
+    : user.value?.id
+
+  if (!userId) {
     return navigateTo('/auth/unified')
   }
 
@@ -11,7 +28,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const { data: profile } = await client
     .from('profiles')
     .select('role, family_id')
-    .eq('id', user.value.id)
+    .eq('id', userId)
     .single()
 
   // 检查是否是超级管理员
