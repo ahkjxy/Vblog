@@ -44,18 +44,8 @@ export default defineNuxtPlugin(() => {
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'SW_UPDATED') {
           console.log('📢 Service Worker 已更新到版本:', event.data.version)
-          // 自动刷新页面以应用更新
-          setTimeout(() => {
-            window.location.reload()
-          }, 1000)
+          showUpdateNotification()
         }
-      })
-
-      // 监听控制器变化（新 SW 接管）
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('🔄 Service Worker 控制器已更改')
-        // 自动刷新页面
-        window.location.reload()
       })
     })
   }

@@ -38,16 +38,6 @@ self.addEventListener('activate', (event) => {
     }).then(() => {
       // 立即接管所有页面
       return self.clients.claim()
-    }).then(() => {
-      // 通知所有客户端刷新页面
-      return self.clients.matchAll().then((clients) => {
-        clients.forEach((client) => {
-          client.postMessage({
-            type: 'SW_UPDATED',
-            version: CACHE_VERSION
-          })
-        })
-      })
     })
   )
 })

@@ -22,8 +22,7 @@ export default defineNuxtConfig({
       exclude: ['/', '/blog', '/blog/*', '/categories', '/categories/*', '/tags', '/tags/*', '/about', '/contact', '/changelog', '/docs', '/api', '/privacy', '/support', '/terms', '/disclaimer'],
     },
     cookieOptions: {
-      name: 'sb-mfgfbwhznqpdjumtsrus-auth-token',
-      lifetime: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7, // 7 days
       domain: process.env.NODE_ENV === 'production' ? '.familybank.chat' : undefined,
       path: '/',
       sameSite: 'lax',

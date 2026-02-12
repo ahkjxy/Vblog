@@ -29,7 +29,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     .from('profiles')
     .select('role, family_id')
     .eq('id', userId)
-    .single()
+    .single() as { data: { role: string; family_id: string } | null }
 
   // 检查是否是超级管理员
   const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
