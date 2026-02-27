@@ -21,8 +21,9 @@ const returnUrl = route.query.returnUrl as string // 自定义返回 URL
 
 // 错误信息映射
 const errorMessages: Record<string, string> = {
+  'ssr_no_event': '服务端请求上下文缺失',
   'ssr_no_session': '服务端未找到会话，请重新登录',
-  'ssr_session_error': '服务端会话错误，请重新登录',
+  'ssr_error': '服务端认证错误',
   'no_user': '未找到用户信息，请重新登录',
   'profile_error': '获取用户资料失败，请重新登录',
   'no_profile': '用户资料不存在，请联系管理员',
