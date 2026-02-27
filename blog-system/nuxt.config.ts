@@ -14,8 +14,8 @@ export default defineNuxtConfig({
   ],
 
   supabase: {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    url: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
+    key: process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     redirectOptions: {
       login: '/auth/unified',
       callback: '/auth/callback',
@@ -34,7 +34,6 @@ export default defineNuxtConfig({
         detectSessionInUrl: true,
         persistSession: true,
         autoRefreshToken: true,
-        storage: process.client ? window.localStorage : undefined
       }
     }
   },
