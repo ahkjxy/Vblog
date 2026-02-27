@@ -1,0 +1,74 @@
+鉴权和用户信息问题排查任务清单
+=====================================
+
+问题描述：
+1. 线上环境登录成功后进入 /dashboard 会被踢回 /auth/unified
+2. 头部显示用户名是 ahkixy 而不是 王僚原
+
+排查任务：
+---------
+
+【高优先级】Cookie 和 Session 问题
+1. ✓ 检查 nuxt.config.ts 的 cookieOptions 配置
+   - 已修复：移除了无效的 name 属性
+   - 已修复：lifetime 改为 maxAge
+   - domain 设置为 .familybank.chat（生产环境）
+   
+2. 检查 Supabase cookie 是否正确设置
+   - 线上环境检查浏览器 DevTools > Application > Cookies
+   - 确认 cookie 名称：sb-mfgfbwhznqpdjumtsrus-auth-token
+   - 确认 cookie domain：.familybank.chat
+   - 确认 cookie 包含：access_token 和 refresh_token
+   
+3. 测试 SSR session 读取
+   - 在 middleware/auth.ts 添加 console.log 调试
+   - 检查服务端是否能读取到 session
+   - 检查 userId 是否正确获取
+
+【高优先级】用户名显示问题
+4. 检查 profiles 表的 name 字段
+   - 登录 Supabase Dashboard
+   - 查询：SELECT id, email, name, username FROM profiles WHERE email = 'ahkixy@gmail.com'
+   - 确认 name 字段的值是什么
+   
+5. 检查用户注册时 name 的设置
+   - unified.vue 注册时设置：username: em.split('@')[0]
+   - 但这是设置到 auth.users.raw_user_meta_data.username
+   - 需要确认 profiles 表的 name 是否从这里同步
+
+6. 检查 profiles 表的触发器
+   - 查看是否有 on_auth_user_created 触发器
+   - 确认触发器是否正确设置 name 字段
+   - 可能需要手动更新 name 字段
+
+【中优先级】认证流程
+7. 检查 auth callback 处理
+   - callback.get.ts 是否正确交换 code
+   - 是否正确设置 cookie
+   
+8. 检查 middleware 权限逻辑
+   - auth.ts 中的 profile 查询是否成功
+   - 超级管理员判断逻辑是否正确
+
+【低优先级】其他
+9. 检查 supabase-auth.server.ts 插件
+   - 确认服务端插件是否正确加载 session
+   
+10. 检查环境变量
+    - NEXT_PUBLIC_SUPABASE_URL
+    - NEXT_PUBLIC_SUPABASE_ANON_KEY
+    - 确认线上环境变量正确
+
+立即执行的修复：
+--------------
+
+修复1：在 middleware/auth.ts 添加调试日志
+修复2：检查并更新 profiles 表的 name 字段
+修复3：添加用户 profile 更新接口
+
+下一步行动：
+----------
+1. 先修复 TypeScript 错误（已完成）
+2. 部署到线上测试 cookie 是否正确
+3. 如果还有问题，添加调试日志
+4. 手动更新数据库中的 name 字段

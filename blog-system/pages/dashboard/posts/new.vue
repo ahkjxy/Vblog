@@ -37,14 +37,12 @@ const { data: taxonomies } = await useAsyncData('new-post-taxonomies', async () 
   }
 })
 
-// 生成 slug（支持中文转拼音）
+// 生成 slug（使用 useUtils 的 generateSlug）
+const { generateSlug: utilsGenerateSlug } = useUtils()
+
 function generateSlug(text: string) {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+  if (!text) return ''
+  return utilsGenerateSlug(text)
 }
 
 // 自动生成摘要
@@ -204,7 +202,7 @@ useSeoMeta({
           type="text"
           required
           v-model="form.title"
-          @input="form.slug = generateSlug(form.title)"
+          @input="() => { if (!form.slug) form.slug = generateSlug(form.title) }"
           class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
           placeholder="输入文章标题"
         />
@@ -215,18 +213,27 @@ useSeoMeta({
         <label for="slug" class="block text-sm font-medium mb-2">
           URL 别名 (Slug)
         </label>
-        <input
-          id="slug"
-          type="text"
-          v-model="form.slug"
-          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          placeholder="自动生成拼音或手动输入"
-        />
+        <div class="flex gap-2">
+          <input
+            id="slug"
+            type="text"
+            v-model="form.slug"
+            class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm"
+            placeholder="自动生成或手动输入"
+          />
+          <button
+            type="button"
+            @click="form.slug = generateSlug(form.title)"
+            class="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm whitespace-nowrap"
+          >
+            重新生成
+          </button>
+        </div>
         <p class="text-xs text-gray-500 mt-1">
           文章 URL 将是: /blog/{{ form.slug || 'your-slug-here' }}
         </p>
         <p class="text-xs text-purple-600 mt-1">
-          💡 中文标题会自动转换为拼音，也可以手动修改
+          💡 输入标题后会自动生成 URL 别名，也可以手动修改
         </p>
       </div>
 

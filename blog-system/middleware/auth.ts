@@ -5,12 +5,24 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // 在服务端，尝试从 session 获取用户信息
   if (import.meta.server) {
     const { data: { session } } = await client.auth.getSession()
+    console.log('[AUTH SSR] Session check:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      path: to.path
+    })
     if (!session) {
+      console.log('[AUTH SSR] No session, redirecting to login')
       return navigateTo('/auth/unified')
     }
   } else {
     // 客户端检查
+    console.log('[AUTH Client] User check:', {
+      hasUser: !!user.value,
+      userId: user.value?.id,
+      path: to.path
+    })
     if (!user.value) {
+      console.log('[AUTH Client] No user, redirecting to login')
       return navigateTo('/auth/unified')
     }
   }
@@ -20,20 +32,38 @@ export default defineNuxtRouteMiddleware(async (to) => {
     ? (await client.auth.getSession()).data.session?.user.id
     : user.value?.id
 
+  console.log('[AUTH] User ID:', userId)
+
   if (!userId) {
+    console.log('[AUTH] No userId, redirecting to login')
     return navigateTo('/auth/unified')
   }
 
   // 获取用户 profile
-  const { data: profile } = await client
+  const { data: profile, error: profileError } = await client
     .from('profiles')
-    .select('role, family_id')
+    .select('role, family_id, name')
     .eq('id', userId)
-    .single() as { data: { role: string; family_id: string } | null }
+    .single() as { data: { role: string; family_id: string; name: string } | null; error: any }
+
+  console.log('[AUTH] Profile check:', {
+    hasProfile: !!profile,
+    role: profile?.role,
+    familyId: profile?.family_id,
+    name: profile?.name,
+    error: profileError
+  })
 
   // 检查是否是超级管理员
   const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
   const isSuperAdmin = profile?.role === 'admin' && profile?.family_id === SUPER_ADMIN_FAMILY_ID
+
+  console.log('[AUTH] Admin check:', {
+    isSuperAdmin,
+    role: profile?.role,
+    familyId: profile?.family_id,
+    superAdminFamilyId: SUPER_ADMIN_FAMILY_ID
+  })
 
   // 只有超级管理员可以访问的页面
   const adminOnlyPages = [
@@ -48,6 +78,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const requiresAdmin = adminOnlyPages.some(page => to.path.startsWith(page))
 
   if (requiresAdmin && !isSuperAdmin) {
+    console.log('[AUTH] Access denied: requires admin, redirecting to dashboard')
     return navigateTo('/dashboard')
   }
+
+  console.log('[AUTH] Access granted to:', to.path)
 })
