@@ -1,15 +1,19 @@
 export default defineNuxtRouteMiddleware(async (to) => {
+  // 只在客户端运行中间件
+  if (process.server) {
+    return
+  }
+
   const user = useSupabaseUser()
   const client = useSupabaseClient()
   
   // 等待用户状态初始化
-  await new Promise(resolve => setTimeout(resolve, 0))
+  await new Promise(resolve => setTimeout(resolve, 100))
   
   // 检查用户是否登录
   if (!user.value) {
-    const context = process.server ? 'SSR' : 'Client'
-    console.log(`[AUTH ${context}] No user found`)
-    return navigateTo(`/auth/unified?error=${process.server ? 'ssr_no_session' : 'no_user'}`)
+    console.log('[AUTH Client] No user found')
+    return navigateTo('/auth/unified?error=no_user')
   }
 
   // 获取用户 profile
@@ -20,12 +24,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
     .single()
 
   if (profileError) {
-    console.error('[AUTH] Profile error:', profileError)
+    console.error('[AUTH Client] Profile error:', profileError)
     return navigateTo('/auth/unified?error=profile_error')
   }
 
   if (!profile) {
-    console.error('[AUTH] No profile found')
+    console.error('[AUTH Client] No profile found')
     return navigateTo('/auth/unified?error=no_profile')
   }
 
@@ -45,7 +49,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const requiresAdmin = adminOnlyPages.some(page => to.path.startsWith(page))
 
   if (requiresAdmin && !isSuperAdmin) {
-    console.log('[AUTH] Access denied: requires admin')
+    console.log('[AUTH Client] Access denied: requires admin')
     return navigateTo('/dashboard?error=not_admin')
   }
 })
