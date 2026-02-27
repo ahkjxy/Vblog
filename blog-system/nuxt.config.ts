@@ -23,6 +23,8 @@ export default defineNuxtConfig({
       sameSite: 'lax',
       secure: true,
       path: '/',
+      // 生产环境使用 .familybank.chat 跨子域名共享，开发环境不设置 domain
+      domain: process.env.NODE_ENV === 'production' ? '.familybank.chat' : undefined,
     },
     clientOptions: {
       auth: {
@@ -94,10 +96,9 @@ export default defineNuxtConfig({
     compressPublicAssets: true, // 压缩静态资源
     minify: true, // 压缩输出
     prerender: {
-      crawlLinks: true,
+      crawlLinks: false, // 禁用自动爬取链接
       routes: [
         '/',
-        '/blog',
         '/about',
         '/contact',
         '/privacy',
@@ -137,14 +138,15 @@ export default defineNuxtConfig({
     '/api': { prerender: true },
     '/support': { prerender: true },
     '/changelog': { prerender: true },
+    '/investment': { prerender: true },
     
-    // 动态页面 - SWR 缓存
-    '/blog': { swr: 60 }, // 60秒缓存
-    '/blog/**': { swr: 300 }, // 5分钟缓存
-    '/categories': { swr: 60 },
-    '/categories/**': { swr: 300 },
-    '/tags': { swr: 60 },
-    '/tags/**': { swr: 300 },
+    // 动态页面 - 不预渲染，使用 SWR 缓存
+    '/blog': { prerender: false, swr: 60 },
+    '/blog/**': { prerender: false, swr: 300 },
+    '/categories': { prerender: false, swr: 60 },
+    '/categories/**': { prerender: false, swr: 300 },
+    '/tags': { prerender: false, swr: 60 },
+    '/tags/**': { prerender: false, swr: 300 },
     
     // API 路由 - 缓存
     '/api/**': { cors: true, headers: { 'cache-control': 'public, max-age=60' } },

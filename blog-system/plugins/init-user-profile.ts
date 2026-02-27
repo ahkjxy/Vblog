@@ -1,20 +1,28 @@
 // 在应用启动时初始化用户 profile
 export default defineNuxtPlugin(async () => {
   const user = useSupabaseUser()
-  const { loadProfile } = useUserProfile()
-
-  // 如果有用户，预加载 profile
+  
+  // 只在有用户时才加载 profile
   if (user.value) {
-    await loadProfile()
+    const { loadProfile } = useUserProfile()
+    try {
+      await loadProfile()
+    } catch (error) {
+      console.error('[init-user-profile] Error loading profile:', error)
+    }
   }
 
-  // 监听用户变化
+  // 监听用户变化（仅客户端）
   if (process.client) {
     watch(user, async (newUser) => {
+      const { loadProfile, clearProfile } = useUserProfile()
       if (newUser) {
-        await loadProfile()
+        try {
+          await loadProfile()
+        } catch (error) {
+          console.error('[init-user-profile] Error loading profile on user change:', error)
+        }
       } else {
-        const { clearProfile } = useUserProfile()
         clearProfile()
       }
     })
