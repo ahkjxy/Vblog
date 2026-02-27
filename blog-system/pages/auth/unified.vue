@@ -19,9 +19,23 @@ const resetLoading = ref(false)
 const redirectTarget = (route.query.redirect as string) || 'blog' // 默认为 blog
 const returnUrl = route.query.returnUrl as string // 自定义返回 URL
 
+// 错误信息映射
+const errorMessages: Record<string, string> = {
+  'ssr_no_session': '服务端未找到会话，请重新登录',
+  'ssr_session_error': '服务端会话错误，请重新登录',
+  'no_user': '未找到用户信息，请重新登录',
+  'profile_error': '获取用户资料失败，请重新登录',
+  'no_profile': '用户资料不存在，请联系管理员',
+  'not_admin': '权限不足，需要管理员权限'
+}
+
 onMounted(() => {
   const msg = route.query.message as string
-  if (msg) {
+  const error = route.query.error as string
+  
+  if (error && errorMessages[error]) {
+    message.value = { type: 'error', text: `[${error}] ${errorMessages[error]}` }
+  } else if (msg) {
     message.value = { type: 'info', text: msg }
   }
 })

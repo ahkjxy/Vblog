@@ -8,18 +8,18 @@ export default defineNuxtRouteMiddleware(async (to) => {
       const { data: { session } } = await client.auth.getSession()
       if (!session) {
         console.log('[AUTH SSR] No session found')
-        return navigateTo('/auth/unified')
+        return navigateTo('/auth/unified?error=ssr_no_session')
       }
     } catch (error) {
       console.error('[AUTH SSR] Error getting session:', error)
-      return navigateTo('/auth/unified')
+      return navigateTo('/auth/unified?error=ssr_session_error')
     }
   }
   
   // 检查用户是否登录
   if (!user.value) {
     console.log('[AUTH] No user found')
-    return navigateTo('/auth/unified')
+    return navigateTo('/auth/unified?error=no_user')
   }
 
   // 获取用户 profile
@@ -29,9 +29,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
     .eq('id', user.value.id)
     .single()
 
-  if (profileError || !profile) {
+  if (profileError) {
     console.error('[AUTH] Profile error:', profileError)
-    return navigateTo('/auth/unified')
+    return navigateTo('/auth/unified?error=profile_error')
+  }
+
+  if (!profile) {
+    console.error('[AUTH] No profile found')
+    return navigateTo('/auth/unified?error=no_profile')
   }
 
   // 检查是否是超级管理员
@@ -51,6 +56,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (requiresAdmin && !isSuperAdmin) {
     console.log('[AUTH] Access denied: requires admin')
-    return navigateTo('/dashboard')
+    return navigateTo('/dashboard?error=not_admin')
   }
 })
