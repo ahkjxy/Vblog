@@ -16,11 +16,7 @@ export default defineNuxtConfig({
   supabase: {
     url: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
     key: process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    redirectOptions: {
-      login: '/auth/unified',
-      callback: '/auth/callback',
-      exclude: ['/', '/blog', '/blog/*', '/categories', '/categories/*', '/tags', '/tags/*', '/about', '/contact', '/changelog', '/docs', '/api', '/privacy', '/support', '/terms', '/disclaimer'],
-    },
+    redirect: false, // 禁用自动重定向，手动在 middleware 中处理
     cookieOptions: {
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
@@ -108,7 +104,8 @@ export default defineNuxtConfig({
         '/docs',
         '/changelog',
         '/api',
-        '/support'
+        '/support',
+        '/investment'
       ]
     }
   },

@@ -26,6 +26,64 @@ useSeoMeta({
 
 const changelog = [
   {
+    version: '3.2.0',
+    date: '2026-02-27',
+    type: 'improvement',
+    changes: [
+      {
+        category: '🔐 认证系统优化',
+        icon: Shield,
+        items: [
+          '修复 SSR 认证问题：解决刷新页面被踢回登录的问题',
+          '优化 Cookie 配置：移除可能导致问题的 domain 和 secure 设置',
+          '添加 Session 初始化插件：确保客户端 session 在导航前已加载',
+          '优化 Middleware 逻辑：添加延迟等待 session 初始化',
+          '创建调试工具：/auth-debug 和 /test-auth 页面方便排查问题'
+        ]
+      },
+      {
+        category: '📄 新增投资融资页面',
+        icon: TrendingUp,
+        items: [
+          '创建专业的投资融资介绍页面',
+          '展示真实的产品数据和发展历程',
+          '提供清晰的联系方式和投资亮点',
+          '优化页面设计，提升专业形象'
+        ]
+      },
+      {
+        category: '✨ 功能优化',
+        icon: Sparkles,
+        items: [
+          '移除 Service Worker 功能：解决一直提示新版本的问题',
+          '修复 URL 别名自动生成：支持中文标题转拼音',
+          '优化文章创建流程：添加重新生成按钮',
+          '改进用户名显示：修复显示错误的问题'
+        ]
+      },
+      {
+        category: '🐛 问题修复',
+        icon: Bug,
+        items: [
+          '修复构建错误：解决 #supabase/server 模块缺失问题',
+          '修复 TypeScript 错误：cookieOptions 配置项修正',
+          '修复 Middleware 类型错误：添加正确的类型断言',
+          '优化错误处理：添加更完善的 try-catch 逻辑'
+        ]
+      },
+      {
+        category: '📝 用户体验',
+        icon: Users,
+        items: [
+          '创建用户 Profile 编辑页面：可以更新显示名称',
+          '添加服务端 Session 测试 API：方便调试认证问题',
+          '优化调试页面：提供更详细的认证状态信息',
+          '改进错误提示：更友好的错误信息展示'
+        ]
+      }
+    ]
+  },
+  {
     version: '3.1.0',
     date: '2026-02-12',
     type: 'improvement',

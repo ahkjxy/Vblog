@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: [] // 不使用任何 middleware，允许未登录访问
+})
+
 const debugInfo = ref<any>({})
 const loading = ref(true)
 

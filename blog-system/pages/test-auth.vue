@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: [] // 不使用任何 middleware
+})
+
 // 不使用 middleware，手动测试认证
 const client = useSupabaseClient()
 const user = useSupabaseUser()

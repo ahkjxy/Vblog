@@ -4,7 +4,8 @@ import {
   BookOpen, 
   FolderOpen, 
   Tag, 
-  Calendar, 
+  Calendar,
+  TrendingUp,
   LayoutDashboard, 
   LogOut, 
   ChevronDown, 
@@ -43,6 +44,7 @@ const navLinks = [
   { name: '社区讨论', href: '/blog', icon: BookOpen },
   { name: '分类', href: '/categories', icon: FolderOpen },
   { name: '标签', href: '/tags', icon: Tag },
+  { name: '投资融资', href: '/investment', icon: TrendingUp },
   { name: '更新日志', href: '/changelog', icon: Calendar },
 ]
 
