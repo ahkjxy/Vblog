@@ -104,11 +104,11 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     .eq('id', user.id)
     .single()
   
-  // 检查是否是超级管理员
+  // 检查是否是超管
   const isSuperAdmin = profile?.role === 'admin' && 
     profile?.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
   
-  // 某些页面只有超级管理员可以访问
+  // 某些页面只有超管可以访问
   const adminOnlyPages = ['/dashboard/users', '/dashboard/settings']
   if (adminOnlyPages.some(page => to.path.startsWith(page)) && !isSuperAdmin) {
     return navigateTo('/dashboard')
@@ -124,13 +124,13 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 | 文章列表 | `/pages/dashboard/posts/index.vue` | `src/app/dashboard/posts/page.tsx` | 所有登录用户 |
 | 新建文章 | `/pages/dashboard/posts/new.vue` | `src/app/dashboard/posts/new/page.tsx` | 所有登录用户 |
 | 编辑文章 | `/pages/dashboard/posts/[id]/edit.vue` | `src/app/dashboard/posts/[id]/edit/page.tsx` | 作者或管理员 |
-| 审核文章 | `/pages/dashboard/posts/[id]/review.vue` | `src/app/dashboard/posts/[id]/review/page.tsx` | 仅超级管理员 |
-| 分类管理 | `/pages/dashboard/categories.vue` | `src/app/dashboard/categories/page.tsx` | 仅超级管理员 |
-| 标签管理 | `/pages/dashboard/tags.vue` | `src/app/dashboard/tags/page.tsx` | 仅超级管理员 |
+| 审核文章 | `/pages/dashboard/posts/[id]/review.vue` | `src/app/dashboard/posts/[id]/review/page.tsx` | 仅超管 |
+| 分类管理 | `/pages/dashboard/categories.vue` | `src/app/dashboard/categories/page.tsx` | 仅超管 |
+| 标签管理 | `/pages/dashboard/tags.vue` | `src/app/dashboard/tags/page.tsx` | 仅超管 |
 | 媒体库 | `/pages/dashboard/media.vue` | `src/app/dashboard/media/page.tsx` | 所有登录用户 |
 | 评论管理 | `/pages/dashboard/comments.vue` | `src/app/dashboard/comments/page.tsx` | 作者或管理员 |
-| 用户管理 | `/pages/dashboard/users.vue` | `src/app/dashboard/users/page.tsx` | 仅超级管理员 |
-| 系统设置 | `/pages/dashboard/settings.vue` | `src/app/dashboard/settings/page.tsx` | 仅超级管理员 |
+| 用户管理 | `/pages/dashboard/users.vue` | `src/app/dashboard/users/page.tsx` | 仅超管 |
+| 系统设置 | `/pages/dashboard/settings.vue` | `src/app/dashboard/settings/page.tsx` | 仅超管 |
 
 ### 阶段 3: 认证系统
 

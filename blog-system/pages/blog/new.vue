@@ -153,7 +153,7 @@ const handleSubmit = async () => {
       }
     }
 
-    // 检查是否是超级管理员
+    // 检查是否是超管
     const { data: userProfile } = await client
       .from('profiles')
       .select('role, family_id')
@@ -170,7 +170,7 @@ const handleSubmit = async () => {
     let reviewedAt = null
     
     if (isSuperAdmin) {
-      // 超级管理员：自动审核通过
+      // 超管：自动审核通过
       reviewStatus = 'approved'
       reviewedBy = user.value!.id
       reviewedAt = new Date().toISOString()
@@ -221,7 +221,7 @@ const handleSubmit = async () => {
     // 显示成功消息后跳转
     setTimeout(() => {
       if (isSuperAdmin && finalStatus === 'published') {
-        // 超级管理员发布的文章直接跳转到文章页
+        // 超管发布的文章直接跳转到文章页
         router.push(`/blog/${post.slug}`)
       } else {
         // 其他情况跳转到列表页
@@ -469,7 +469,7 @@ useSeoMeta({
             <ul class="text-sm text-blue-700 font-medium mt-2 space-y-1 ml-4">
               <li>• 选择"保存为草稿"：内容不会公开，可以稍后继续编辑</li>
               <li>• 选择"立即发布"：提交后进入审核队列，审核通过后自动发布</li>
-              <li>• 超级管理员发布的内容会自动审核通过</li>
+              <li>• 超管发布的内容会自动审核通过</li>
             </ul>
           </div>
         </form>

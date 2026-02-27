@@ -73,7 +73,7 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
         .from('feedback_messages')
         .select('*', { count: 'exact', head: true })
 
-      // 超级管理员可以看到所有反馈
+      // 超管可以看到所有反馈
       // 普通家长只能看到自己发送的反馈
       if (!isSuperAdmin) {
         countQuery = countQuery.eq('profile_id', userId)
@@ -97,7 +97,7 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
         .order('created_at', { ascending: false })
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1)
 
-      // 超级管理员可以看到所有反馈
+      // 超管可以看到所有反馈
       // 普通家长只能看到自己发送的反馈
       if (!isSuperAdmin) {
         query = query.eq('profile_id', userId)
@@ -192,13 +192,13 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
 
     setSubmitting(true)
     try {
-      // 普通家长发送反馈时，使用超级管理员的 family_id
+      // 普通家长发送反馈时，使用超管的 family_id
       const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
       
       const { error } = await supabase
         .from('feedback_messages')
         .insert({
-          family_id: SUPER_ADMIN_FAMILY_ID, // 发送给超级管理员家庭
+          family_id: SUPER_ADMIN_FAMILY_ID, // 发送给超管家庭
           profile_id: userId,
           subject: newSubject.trim(),
           message: newMessage.trim(),
@@ -367,7 +367,7 @@ export function FeedbackManagement({ userId, userName, familyId, isSuperAdmin }:
           )}
         </div>
 
-        {/* Reply Input - 只有超级管理员可以回复 */}
+        {/* Reply Input - 只有超管可以回复 */}
         {isSuperAdmin && (
           <div className="p-6 border-t border-gray-200 bg-gray-50">
             <label className="block text-sm font-bold text-gray-700 mb-2">添加回复</label>

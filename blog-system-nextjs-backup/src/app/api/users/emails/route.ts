@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const supabase = await createClient()
     
-    // 验证当前用户是否是超级管理员
+    // 验证当前用户是否是超管
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

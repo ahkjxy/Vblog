@@ -77,6 +77,24 @@ if (error.value) {
 
 const post = computed(() => pageData.value?.post)
 
+// 判断是否是自己的文章
+const user = useSupabaseUser()
+const isOwnPost = computed(() => {
+  return user.value && post.value && user.value.id === post.value.author_id
+})
+
+// 打赏排行榜引用
+const leaderboardRef = ref()
+
+// 刷新文章数据（打赏后）
+const handleTipped = async () => {
+  await refreshNuxtData(`post-${slug}`)
+  // 刷新排行榜
+  if (leaderboardRef.value) {
+    await leaderboardRef.value.refresh()
+  }
+}
+
 // SEO 优化
 if (post.value) {
   const categories = post.value.post_categories?.map((pc: any) => pc.categories.name) || []
@@ -231,6 +249,28 @@ if (config.public.adsenseClientId) {
             </div>
           </div>
 
+          <!-- Tip Button -->
+          <div v-if="!isOwnPost" class="py-4 sm:py-6 md:py-8 border-t border-gray-100 dark:border-white/5">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h3 class="text-lg font-black text-gray-900 dark:text-white mb-1">喜欢这篇文章？</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">用虚拟积分打赏作者，支持优质内容创作</p>
+              </div>
+              <TipButton
+                :post-id="post.id"
+                :author-id="post.author_id"
+                :author-name="formatAuthorName(post.profiles)"
+                :author-avatar="post.profiles?.avatar_url"
+                :tips-count="post.tips_count || 0"
+                :tips-total="post.tips_total || 0"
+                @tipped="handleTipped"
+              />
+            </div>
+            
+            <!-- Tips Leaderboard -->
+            <TipsLeaderboard ref="leaderboardRef" :post-id="post.id" />
+          </div>
+
           <!-- Author Bio -->
           <div v-if="post.profiles?.bio" class="py-4 sm:py-6 md:py-8 border-t border-gray-100 dark:border-white/5">
             <div class="mobile-card-spacing flex gap-3 sm:gap-4 items-start vibrant-card p-4 sm:p-6">
@@ -276,7 +316,7 @@ if (config.public.adsenseClientId) {
             <BannerAd />
 
             <!-- 热门文章 -->
-            <div v-if="pageData?.hotPosts && pageData.hotPosts.length > 0" class="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+            <div v-if="pageData?.hotPosts && pageData.hotPosts.length > 0" class="sticky top-20 bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
               <div class="flex items-center gap-3 mb-6">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
                   <TrendingUp class="w-5 h-5 text-white" />

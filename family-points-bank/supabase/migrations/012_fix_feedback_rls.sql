@@ -37,7 +37,7 @@ CREATE POLICY "Users can create own family privacy agreements"
   );
 
 -- 3. 反馈留言 RLS 策略
--- 用户可以查看自己家庭的反馈或超级管理员可以查看所有
+-- 用户可以查看自己家庭的反馈或超管可以查看所有
 CREATE POLICY "Users can view feedback"
   ON feedback_messages FOR SELECT
   USING (
@@ -63,7 +63,7 @@ CREATE POLICY "Users can create own family feedback"
     )
   );
 
--- 用户可以更新自己家庭的反馈或超级管理员可以更新所有
+-- 用户可以更新自己家庭的反馈或超管可以更新所有
 CREATE POLICY "Users can update feedback"
   ON feedback_messages FOR UPDATE
   USING (
@@ -115,8 +115,8 @@ CREATE POLICY "Users can create replies"
   );
 
 -- 完成
-COMMENT ON POLICY "Users can view feedback" ON feedback_messages IS '用户可以查看自己家庭的反馈，超级管理员可以查看所有';
+COMMENT ON POLICY "Users can view feedback" ON feedback_messages IS '用户可以查看自己家庭的反馈，超管可以查看所有';
 COMMENT ON POLICY "Users can create own family feedback" ON feedback_messages IS '用户可以创建自己家庭的反馈';
-COMMENT ON POLICY "Users can update feedback" ON feedback_messages IS '用户可以更新自己家庭的反馈，超级管理员可以更新所有';
+COMMENT ON POLICY "Users can update feedback" ON feedback_messages IS '用户可以更新自己家庭的反馈，超管可以更新所有';
 COMMENT ON POLICY "Users can view replies" ON feedback_replies IS '用户可以查看相关反馈的回复';
 COMMENT ON POLICY "Users can create replies" ON feedback_replies IS '用户可以创建回复';

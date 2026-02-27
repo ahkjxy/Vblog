@@ -14,7 +14,7 @@ export default async function DashboardPage() {
     .eq('id', user?.id)
     .maybeSingle()
 
-  // 检查是否是超级管理员
+  // 检查是否是超管
   const isSuperAdmin = profile?.role === 'admin' && profile?.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
 
   // Get statistics - 根据权限过滤
@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   let commentsCountQuery = supabase.from('comments').select('*', { count: 'exact', head: true })
   let viewsQuery = supabase.from('posts').select('view_count')
   
-  // 如果不是超级管理员，只统计自己的数据
+  // 如果不是超管，只统计自己的数据
   if (!isSuperAdmin) {
     postsCountQuery = postsCountQuery.eq('author_id', user?.id)
     viewsQuery = viewsQuery.eq('author_id', user?.id)
@@ -46,7 +46,7 @@ export default async function DashboardPage() {
     viewsQuery
   ])
 
-  // 用户数统计：只有超级管理员才显示
+  // 用户数统计：只有超管才显示
   let totalUsers = 0
   if (isSuperAdmin) {
     const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true })
@@ -56,7 +56,7 @@ export default async function DashboardPage() {
   const viewCount = totalViews?.reduce((sum, post) => sum + (post.view_count || 0), 0) || 0 || 0
 
   // Get recent posts with author info
-  // 非超级管理员只能看到自己的文章
+  // 非超管只能看到自己的文章
   let recentPostsQuery = supabase
     .from('posts')
     .select(`
@@ -71,7 +71,7 @@ export default async function DashboardPage() {
     .order('updated_at', { ascending: false })
     .limit(5)
   
-  // 如果不是超级管理员，只显示自己的文章
+  // 如果不是超管，只显示自己的文章
   if (!isSuperAdmin) {
     recentPostsQuery = recentPostsQuery.eq('author_id', user?.id)
   }
@@ -186,7 +186,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* 只有超级管理员才显示用户统计 */}
+        {/* 只有超管才显示用户统计 */}
         {isSuperAdmin && (
           <div className="group relative overflow-hidden bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 hover:shadow-2xl hover:border-[#7C4DFF]/30 transition-all">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#7C4DFF]/10 to-[#FF4D94]/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity -translate-y-1/2 translate-x-1/2"></div>
@@ -408,7 +408,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Quick Actions - 只有超级管理员才显示 */}
+      {/* Quick Actions - 只有超管才显示 */}
       {isSuperAdmin && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <Link

@@ -216,14 +216,64 @@ onMounted(() => {
           class="w-full px-4 py-4 rounded-2xl border border-gray-100 focus:border-brand-pink outline-none text-sm font-medium bg-gray-50/30 resize-none"
           required
         ></textarea>
-        <button type="button" @click="showEmojiPicker = !showEmojiPicker" class="absolute bottom-4 right-4 text-gray-400 hover:text-brand-pink transition-colors">
+        
+        <!-- 表情按钮 - 左下角 -->
+        <button 
+          type="button" 
+          @click="showEmojiPicker = !showEmojiPicker" 
+          class="absolute bottom-4 left-4 text-gray-400 hover:text-brand-pink transition-colors p-1 hover:bg-gray-100 rounded-lg"
+        >
           <Smile class="w-5 h-5" />
         </button>
-
-        <div v-if="showEmojiPicker" class="absolute bottom-full right-0 mb-2 p-3 bg-white border border-gray-100 rounded-2xl shadow-2xl grid grid-cols-8 gap-1 z-10 w-64">
-          <button v-for="e in EMOJIS" :key="e" type="button" @click="insertEmoji(e)" class="text-xl hover:bg-gray-50 rounded p-1">{{ e }}</button>
-        </div>
       </div>
+
+      <!-- 表情选择器弹窗 -->
+      <Teleport to="body">
+        <Transition
+          enter-active-class="transition duration-200 ease-out"
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-100"
+          leave-active-class="transition duration-150 ease-in"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
+        >
+          <div 
+            v-if="showEmojiPicker" 
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            @click.self="showEmojiPicker = false"
+          >
+            <div 
+              ref="emojiPickerRef"
+              class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full p-6 transform transition-all"
+              :class="showEmojiPicker ? 'scale-100' : 'scale-95'"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-black text-gray-900 dark:text-white">选择表情</h3>
+                <button 
+                  @click="showEmojiPicker = false"
+                  class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div class="grid grid-cols-8 gap-2 max-h-80 overflow-y-auto">
+                <button 
+                  v-for="e in EMOJIS" 
+                  :key="e" 
+                  type="button" 
+                  @click="insertEmoji(e)" 
+                  class="text-3xl hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl p-3 transition-all hover:scale-110 active:scale-95"
+                >
+                  {{ e }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
 
       <div class="flex items-center justify-between pt-2">
         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">

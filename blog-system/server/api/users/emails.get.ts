@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 验证是否是超级管理员
+    // 验证是否是超管
     const { data: profile } = await client
       .from('profiles')
       .select('role, family_id')

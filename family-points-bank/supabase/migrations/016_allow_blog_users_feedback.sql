@@ -45,7 +45,7 @@ CREATE POLICY "Users can view own feedback replies"
       )
     )
     OR
-    -- 超级管理员可以查看所有回复
+    -- 超管可以查看所有回复
     EXISTS (
       SELECT 1 FROM profiles
       WHERE id = auth.uid()
@@ -71,7 +71,7 @@ CREATE POLICY "Users can view own feedback"
       SELECT family_id FROM profiles WHERE id = auth.uid()
     )
     OR
-    -- 超级管理员可以查看所有反馈
+    -- 超管可以查看所有反馈
     EXISTS (
       SELECT 1 FROM profiles
       WHERE id = auth.uid()
@@ -86,7 +86,7 @@ BEGIN
   RAISE NOTICE '✅ 任何认证用户都可以创建反馈';
   RAISE NOTICE '✅ 用户可以查看自己提交的反馈';
   RAISE NOTICE '✅ 用户可以查看自己反馈的回复';
-  RAISE NOTICE '✅ 超级管理员可以查看和回复所有反馈';
+  RAISE NOTICE '✅ 超管可以查看和回复所有反馈';
 END $$;
 
 -- 完成

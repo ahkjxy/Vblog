@@ -44,6 +44,7 @@ const searchQuery = ref('')
 const isRoleDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isBatchDeleteDialogOpen = ref(false)
+const isDetailDialogOpen = ref(false)
 const selectedUser = ref<User | null>(null)
 const selectedUserIds = ref<Set<string>>(new Set())
 const newRole = ref<'admin' | 'child'>('admin')
@@ -321,7 +322,7 @@ onMounted(() => {
     <div v-else-if="!isSuperAdmin" class="bg-white rounded-2xl p-12 text-center border border-gray-100">
       <Shield class="w-16 h-16 text-gray-300 mx-auto mb-4" />
       <h3 class="text-lg font-semibold text-gray-900 mb-2">权限不足</h3>
-      <p class="text-gray-600">只有超级管理员可以访问用户管理页面</p>
+      <p class="text-gray-600">只有超管可以访问用户管理页面</p>
     </div>
 
     <template v-else>
@@ -459,7 +460,7 @@ onMounted(() => {
                       v-if="group.isSuperAdmin"
                       class="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200"
                     >
-                      ⭐ 超级管理员家庭
+                      ⭐ 超管家庭
                     </span>
                   </div>
 
@@ -522,7 +523,6 @@ onMounted(() => {
                     />
                   </th>
                   <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">用户</th>
-                  <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">邮箱</th>
                   <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">角色</th>
                   <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">注册时间</th>
                   <th class="px-6 py-3 text-right text-sm font-medium text-gray-600">操作</th>
@@ -572,25 +572,21 @@ onMounted(() => {
                     </div>
                   </td>
                   <td class="px-6 py-4">
-                    <div class="flex items-center gap-2 text-sm">
-                      <Mail class="w-4 h-4 text-gray-400" />
-                      <span v-if="u.role === 'child'" class="text-gray-400 italic">无邮箱</span>
-                      <span v-else-if="u.email" class="text-gray-600">{{ u.email }}</span>
-                      <span v-else class="text-gray-400 text-xs font-mono">
-                        ID: {{ u.id.slice(0, 8) }}...
-                      </span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4">
                     <span
-                      v-if="u.is_super_admin"
+                      v-if="u.is_super_admin && u.role !== 'admin'"
                       class="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200"
                     >
-                      ⭐ 超级管理员
+                      ⭐ 超管家萌宝
+                    </span>
+                    <span
+                      v-else-if="u.is_super_admin && u.role === 'admin'"
+                      class="px-3 py-1 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700 rounded-full text-xs font-bold border border-blue-200"
+                    >
+                      🛡️ 超管
                     </span>
                     <span
                       v-else-if="u.role === 'admin'"
-                      class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"
+                      class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium"
                     >
                       家长
                     </span>
@@ -606,6 +602,18 @@ onMounted(() => {
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center justify-end gap-2">
+                      <button
+                        @click="() => {
+                          selectedUser = u
+                          isDetailDialogOpen = true
+                        }"
+                        class="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                        title="查看详情"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
                       <button
                         @click="openRoleDialog(u)"
                         class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -795,6 +803,156 @@ onMounted(() => {
             class="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors"
           >
             批量删除
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div
+      v-if="isDetailDialogOpen && selectedUser"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto"
+      @click.self="isDetailDialogOpen = false"
+    >
+      <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-2xl w-full shadow-2xl my-8">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-2xl font-bold text-gray-900 dark:text-white">用户详情</h3>
+          <button
+            @click="isDetailDialogOpen = false"
+            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- User Avatar and Name -->
+        <div class="flex items-center gap-4 mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl">
+          <img
+            v-if="selectedUser.avatar_url"
+            :src="selectedUser.avatar_url"
+            :alt="selectedUser.name"
+            class="w-20 h-20 rounded-2xl ring-4 ring-white dark:ring-gray-700 shadow-lg"
+          />
+          <div
+            v-else-if="selectedUser.avatar_color"
+            class="w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-2xl ring-4 ring-white dark:ring-gray-700 shadow-lg"
+            :style="{ backgroundColor: selectedUser.avatar_color }"
+          >
+            {{ selectedUser.name.slice(-1) }}
+          </div>
+          <div
+            v-else
+            class="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-bold text-2xl ring-4 ring-white dark:ring-gray-700 shadow-lg"
+          >
+            {{ selectedUser.name.charAt(0).toUpperCase() }}
+          </div>
+          <div class="flex-1">
+            <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-1">{{ selectedUser.name }}</h4>
+            <div class="flex items-center gap-2">
+              <span
+                v-if="selectedUser.is_super_admin"
+                class="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold"
+              >
+                ⭐ 超管家萌宝
+              </span>
+              <span
+                v-else-if="selectedUser.role === 'admin'"
+                class="px-3 py-1 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700 rounded-full text-xs font-bold"
+              >
+                🛡️ 超管
+              </span>
+              <span
+                v-else
+                class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium"
+              >
+                孩子
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="space-y-4">
+          <!-- Email -->
+          <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
+            <div class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">邮箱</div>
+            <div class="flex items-center gap-2">
+              <Mail class="w-4 h-4 text-gray-400" />
+              <span v-if="selectedUser.role === 'child'" class="text-gray-400 italic">无邮箱（孩子账号）</span>
+              <span v-else-if="selectedUser.email" class="text-gray-900 dark:text-white font-medium">{{ selectedUser.email }}</span>
+              <span v-else class="text-gray-400 italic">未设置</span>
+            </div>
+          </div>
+
+          <!-- User ID -->
+          <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
+            <div class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">用户 ID</div>
+            <div class="flex items-center gap-2">
+              <code class="text-sm font-mono text-gray-900 dark:text-white bg-white dark:bg-gray-800 px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700">
+                {{ selectedUser.id }}
+              </code>
+              <button
+                @click="async () => {
+                  await navigator.clipboard.writeText(selectedUser.id)
+                }"
+                class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                title="复制"
+              >
+                <Copy class="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Family ID -->
+          <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
+            <div class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">家庭 ID</div>
+            <div class="flex items-center gap-2">
+              <code v-if="selectedUser.family_id" class="text-sm font-mono text-gray-900 dark:text-white bg-white dark:bg-gray-800 px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700">
+                {{ selectedUser.family_id }}
+              </code>
+              <span v-else class="text-gray-400 italic">未分配家庭</span>
+              <button
+                v-if="selectedUser.family_id"
+                @click="async () => {
+                  await navigator.clipboard.writeText(selectedUser.family_id)
+                }"
+                class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                title="复制"
+              >
+                <Copy class="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Family Name -->
+          <div v-if="selectedUser.families" class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
+            <div class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">家庭名称</div>
+            <div class="text-gray-900 dark:text-white font-medium">{{ selectedUser.families.name }}</div>
+          </div>
+
+          <!-- Bio -->
+          <div v-if="selectedUser.bio" class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
+            <div class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">个人简介</div>
+            <div class="text-gray-900 dark:text-white">{{ selectedUser.bio }}</div>
+          </div>
+
+          <!-- Created At -->
+          <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
+            <div class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">注册时间</div>
+            <div class="text-gray-900 dark:text-white font-medium">{{ formatDate(selectedUser.created_at) }}</div>
+          </div>
+        </div>
+
+        <!-- Close Button -->
+        <div class="mt-6">
+          <button
+            @click="isDetailDialogOpen = false"
+            class="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-pink-700 transition-colors"
+          >
+            关闭
           </button>
         </div>
       </div>

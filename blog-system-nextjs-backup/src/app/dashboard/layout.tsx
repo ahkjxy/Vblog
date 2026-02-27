@@ -37,7 +37,7 @@ export default async function DashboardLayout({
     .eq('id', user.id)
     .maybeSingle()
 
-  // 博客系统的超级管理员判断
+  // 博客系统的超管判断
   const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
   const isSuperAdmin = userProfile?.role === 'admin' && userProfile?.family_id === SUPER_ADMIN_FAMILY_ID
 
@@ -46,7 +46,7 @@ export default async function DashboardLayout({
   const userAvatar = userProfile?.avatar_url
 
   const getRoleLabel = () => {
-    if (isSuperAdmin) return '超级管理员'
+    if (isSuperAdmin) return '超管'
     if (userRole === 'admin') return '家长'
     if (userRole === 'editor') return '编辑'
     return '作者'

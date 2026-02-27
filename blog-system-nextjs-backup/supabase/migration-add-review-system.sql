@@ -91,7 +91,7 @@ USING (
   )
 );
 
--- 3. 后台：超级管理员可以查看所有文章
+-- 3. 后台：超管可以查看所有文章
 CREATE POLICY "Super admins can view all posts"
 ON posts FOR SELECT
 USING (
@@ -141,7 +141,7 @@ WITH CHECK (
   )
 );
 
--- 2. 超级管理员可以更新所有文章（包括审核状态）
+-- 2. 超管可以更新所有文章（包括审核状态）
 CREATE POLICY "Super admins can update all posts"
 ON posts FOR UPDATE
 USING (
@@ -178,7 +178,7 @@ USING (
   )
 );
 
--- 2. 超级管理员可以删除所有文章
+-- 2. 超管可以删除所有文章
 CREATE POLICY "Super admins can delete all posts"
 ON posts FOR DELETE
 USING (
@@ -194,7 +194,7 @@ USING (
 -- 创建审核函数
 -- ============================================
 
--- 审核文章的函数（只有超级管理员可以调用）
+-- 审核文章的函数（只有超管可以调用）
 CREATE OR REPLACE FUNCTION approve_post(
   post_id UUID,
   approve BOOLEAN
@@ -204,13 +204,13 @@ DECLARE
   v_user_family_id UUID;
   v_super_admin_family_id UUID := '79ed05a1-e0e5-4d8c-9a79-d8756c488171';
 BEGIN
-  -- 检查当前用户是否是超级管理员
+  -- 检查当前用户是否是超管
   SELECT family_id INTO v_user_family_id
   FROM profiles
   WHERE id = auth.uid() AND role = 'admin';
   
   IF v_user_family_id IS NULL OR v_user_family_id != v_super_admin_family_id THEN
-    RAISE EXCEPTION '只有超级管理员可以审核文章';
+    RAISE EXCEPTION '只有超管可以审核文章';
   END IF;
   
   -- 更新文章审核状态

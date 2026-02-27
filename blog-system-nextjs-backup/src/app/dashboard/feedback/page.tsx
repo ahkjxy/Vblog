@@ -29,7 +29,7 @@ export default async function FeedbackPage() {
     redirect('/dashboard')
   }
 
-  // 判断是否是超级管理员（用于显示所有家庭的反馈）
+  // 判断是否是超管（用于显示所有家庭的反馈）
   const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
   const isSuperAdmin = userProfile?.role === 'admin' && userProfile?.family_id === SUPER_ADMIN_FAMILY_ID
 
@@ -40,7 +40,7 @@ export default async function FeedbackPage() {
         <p className="text-gray-600 mt-2">
           {isSuperAdmin 
             ? '查看和回复所有用户反馈消息' 
-            : '向超级管理员发送反馈，查看回复记录'}
+            : '向超管发送反馈，查看回复记录'}
         </p>
       </div>
 

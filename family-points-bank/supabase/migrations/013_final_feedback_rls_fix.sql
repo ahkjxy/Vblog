@@ -37,7 +37,7 @@ CREATE POLICY "privacy_insert"
   );
 
 -- 3. 反馈留言 RLS 策略
--- SELECT: 用户可以查看自己家庭的反馈或超级管理员可以查看所有
+-- SELECT: 用户可以查看自己家庭的反馈或超管可以查看所有
 CREATE POLICY "feedback_select"
   ON feedback_messages FOR SELECT
   USING (
@@ -61,7 +61,7 @@ CREATE POLICY "feedback_insert"
     )
   );
 
--- UPDATE: 用户可以更新自己家庭的反馈或超级管理员可以更新所有
+-- UPDATE: 用户可以更新自己家庭的反馈或超管可以更新所有
 CREATE POLICY "feedback_update"
   ON feedback_messages FOR UPDATE
   USING (
@@ -139,8 +139,8 @@ END $$;
 -- 完成
 COMMENT ON POLICY "privacy_select" ON privacy_agreements IS '用户可以查看自己家庭的隐私协议记录';
 COMMENT ON POLICY "privacy_insert" ON privacy_agreements IS '用户可以创建自己家庭的隐私协议记录';
-COMMENT ON POLICY "feedback_select" ON feedback_messages IS '用户可以查看自己家庭的反馈，超级管理员可以查看所有';
+COMMENT ON POLICY "feedback_select" ON feedback_messages IS '用户可以查看自己家庭的反馈，超管可以查看所有';
 COMMENT ON POLICY "feedback_insert" ON feedback_messages IS '用户可以创建自己家庭的反馈';
-COMMENT ON POLICY "feedback_update" ON feedback_messages IS '用户可以更新自己家庭的反馈，超级管理员可以更新所有';
+COMMENT ON POLICY "feedback_update" ON feedback_messages IS '用户可以更新自己家庭的反馈，超管可以更新所有';
 COMMENT ON POLICY "replies_select" ON feedback_replies IS '用户可以查看相关反馈的回复';
 COMMENT ON POLICY "replies_insert" ON feedback_replies IS '用户可以创建回复';

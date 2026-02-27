@@ -80,7 +80,7 @@ export default function CommentsPage() {
         `)
         .order('created_at', { ascending: false })
       
-      // 如果不是超级管理员，只显示自己文章的评论
+      // 如果不是超管，只显示自己文章的评论
       if (!isSuperAdmin && currentUserId) {
         query = query.eq('posts.author_id', currentUserId)
       }

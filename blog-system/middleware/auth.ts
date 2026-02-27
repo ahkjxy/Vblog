@@ -33,11 +33,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo('/auth/unified?error=no_profile')
   }
 
-  // 检查是否是超级管理员
+  // 检查是否是超管
   const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
   const isSuperAdmin = profile.role === 'admin' && profile.family_id === SUPER_ADMIN_FAMILY_ID
 
-  // 只有超级管理员可以访问的页面
+  // 只有超管可以访问的页面
   const adminOnlyPages = [
     '/dashboard/users',
     '/dashboard/settings',

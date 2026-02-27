@@ -120,7 +120,7 @@ const handleSubmit = async () => {
       }
     }
 
-    // 检查是否是超级管理员
+    // 检查是否是超管
     const { data: userProfile } = await client
       .from('profiles')
       .select('role, family_id')

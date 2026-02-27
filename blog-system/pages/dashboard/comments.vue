@@ -72,7 +72,7 @@ const loadComments = async () => {
       `)
       .order('created_at', { ascending: false })
     
-    // 如果不是超级管理员，只显示自己文章的评论
+    // 如果不是超管，只显示自己文章的评论
     if (!isSuperAdmin.value && user.value) {
       query = query.eq('posts.author_id', user.value.id)
     }

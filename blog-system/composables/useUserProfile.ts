@@ -112,7 +112,7 @@ export const useUserProfile = () => {
   })
 
   const userRole = computed(() => {
-    if (isSuperAdmin.value) return '超级管理员'
+    if (isSuperAdmin.value) return '超管'
     if (userProfileState.value?.role === 'admin') return '家长'
     if (userProfileState.value?.role === 'editor') return '编辑'
     return '作者'

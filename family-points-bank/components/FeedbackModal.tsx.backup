@@ -727,7 +727,7 @@ export function FeedbackModal({
               ))}
             </div>
 
-            {/* Reply Input - 只有超级管理员可以回复 */}
+            {/* Reply Input - 只有超管可以回复 */}
             {isSuperAdmin && (
               <div className="space-y-3">
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">

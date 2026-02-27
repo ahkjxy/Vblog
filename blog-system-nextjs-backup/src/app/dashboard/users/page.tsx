@@ -60,12 +60,12 @@ export default function UsersPage() {
 
       setCurrentUserId(currentUser.id)
       
-      // 检查是否是超级管理员
+      // 检查是否是超管
       const isAdmin = currentProfile.role === 'admin' && 
         currentProfile.family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
       setIsSuperAdmin(isAdmin)
       
-      // 如果不是超级管理员，拒绝访问
+      // 如果不是超管，拒绝访问
       if (!isAdmin) {
         setLoading(false)
         return
@@ -292,14 +292,14 @@ export default function UsersPage() {
     )
   }
 
-  // 只有超级管理员可以访问
+  // 只有超管可以访问
   if (!isSuperAdmin) {
     return (
       <div className="flex items-center justify-center h-64">
         <EmptyState
           icon={Shield}
           title="权限不足"
-          description="只有超级管理员可以访问用户管理页面"
+          description="只有超管可以访问用户管理页面"
         />
       </div>
     )
@@ -429,7 +429,7 @@ export default function UsersPage() {
                   </div>
                   {group.isSuperAdmin && (
                     <span className="ml-2 px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200">
-                      ⭐ 超级管理员家庭
+                      ⭐ 超管家庭
                     </span>
                   )}
                 </div>
@@ -529,7 +529,7 @@ export default function UsersPage() {
                         <td className="px-6 py-4">
                           {user.is_super_admin ? (
                             <span className="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200">
-                              ⭐ 超级管理员
+                              ⭐ 超管
                             </span>
                           ) : user.role === 'admin' ? (
                             <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">

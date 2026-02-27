@@ -81,9 +81,9 @@ return createServerClient(
 ### 普通用户
 - 可以创建文章
 - 文章状态为 `review_status: 'pending'`
-- 需要超级管理员审核后才能显示
+- 需要超管审核后才能显示
 
-### 超级管理员
+### 超管
 - 可以创建文章
 - 文章自动审核通过 `review_status: 'approved'`
 - 立即显示在前台

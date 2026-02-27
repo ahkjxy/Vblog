@@ -49,12 +49,12 @@
 6. `/dashboard/tags` - 标签管理
 7. `/dashboard/media` - 媒体库
 8. `/dashboard/comments` - 评论管理
-9. `/dashboard/users` - 用户管理（超级管理员）
+9. `/dashboard/users` - 用户管理（超管）
 10. `/dashboard/settings` - 系统设置
 
 ### Phase 4: 权限系统
 - 实现和 Next.js 版本一致的权限控制
-- 超级管理员判断: `role === 'admin' && family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'`
+- 超管判断: `role === 'admin' && family_id === '79ed05a1-e0e5-4d8c-9a79-d8756c488171'`
 - 中间件保护路由
 
 ## 技术栈对应关系

@@ -29,7 +29,7 @@ const { data: reviewData, refresh } = await useAsyncData<ReviewData>(`review-pos
     .eq('id', user.value.id)
     .single()
 
-  // 2. 验证超级管理员权限
+  // 2. 验证超管权限
   const isSuperAdmin = profile?.role === 'admin'
   if (!isSuperAdmin) {
     throw createError({ statusCode: 403, statusMessage: '您没有权限进行审核' })

@@ -34,7 +34,7 @@ export function SystemSettings({
   const [isDeleting, setIsDeleting] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   
-  // 检查是否是超级管理员
+  // 检查是否是超管
   const isSuperAdmin = currentSyncId === '79ed05a1-e0e5-4d8c-9a79-d8756c488171';
 
   const t = {

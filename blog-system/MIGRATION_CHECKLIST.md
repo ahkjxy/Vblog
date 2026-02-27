@@ -14,23 +14,23 @@
 - ✅ `pages/dashboard/posts/index.vue` - 文章列表
 - ✅ `pages/dashboard/posts/new.vue` - 新建文章
 - ✅ `pages/dashboard/posts/[id]/edit.vue` - 编辑文章
-- ✅ `pages/dashboard/posts/[id]/review.vue` - 审核文章（超级管理员）
+- ✅ `pages/dashboard/posts/[id]/review.vue` - 审核文章（超管）
 
 ### 分类和标签管理
-- ✅ `pages/dashboard/categories.vue` - 分类管理（超级管理员）
-- ✅ `pages/dashboard/tags.vue` - 标签管理（超级管理员）
+- ✅ `pages/dashboard/categories.vue` - 分类管理（超管）
+- ✅ `pages/dashboard/tags.vue` - 标签管理（超管）
 
 ### 评论管理
-- ✅ `pages/dashboard/comments.vue` - 评论管理（超级管理员）
+- ✅ `pages/dashboard/comments.vue` - 评论管理（超管）
 
 ### 用户管理
-- ✅ `pages/dashboard/users.vue` - 用户管理（超级管理员）
+- ✅ `pages/dashboard/users.vue` - 用户管理（超管）
 
 ### 媒体库
 - ✅ `pages/dashboard/media.vue` - 媒体库管理
 
 ### 系统设置
-- ✅ `pages/dashboard/settings.vue` - 系统设置（超级管理员）
+- ✅ `pages/dashboard/settings.vue` - 系统设置（超管）
 
 ## ❌ 可选功能（未迁移）
 
@@ -38,8 +38,8 @@
 - ❌ `pages/dashboard/feedback.vue` - 用户反馈管理
   - **说明**：此功能在原项目中存在，但不在主导航菜单中
   - **功能**：
-    - 普通用户可以向超级管理员发送反馈
-    - 超级管理员可以查看所有反馈并回复
+    - 普通用户可以向超管发送反馈
+    - 超管可以查看所有反馈并回复
     - 支持状态管理（待处理、处理中、已解决、已关闭）
     - 支持优先级（低、普通、高、紧急）
     - 支持分类（一般反馈、错误报告、功能建议、使用咨询、其他）
@@ -74,12 +74,12 @@
 - [x] 新建文章（标题、内容、分类、标签、封面、摘要）
 - [x] 编辑文章（完整编辑功能）
 - [x] 删除文章
-- [x] 审核文章（超级管理员）
+- [x] 审核文章（超管）
 - [x] 发布/草稿状态切换
 
 ### 分类和标签管理 ✅
-- [x] 分类 CRUD（仅超级管理员）
-- [x] 标签 CRUD（仅超级管理员）
+- [x] 分类 CRUD（仅超管）
+- [x] 标签 CRUD（仅超管）
 - [x] Slug 自动生成
 - [x] 描述字段
 
@@ -96,7 +96,7 @@
 - [x] 角色管理
 - [x] 删除用户
 - [x] 批量操作
-- [x] 超级管理员家庭高亮
+- [x] 超管家庭高亮
 
 ### 媒体库 ✅
 - [x] 文件上传（点击、拖拽）
@@ -112,7 +112,7 @@
 - [x] 评论设置（审核、匿名、自动批准）
 
 ### 权限系统 ✅
-- [x] 超级管理员判断
+- [x] 超管判断
 - [x] 页面级权限控制
 - [x] 功能级权限控制
 - [x] 中间件保护
@@ -160,7 +160,7 @@
 ### 环境变量
 - [ ] `NUXT_PUBLIC_SUPABASE_URL` - Supabase 项目 URL
 - [ ] `NUXT_PUBLIC_SUPABASE_KEY` - Supabase 匿名密钥
-- [ ] 超级管理员 Family ID 配置
+- [ ] 超管 Family ID 配置
 
 ### 数据库
 - [ ] 所有表已创建

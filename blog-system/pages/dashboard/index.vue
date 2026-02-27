@@ -80,7 +80,7 @@ const { data: dashboardData } = await useAsyncData('dashboard-data', async () =>
     .eq('id', user.value.id)
     .single()
 
-  // 检查是否是超级管理员
+  // 检查是否是超管
   const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
   const isSuperAdmin = profile?.role === 'admin' && profile?.family_id === SUPER_ADMIN_FAMILY_ID
 
@@ -89,7 +89,7 @@ const { data: dashboardData } = await useAsyncData('dashboard-data', async () =>
   let commentsCountQuery = client.from('comments').select('*', { count: 'exact', head: true })
   let viewsQuery = client.from('posts').select('view_count')
 
-  // 如果不是超级管理员，只统计自己的数据
+  // 如果不是超管，只统计自己的数据
   if (!isSuperAdmin) {
     postsCountQuery = postsCountQuery.eq('author_id', user.value.id)
     viewsQuery = viewsQuery.eq('author_id', user.value.id)
@@ -105,7 +105,7 @@ const { data: dashboardData } = await useAsyncData('dashboard-data', async () =>
     viewsQuery
   ])
 
-  // 用户数统计：只有超级管理员才显示
+  // 用户数统计：只有超管才显示
   let totalUsers = 0
   if (isSuperAdmin) {
     const { count } = await client.from('profiles').select('*', { count: 'exact', head: true })
@@ -127,7 +127,7 @@ const { data: dashboardData } = await useAsyncData('dashboard-data', async () =>
 
   const { data: recentPosts } = await recentPostsQuery
 
-  // 获取待审核文章（仅超级管理员）
+  // 获取待审核文章（仅超管）
   let pendingPosts = null
   if (isSuperAdmin) {
     const { data } = await client
@@ -236,7 +236,7 @@ useSeoMeta({
       </div>
     </div>
 
-    <!-- Pending Posts - 只有超级管理员才显示 -->
+    <!-- Pending Posts - 只有超管才显示 -->
     <div v-if="dashboardData.isSuperAdmin && dashboardData.pendingPosts && dashboardData.pendingPosts.length > 0" class="bg-white rounded-3xl border border-orange-200 shadow-lg overflow-hidden">
       <div class="p-5 sm:p-6 border-b border-orange-100 bg-gradient-to-r from-orange-50 to-yellow-50">
         <div class="flex items-center gap-3 mb-2">
@@ -367,7 +367,7 @@ useSeoMeta({
       </div>
     </div>
 
-    <!-- Quick Actions - 只有超级管理员才显示 -->
+    <!-- Quick Actions - 只有超管才显示 -->
     <div v-if="dashboardData.isSuperAdmin" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       <NuxtLink
         to="/dashboard/categories"

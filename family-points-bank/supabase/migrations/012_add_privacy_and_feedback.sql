@@ -74,7 +74,7 @@ CREATE POLICY "Users can create own family privacy agreements"
   );
 
 -- 7. 反馈留言 RLS 策略
--- 用户可以查看自己家庭的反馈或超级管理员可以查看所有
+-- 用户可以查看自己家庭的反馈或超管可以查看所有
 CREATE POLICY "Users can view feedback"
   ON feedback_messages FOR SELECT
   USING (
@@ -100,7 +100,7 @@ CREATE POLICY "Users can create own family feedback"
     )
   );
 
--- 用户可以更新自己家庭的反馈或超级管理员可以更新所有
+-- 用户可以更新自己家庭的反馈或超管可以更新所有
 CREATE POLICY "Users can update feedback"
   ON feedback_messages FOR UPDATE
   USING (
@@ -185,7 +185,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 11. 创建函数：获取反馈统计（超级管理员）
+-- 11. 创建函数：获取反馈统计（超管）
 CREATE OR REPLACE FUNCTION get_feedback_stats()
 RETURNS TABLE (
   total_feedback BIGINT,
@@ -197,7 +197,7 @@ RETURNS TABLE (
   urgent_priority_count BIGINT
 ) AS $$
 BEGIN
-  -- 检查是否是超级管理员
+  -- 检查是否是超管
   IF NOT EXISTS (
     SELECT 1 FROM profiles
     WHERE id = auth.uid()
@@ -298,5 +298,5 @@ COMMENT ON TABLE privacy_agreements IS '隐私协议同意记录表';
 COMMENT ON TABLE feedback_messages IS '用户反馈留言表';
 COMMENT ON TABLE feedback_replies IS '反馈回复表';
 COMMENT ON FUNCTION check_privacy_agreement IS '检查家庭是否已同意隐私协议';
-COMMENT ON FUNCTION get_feedback_stats IS '获取反馈统计信息（超级管理员）';
+COMMENT ON FUNCTION get_feedback_stats IS '获取反馈统计信息（超管）';
 COMMENT ON FUNCTION get_feedback_with_replies IS '获取反馈详情及所有回复';

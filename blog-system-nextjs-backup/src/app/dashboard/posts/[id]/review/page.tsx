@@ -19,7 +19,7 @@ export default async function ReviewPostPage({ params }: PageProps) {
     redirect('/auth/unified')
   }
 
-  // 2. 验证超级管理员权限
+  // 2. 验证超管权限
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, family_id')
