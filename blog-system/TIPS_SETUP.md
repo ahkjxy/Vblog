@@ -1,90 +1,44 @@
-# 虚拟积分打赏功能设置指南
+# 打赏和定时发布功能设置
 
-## 1. 执行数据库迁移
+## 数据库迁移
 
-在 Supabase 后台执行以下步骤：
+在 Supabase Dashboard 的 SQL Editor 中依次执行：
 
-1. 登录 Supabase Dashboard: https://supabase.com/dashboard
-2. 选择你的项目
-3. 点击左侧菜单 "SQL Editor"
-4. 点击 "New query"
-5. 复制 `blog-system/supabase/add-tips-system.sql` 文件的全部内容
-6. 粘贴到 SQL 编辑器
-7. 点击 "Run" 执行
+1. `supabase/add-tips-system.sql` - 打赏系统
+2. `supabase/add-scheduled-publish.sql` - 定时发布
 
-## 2. 功能说明
+## 定时任务设置
 
-### 数据库变更
-- `posts` 表新增字段：
-  - `tips_count`: 打赏次数
-  - `tips_total`: 打赏总额
-  
-- 新建 `post_tips` 表记录打赏历史：
-  - 打赏人、收款人、金额、留言、时间等
+定时发布需要定期调用 `auto_publish_scheduled_posts()` 函数。
 
-### 核心功能
-- `create_post_tip()`: 原子操作函数
-  - 余额检查
-  - 积分转移（扣除打赏者，增加作者）
-  - 创建打赏记录
-  - 更新文章统计
-  - 完整的错误处理
+### 方案 1: Supabase Cron (推荐)
 
-- `get_post_tips_leaderboard()`: 获取打赏排行榜
-  - 按打赏总额排序
-  - 显示最新留言
-  - 支持分页
+在 Supabase Dashboard 启用 pg_cron 扩展，然后执行：
 
-### 前端组件
-- `TipButton.vue`: 打赏按钮和弹窗
-  - 快捷金额选择（1/5/10/20）
-  - 自定义金额（1-100）
-  - 留言功能
-  - 余额显示和检查
-  
-- `TipsLeaderboard.vue`: 打赏排行榜
-  - 显示前10名打赏者
-  - 排名徽章（金银铜）
-  - 用户头像和留言
+```sql
+SELECT cron.schedule(
+  'auto-publish-posts',
+  '* * * * *',
+  $$SELECT auto_publish_scheduled_posts()$$
+);
+```
 
-### 集成位置
-- 文章详情页 `/blog/[slug].vue`
-- 位于标签和作者简介之间
-- 打赏后自动刷新数据
+### 方案 2: Vercel Cron Job
 
-## 3. 使用流程
+在 `vercel.json` 添加：
 
-1. 用户点击"打赏"按钮
-2. 未登录用户跳转到登录页
-3. 已登录用户打开打赏弹窗
-4. 选择金额（快捷或自定义）
-5. 可选填写留言
-6. 点击确认打赏
-7. 系统检查余额并执行转账
-8. 打赏成功后刷新文章和排行榜
+```json
+{
+  "crons": [{
+    "path": "/api/cron/publish-posts",
+    "schedule": "* * * * *"
+  }]
+}
+```
 
-## 4. 安全机制
+创建 API 路由调用函数。
 
-- RLS 策略保护数据
-- 不能给自己打赏
-- 余额不足时拒绝
-- 金额限制 1-100
-- 原子操作保证数据一致性
-- 使用 SECURITY DEFINER 确保权限
+## 功能说明
 
-## 5. 测试建议
-
-1. 测试未登录用户点击打赏
-2. 测试余额不足的情况
-3. 测试给自己打赏（应该失败）
-4. 测试正常打赏流程
-5. 测试打赏排行榜显示
-6. 测试留言功能
-
-## 6. 后续优化建议
-
-- 在 Dashboard 中显示作者收到的打赏统计
-- 添加打赏通知功能
-- 支持打赏后自动关注作者
-- 添加打赏历史记录页面
-- 支持批量打赏多篇文章
+- 打赏：用户可用虚拟积分打赏文章作者
+- 定时发布：设置未来时间自动发布文章

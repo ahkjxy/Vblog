@@ -70,7 +70,11 @@ const form = ref({
   content: typeof editData.value?.post.content === 'string' 
     ? editData.value.post.content 
     : (editData.value?.post.content ? JSON.stringify(editData.value.post.content, null, 2) : ''),
-  status: editData.value?.post.status || 'draft'
+  status: editData.value?.post.status || 'draft',
+  scheduledAt: editData.value?.post.scheduled_at 
+    ? new Date(editData.value.post.scheduled_at).toISOString().slice(0, 16)
+    : '',
+  isScheduled: editData.value?.post.is_scheduled || false
 })
 
 const selectedCategories = ref<string[]>(editData.value?.selectedCategories || [])
@@ -112,6 +116,8 @@ const handleSubmit = async () => {
       content: form.value.content,
       excerpt: form.value.excerpt,
       status: form.value.status,
+      scheduled_at: form.value.isScheduled && form.value.scheduledAt ? new Date(form.value.scheduledAt).toISOString() : null,
+      is_scheduled: form.value.isScheduled && form.value.scheduledAt ? true : false
     }
 
     if (form.value.status === 'published' && editData.value?.post.status !== 'published') {
@@ -331,6 +337,37 @@ useSeoMeta({
           <option value="draft">草稿</option>
           <option value="published">发布</option>
         </select>
+      </div>
+
+      <!-- Scheduled Publish -->
+      <div class="border border-purple-100 rounded-xl p-4 bg-purple-50/50">
+        <div class="flex items-center gap-2 mb-3">
+          <input
+            id="isScheduled"
+            type="checkbox"
+            v-model="form.isScheduled"
+            class="w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
+          />
+          <label for="isScheduled" class="text-sm font-medium cursor-pointer">
+            定时发布
+          </label>
+        </div>
+        
+        <div v-if="form.isScheduled" class="space-y-2">
+          <label for="scheduledAt" class="block text-sm font-medium text-gray-700">
+            发布时间
+          </label>
+          <input
+            id="scheduledAt"
+            type="datetime-local"
+            v-model="form.scheduledAt"
+            :min="new Date().toISOString().slice(0, 16)"
+            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
+          <p class="text-xs text-gray-500">
+            💡 设置定时发布后，文章将在指定时间自动发布
+          </p>
+        </div>
       </div>
 
       <!-- Actions -->

@@ -139,6 +139,12 @@ const { data: dashboardData } = await useAsyncData('dashboard-data', async () =>
     pendingPosts = data
   }
 
+  // 获取定时发布文章
+  const { data: scheduledPostsData } = await client.rpc('get_scheduled_posts', {
+    p_user_id: isSuperAdmin ? null : user.value.id,
+    p_limit: 5
+  })
+
   return {
     profile,
     isSuperAdmin,
@@ -149,7 +155,8 @@ const { data: dashboardData } = await useAsyncData('dashboard-data', async () =>
       totalUsers
     },
     recentPosts: recentPosts || [],
-    pendingPosts
+    pendingPosts,
+    scheduledPosts: scheduledPostsData || []
   }
 })
 
@@ -292,6 +299,45 @@ useSeoMeta({
             </NuxtLink>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Scheduled Posts -->
+    <div v-if="dashboardData.scheduledPosts && dashboardData.scheduledPosts.length > 0" class="bg-white rounded-3xl border border-blue-200 shadow-lg overflow-hidden">
+      <div class="p-5 sm:p-6 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-cyan-50">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center">
+            <Clock class="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h2 class="text-xl sm:text-2xl font-black text-gray-900">定时发布</h2>
+            <p class="text-xs sm:text-sm text-gray-600 font-medium">即将自动发布的文章</p>
+          </div>
+        </div>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <NuxtLink
+          v-for="post in dashboardData.scheduledPosts"
+          :key="post.id"
+          :to="`/dashboard/posts/${post.id}/edit`"
+          class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 hover:bg-blue-50/50 transition-all group"
+        >
+          <div class="flex-1 min-w-0">
+            <h3 class="font-black text-base sm:text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-[#7C4DFF] transition-colors">
+              {{ post.title }}
+            </h3>
+            <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+              <span class="font-black text-[#7C4DFF]">
+                {{ post.author_name }}的家庭
+              </span>
+              <span class="flex items-center gap-1 font-medium text-blue-600">
+                <Clock class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                将于 {{ formatDate(post.scheduled_at) }} 发布
+              </span>
+            </div>
+          </div>
+          <ArrowRight class="w-5 h-5 text-gray-400 group-hover:text-[#7C4DFF] group-hover:translate-x-1 transition-all" />
+        </NuxtLink>
       </div>
     </div>
 
