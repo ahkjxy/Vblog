@@ -95,7 +95,7 @@ const handlePasswordAuth = async (e: Event) => {
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${redirectTarget}${returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : ''}`,
         data: {
-          username: em.split('@')[0],
+          name: em.split('@')[0],
         }
       }
     })

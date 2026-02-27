@@ -17,24 +17,13 @@ import { onClickOutside } from '@vueuse/core'
 const user = useSupabaseUser()
 const client = useSupabaseClient()
 const config = useRuntimeConfig()
-const router = useRouter()
+
+// 使用全局 profile 状态（已在 plugin 中初始化）
+const { profile, userName, userAvatar } = useUserProfile()
 
 const isDropdownOpen = ref(false)
 const isMobileMenuOpen = ref(false)
 const dropdownRef = ref(null)
-
-// 获取用户 profile
-const { data: profile } = await useAsyncData('user-profile-header', async () => {
-  if (!user.value) return null
-  
-  const { data } = await client
-    .from('profiles')
-    .select('name, avatar_url')
-    .eq('id', user.value.id)
-    .single()
-  
-  return data
-})
 
 onClickOutside(dropdownRef, () => {
   isDropdownOpen.value = false
@@ -117,15 +106,15 @@ const handleLogout = async () => {
               @click="isDropdownOpen = !isDropdownOpen"
               class="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl hover:bg-gradient-to-r hover:from-[#FF4D94]/5 hover:to-[#7C4DFF]/5 transition-all duration-300 group border border-transparent hover:border-[#FF4D94]/20"
             >
-              <div v-if="profile?.avatar_url" class="w-8 h-8 md:w-9 md:h-9 rounded-xl overflow-hidden border-2 border-gray-100 dark:border-white/10 group-hover:border-[#FF4D94] transition-colors shadow-sm">
-                <img :src="profile.avatar_url" class="w-full h-full object-cover" />
+              <div v-if="userAvatar" class="w-8 h-8 md:w-9 md:h-9 rounded-xl overflow-hidden border-2 border-gray-100 dark:border-white/10 group-hover:border-[#FF4D94] transition-colors shadow-sm">
+                <img :src="userAvatar" class="w-full h-full object-cover" />
               </div>
               <div v-else class="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-[#FF4D94] to-[#7C4DFF] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                 <span class="text-white text-xs md:text-sm font-black">
-                  {{ ((profile?.name || user.email)?.charAt(0).toUpperCase()) }}
+                  {{ userName.charAt(0).toUpperCase() }}
                 </span>
               </div>
-              <span class="text-sm font-black text-gray-800 dark:text-white">{{ (profile?.name || user.email?.split('@')[0]) + '的家庭' }}</span>
+              <span class="text-sm font-black text-gray-800 dark:text-white">{{ userName + '的家庭' }}</span>
               <ChevronDown class="w-4 h-4 text-gray-500 transition-transform" :class="{ 'rotate-180': isDropdownOpen }" />
             </button>
 
@@ -139,7 +128,7 @@ const handleLogout = async () => {
             >
               <div v-if="isDropdownOpen" class="absolute right-0 mt-3 w-64 bg-white dark:bg-[#1E293B] rounded-3xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.35)] border border-gray-100 dark:border-white/10 py-2 overflow-hidden backdrop-blur-xl">
                 <div class="px-4 py-4 bg-gradient-to-br from-[#FF4D94]/5 to-[#7C4DFF]/5 border-b border-gray-100 dark:border-white/10">
-                  <p class="text-sm font-black text-gray-900 dark:text-white">{{ profile?.name || user.email?.split('@')[0] }}</p>
+                  <p class="text-sm font-black text-gray-900 dark:text-white">{{ userName }}</p>
                   <div class="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-white dark:bg-white/10 rounded-full text-xs font-bold shadow-sm">
                     <Sparkles class="w-3 h-3 text-[#FF4D94]" />
                     <span class="text-[#FF4D94]">社区成员</span>

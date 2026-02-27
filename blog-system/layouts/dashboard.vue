@@ -11,37 +11,8 @@ const route = useRoute()
 // 移动端菜单状态
 const mobileMenuOpen = ref(false)
 
-// 获取用户信息
-const { data: userProfile } = await useAsyncData('user-profile', async () => {
-  if (!user.value) return null
-  
-  const { data } = await client
-    .from('profiles')
-    .select('*')
-    .eq('id', user.value.id)
-    .single()
-  
-  return data
-})
-
-// 检查是否是超级管理员
-const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
-const isSuperAdmin = computed(() => 
-  userProfile.value?.role === 'admin' && userProfile.value?.family_id === SUPER_ADMIN_FAMILY_ID
-)
-
-const userName = computed(() => 
-  userProfile.value?.name || user.value?.email?.split('@')[0] || '用户'
-)
-
-const userAvatar = computed(() => userProfile.value?.avatar_url)
-
-const getRoleLabel = () => {
-  if (isSuperAdmin.value) return '超级管理员'
-  if (userProfile.value?.role === 'admin') return '家长'
-  if (userProfile.value?.role === 'editor') return '编辑'
-  return '作者'
-}
+// 使用全局 profile 状态（已在 plugin 中初始化）
+const { profile, userName, userAvatar, isSuperAdmin, userRole } = useUserProfile()
 
 // 导航菜单
 const navItems = computed(() => {
@@ -109,7 +80,7 @@ watch(() => route.path, () => {
             <div class="flex flex-col">
               <div class="text-sm font-black font-display text-gray-900 dark:text-white">{{ userName + '的家庭' }}</div>
               <div :class="['text-xs font-bold uppercase tracking-wider', isSuperAdmin ? 'text-[#FF4D94]' : 'text-gray-500 dark:text-gray-400']">
-                {{ getRoleLabel() }}
+                {{ userRole }}
               </div>
             </div>
           </div>

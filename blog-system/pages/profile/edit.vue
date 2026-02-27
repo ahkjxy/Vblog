@@ -86,10 +86,10 @@ const updateName = async () => {
 
           <div>
             <label class="block text-sm font-bold text-gray-700 mb-2">
-              当前数据库中的 username 字段
+              当前数据库中的 name 字段（显示名称）
             </label>
             <div class="px-4 py-3 bg-gray-50 rounded-xl text-gray-600">
-              {{ profile.username || '(空)' }}
+              {{ profile.name || '(空)' }}
             </div>
           </div>
 
