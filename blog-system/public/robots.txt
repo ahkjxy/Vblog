@@ -5,6 +5,11 @@ Allow: /
 Disallow: /dashboard/
 Disallow: /api/
 Disallow: /auth/
+Disallow: /profile/edit
+Disallow: /test
+Disallow: /test-auth
+Disallow: /auth-debug
+Disallow: /blog/new
 
 # Sitemap
 Sitemap: https://blog.familybank.chat/sitemap.xml

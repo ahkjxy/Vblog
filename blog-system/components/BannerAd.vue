@@ -1,14 +1,12 @@
 <script setup lang="ts">
-const config = useRuntimeConfig()
-const adClient = config.public.adsenseClientId
-const adSlot = config.public.adsenseBannerSlot
+const { shouldShowAds, adsenseClientId, bannerSlot } = useAdsense()
 
 const mounted = ref(false)
 
 onMounted(() => {
   mounted.value = true
   
-  if (adClient && adSlot) {
+  if (shouldShowAds.value && adsenseClientId && bannerSlot) {
     try {
       // 推送广告到 AdSense
       if (typeof window !== 'undefined') {
@@ -22,9 +20,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="mounted" class="adsense-container">
+  <!-- 只在允许的页面显示广告 -->
+  <div v-if="mounted && shouldShowAds" class="adsense-container">
     <!-- 开发环境占位符 -->
-    <div v-if="!adClient || !adSlot" class="text-center p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg">
+    <div v-if="!adsenseClientId || !bannerSlot" class="text-center p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg">
       <p class="text-sm text-gray-500 mb-2">📢 广告位置</p>
       <p class="text-xs text-gray-400">配置 AdSense 后显示</p>
     </div>
@@ -35,8 +34,8 @@ onMounted(() => {
       <ins
         class="adsbygoogle"
         style="display:block"
-        :data-ad-client="adClient"
-        :data-ad-slot="adSlot"
+        :data-ad-client="adsenseClientId"
+        :data-ad-slot="bannerSlot"
         data-ad-format="auto"
         data-full-width-responsive="true"
       />

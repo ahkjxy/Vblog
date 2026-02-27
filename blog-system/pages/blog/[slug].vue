@@ -148,18 +148,10 @@ if (post.value) {
   })
 }
 
-// 添加 AdSense 脚本
-const config = useRuntimeConfig()
-if (config.public.adsenseClientId) {
-  useHead({
-    script: [
-      {
-        src: `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${config.public.adsenseClientId}`,
-        async: true,
-        crossorigin: 'anonymous'
-      }
-    ]
-  })
+// 添加 AdSense 脚本（只在允许的页面）
+const { shouldShowAds, loadAdsenseScript } = useAdsense()
+if (shouldShowAds.value) {
+  loadAdsenseScript()
 }
 </script>
 
