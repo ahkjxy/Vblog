@@ -9,27 +9,27 @@ useSeoMeta({
 })
 
 const stats = [
-  { label: '注册用户', value: '1,200+', icon: Users },
-  { label: '活跃家庭', value: '800+', icon: TrendingUp },
-  { label: '用户满意度', value: '92%', icon: Target },
-  { label: '产品迭代', value: '50+', icon: Rocket },
+  { label: '种子用户', value: '100+', icon: Users },
+  { label: '活跃家庭', value: '60+', icon: TrendingUp },
+  { label: '用户留存率', value: '85%', icon: Target },
+  { label: '功能迭代', value: '50+', icon: Rocket },
 ]
 
 const highlights = [
-  '创新的家庭积分管理系统，解决家庭教育痛点',
-  '产品已上线运营，持续迭代优化中',
-  '用户反馈积极，产品价值得到验证',
-  '创始团队深耕教育科技领域多年',
-  '清晰的产品规划和发展路线',
-  '家庭教育市场潜力巨大',
+  '创新的家庭积分管理系统，精准解决家庭教育痛点',
+  '产品已上线运营，用户反馈积极，持续迭代优化',
+  '早期种子用户留存率高，产品价值得到初步验证',
+  '创始团队深耕教育科技领域，具备丰富行业经验',
+  '清晰的产品规划和商业化路径',
+  '家庭教育市场规模大，增长潜力显著',
 ]
 
 const milestones = [
-  { year: '2024 Q1', title: '项目启动', desc: '完成产品设计和技术架构' },
-  { year: '2024 Q2', title: '产品上线', desc: '元气银行 1.0 正式发布' },
-  { year: '2024 Q3', title: '功能完善', desc: '推出社区、博客等核心功能' },
-  { year: '2024 Q4', title: '用户增长', desc: '持续优化产品，积累种子用户' },
-  { year: '2025 Q1', title: '寻求融资', desc: '计划启动天使轮/Pre-A 轮融资' },
+  { year: '2025 Q3', title: '项目启动', desc: '完成产品设计和技术架构' },
+  { year: '2025 Q3', title: '产品上线', desc: '元气银行 1.0 正式发布' },
+  { year: '2025 Q4', title: '功能完善', desc: '推出社区、博客等核心功能' },
+  { year: '2026 Q1', title: '用户增长', desc: '持续优化产品，积累种子用户' },
+  { year: '2026 Q2', title: '寻求融资', desc: '计划启动天使轮/Pre-A 轮融资' },
 ]
 
 const contactEmail = 'ahkjxy@qq.com'
@@ -113,7 +113,7 @@ const contactPhone = 'WX: liaoyuan3256'
               元气银行是一款专注于家庭教育管理的创新产品，通过积分系统、任务管理、成就体系等功能，帮助家长科学管理孩子的成长，培养良好习惯，建立正向激励机制。
             </p>
             <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
-              我们不仅提供工具，更构建了一个家庭教育社区，让家长们可以分享经验、交流心得，共同成长。产品目前处于早期阶段，正在积累种子用户并持续优化产品体验。
+              我们不仅提供工具，更构建了一个家庭教育社区，让家长们可以分享经验、交流心得，共同成长。产品目前处于早期发展阶段，正在积累种子用户并持续打磨产品体验，用户留存率和活跃度表现良好。
             </p>
           </div>
 
@@ -204,7 +204,7 @@ const contactPhone = 'WX: liaoyuan3256'
 
             <div class="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <MapPin class="w-4 h-4" />
-              <span>中国 · 深圳</span>
+              <span>中国 · 上海</span>
             </div>
           </div>
         </div>
