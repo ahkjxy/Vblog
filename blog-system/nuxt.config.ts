@@ -23,10 +23,8 @@ export default defineNuxtConfig({
     },
     cookieOptions: {
       maxAge: 60 * 60 * 24 * 7, // 7 days
-      domain: process.env.NODE_ENV === 'production' ? '.familybank.chat' : undefined,
       path: '/',
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production'
     },
     clientOptions: {
       auth: {

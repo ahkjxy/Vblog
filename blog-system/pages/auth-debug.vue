@@ -1,12 +1,11 @@
 <script setup lang="ts">
-const client = useSupabaseClient()
-const user = useSupabaseUser()
-const config = useRuntimeConfig()
-
 const debugInfo = ref<any>({})
 const loading = ref(true)
 
 onMounted(async () => {
+  const client = useSupabaseClient()
+  const user = useSupabaseUser()
+  
   try {
     // 1. 检查客户端 user
     debugInfo.value.clientUser = {
@@ -49,11 +48,14 @@ onMounted(async () => {
       }
     }
 
-    // 5. 检查环境变量
-    debugInfo.value.config = {
-      supabaseUrl: config.public.supabase?.url || 'NOT SET',
-      siteUrl: config.public.siteUrl,
-      nodeEnv: process.env.NODE_ENV,
+    // 5. 测试服务端 API
+    try {
+      const testResponse = await $fetch('/api/auth/test-session')
+      debugInfo.value.serverTest = testResponse
+    } catch (error: any) {
+      debugInfo.value.serverTest = {
+        error: error.message
+      }
     }
 
   } catch (error: any) {
@@ -67,6 +69,10 @@ const copyToClipboard = () => {
   navigator.clipboard.writeText(JSON.stringify(debugInfo.value, null, 2))
   alert('调试信息已复制到剪贴板')
 }
+
+const refreshPage = () => {
+  window.location.reload()
+}
 </script>
 
 <template>
@@ -75,12 +81,20 @@ const copyToClipboard = () => {
       <div class="vibrant-card rounded-3xl p-8">
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-3xl font-black font-display">认证调试信息</h1>
-          <button
-            @click="copyToClipboard"
-            class="px-4 py-2 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-xl font-bold hover:shadow-xl transition-all"
-          >
-            复制信息
-          </button>
+          <div class="flex gap-2">
+            <button
+              @click="refreshPage"
+              class="px-4 py-2 border border-gray-200 rounded-xl font-bold hover:bg-gray-50 transition-all"
+            >
+              刷新页面
+            </button>
+            <button
+              @click="copyToClipboard"
+              class="px-4 py-2 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-xl font-bold hover:shadow-xl transition-all"
+            >
+              复制信息
+            </button>
+          </div>
         </div>
 
         <div v-if="loading" class="text-center py-12">
@@ -110,8 +124,8 @@ const copyToClipboard = () => {
           </div>
 
           <div class="bg-gray-50 rounded-xl p-6">
-            <h2 class="text-lg font-bold mb-4">5. 配置信息</h2>
-            <pre class="text-sm overflow-x-auto">{{ JSON.stringify(debugInfo.config, null, 2) }}</pre>
+            <h2 class="text-lg font-bold mb-4">5. 服务端 Session 测试</h2>
+            <pre class="text-sm overflow-x-auto">{{ JSON.stringify(debugInfo.serverTest, null, 2) }}</pre>
           </div>
 
           <div v-if="debugInfo.error" class="bg-red-50 border border-red-200 rounded-xl p-6">
@@ -133,6 +147,17 @@ const copyToClipboard = () => {
           >
             前往登录页
           </NuxtLink>
+        </div>
+
+        <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <p class="text-sm text-blue-800 font-bold mb-2">测试步骤：</p>
+          <ol class="text-sm text-blue-700 list-decimal list-inside space-y-1">
+            <li>登录后访问此页面</li>
+            <li>检查所有信息是否正确</li>
+            <li>点击"刷新页面"按钮</li>
+            <li>查看刷新后信息是否还在</li>
+            <li>如果刷新后信息消失，说明 SSR session 读取有问题</li>
+          </ol>
         </div>
       </div>
     </div>

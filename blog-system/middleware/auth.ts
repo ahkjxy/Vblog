@@ -1,56 +1,97 @@
-export default defineNuxtRouteMiddleware(async (to) => {
-  const client = useSupabaseClient()
+export default defineNuxtRouteMiddleware(async (to, from) => {
+  // 在服务端使用 serverSupabaseUser，在客户端使用 useSupabaseUser
+  if (process.server) {
+    // 服务端：使用 event 上下文
+    const event = useRequestEvent()
+    if (!event) {
+      console.error('[AUTH SSR] No event context')
+      return navigateTo('/auth/unified')
+    }
 
-  // 直接从 client 获取 session，不依赖 useSupabaseUser()
-  const { data: { session }, error: sessionError } = await client.auth.getSession()
+    // 动态导入服务端 Supabase 工具
+    const { serverSupabaseUser, serverSupabaseClient } = await import('#supabase/server')
+    
+    const user = await serverSupabaseUser(event)
+    
+    if (!user) {
+      console.log('[AUTH SSR] No user found')
+      return navigateTo('/auth/unified')
+    }
 
-  if (sessionError) {
-    console.error('[AUTH] Session error:', sessionError)
-    return navigateTo('/auth/unified')
-  }
+    const client = await serverSupabaseClient(event)
+    
+    // 获取用户 profile
+    const { data: profile, error: profileError } = await client
+      .from('profiles')
+      .select('role, family_id, name')
+      .eq('id', user.id)
+      .single()
 
-  if (!session || !session.user) {
-    console.log('[AUTH] No session or user, redirecting to login')
-    return navigateTo('/auth/unified')
-  }
+    if (profileError || !profile) {
+      console.error('[AUTH SSR] Profile error:', profileError)
+      return navigateTo('/auth/unified')
+    }
 
-  const userId = session.user.id
+    // 检查是否是超级管理员
+    const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
+    const isSuperAdmin = profile.role === 'admin' && profile.family_id === SUPER_ADMIN_FAMILY_ID
 
-  // 获取用户 profile
-  const { data: profile, error: profileError } = await client
-    .from('profiles')
-    .select('role, family_id, name')
-    .eq('id', userId)
-    .single()
+    // 只有超级管理员可以访问的页面
+    const adminOnlyPages = [
+      '/dashboard/users',
+      '/dashboard/settings',
+      '/dashboard/categories',
+      '/dashboard/tags',
+      '/dashboard/comments'
+    ]
 
-  if (profileError) {
-    console.error('[AUTH] Profile error:', profileError)
-    return navigateTo('/auth/unified')
-  }
+    const requiresAdmin = adminOnlyPages.some(page => to.path.startsWith(page))
 
-  if (!profile) {
-    console.log('[AUTH] No profile found, redirecting to login')
-    return navigateTo('/auth/unified')
-  }
+    if (requiresAdmin && !isSuperAdmin) {
+      console.log('[AUTH SSR] Access denied: requires admin')
+      return navigateTo('/dashboard')
+    }
+  } else {
+    // 客户端：使用标准的 composables
+    const user = useSupabaseUser()
+    
+    if (!user.value) {
+      console.log('[AUTH Client] No user found')
+      return navigateTo('/auth/unified')
+    }
 
-  // 检查是否是超级管理员
-  const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
-  const isSuperAdmin = profile.role === 'admin' && profile.family_id === SUPER_ADMIN_FAMILY_ID
+    const client = useSupabaseClient()
+    
+    // 获取用户 profile
+    const { data: profile, error: profileError } = await client
+      .from('profiles')
+      .select('role, family_id, name')
+      .eq('id', user.value.id)
+      .single()
 
-  // 只有超级管理员可以访问的页面
-  const adminOnlyPages = [
-    '/dashboard/users',
-    '/dashboard/settings',
-    '/dashboard/categories',
-    '/dashboard/tags',
-    '/dashboard/comments'
-  ]
+    if (profileError || !profile) {
+      console.error('[AUTH Client] Profile error:', profileError)
+      return navigateTo('/auth/unified')
+    }
 
-  // 检查当前路径是否需要超级管理员权限
-  const requiresAdmin = adminOnlyPages.some(page => to.path.startsWith(page))
+    // 检查是否是超级管理员
+    const SUPER_ADMIN_FAMILY_ID = '79ed05a1-e0e5-4d8c-9a79-d8756c488171'
+    const isSuperAdmin = profile.role === 'admin' && profile.family_id === SUPER_ADMIN_FAMILY_ID
 
-  if (requiresAdmin && !isSuperAdmin) {
-    console.log('[AUTH] Access denied: requires admin')
-    return navigateTo('/dashboard')
+    // 只有超级管理员可以访问的页面
+    const adminOnlyPages = [
+      '/dashboard/users',
+      '/dashboard/settings',
+      '/dashboard/categories',
+      '/dashboard/tags',
+      '/dashboard/comments'
+    ]
+
+    const requiresAdmin = adminOnlyPages.some(page => to.path.startsWith(page))
+
+    if (requiresAdmin && !isSuperAdmin) {
+      console.log('[AUTH Client] Access denied: requires admin')
+      return navigateTo('/dashboard')
+    }
   }
 })
