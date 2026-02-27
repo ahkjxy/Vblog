@@ -27,7 +27,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
               // inconsistent encoding, use raw
             }
             
-            // Handle Supabase SSR's base64 prefix
+            // Handle Nuxt Supabase's base64 prefix
             if (value.startsWith('base64-')) {
               try {
                 const base64 = value.substring(7);
@@ -45,9 +45,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       },
       setItem: (key: string, value: string) => {
         if (typeof window === 'undefined') return;
-        // Cookie access is tricky with subdomains. We use the same domain for both apps.
         const domain = '.familybank.chat';
-        document.cookie = `${key}=${value}; path=/; domain=${domain}; max-age=31536000; SameSite=Lax; Secure`;
+        
+        // Nuxt Supabase 使用 base64 编码
+        const encodedValue = `base64-${btoa(value)}`;
+        
+        document.cookie = `${key}=${encodeURIComponent(encodedValue)}; path=/; domain=${domain}; max-age=604800; SameSite=Lax; Secure`;
       },
       removeItem: (key: string) => {
         if (typeof window === 'undefined') return;

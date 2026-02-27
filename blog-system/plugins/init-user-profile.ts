@@ -5,6 +5,11 @@ export default defineNuxtPlugin(async (nuxtApp) => {
     return
   }
 
+  // 只在客户端运行
+  if (process.server) {
+    return
+  }
+
   const user = useSupabaseUser()
   
   // 只在有用户时才加载 profile
@@ -14,22 +19,22 @@ export default defineNuxtPlugin(async (nuxtApp) => {
       await loadProfile()
     } catch (error) {
       console.error('[init-user-profile] Error loading profile:', error)
+      // 不要抛出错误，避免影响页面加载
     }
   }
 
-  // 监听用户变化（仅客户端）
-  if (process.client) {
-    watch(user, async (newUser) => {
-      const { loadProfile, clearProfile } = useUserProfile()
-      if (newUser) {
-        try {
-          await loadProfile()
-        } catch (error) {
-          console.error('[init-user-profile] Error loading profile on user change:', error)
-        }
-      } else {
-        clearProfile()
+  // 监听用户变化
+  watch(user, async (newUser) => {
+    const { loadProfile, clearProfile } = useUserProfile()
+    if (newUser) {
+      try {
+        await loadProfile()
+      } catch (error) {
+        console.error('[init-user-profile] Error loading profile on user change:', error)
+        // 不要抛出错误
       }
-    })
-  }
+    } else {
+      clearProfile()
+    }
+  })
 })

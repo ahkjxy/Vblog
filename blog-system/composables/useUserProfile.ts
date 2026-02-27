@@ -14,6 +14,11 @@ export const useUserProfile = () => {
       return null
     }
 
+    // 服务端跳过（避免 SSR 时的问题）
+    if (process.server) {
+      return null
+    }
+
     // 如果已经加载且不强制刷新，直接返回
     if (userProfileState.value && !force) {
       return userProfileState.value

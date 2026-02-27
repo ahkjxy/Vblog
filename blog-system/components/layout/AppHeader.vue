@@ -23,7 +23,7 @@ const profile = ref(null)
 const userName = ref('用户')
 const userAvatar = ref(null)
 
-if (!process.env.prerender) {
+if (!process.env.prerender && process.client) {
   const userProfile = useUserProfile()
   profile.value = userProfile.profile.value
   userName.value = userProfile.userName.value
