@@ -2,7 +2,8 @@
   <div class="min-h-screen flex flex-col bg-[#FDFCFD]">
     <LayoutAppHeader />
     
-    <main class="flex-grow">
+    <!-- 添加 padding-top 避免被 fixed header 遮挡 -->
+    <main class="flex-grow pt-16 lg:pt-0">
       <slot />
     </main>
     

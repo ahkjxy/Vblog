@@ -56,7 +56,7 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 w-full border-b border-gray-100/50 dark:border-white/5 bg-white/90 dark:bg-[#0F172A]/90 backdrop-blur-2xl shadow-sm">
+  <header class="fixed lg:sticky top-0 z-50 w-full border-b border-gray-100/50 dark:border-white/5 bg-white/90 dark:bg-[#0F172A]/90 backdrop-blur-2xl shadow-sm">
     <div class="container mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
       <!-- Logo -->
       <NuxtLink href="/" class="flex items-center gap-2 md:gap-3 group">

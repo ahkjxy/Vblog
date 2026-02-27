@@ -1,9 +1,9 @@
-// 全局用户 profile 状态管理
-const userProfileState = useState<any>('user-profile', () => null)
-const isLoadingProfile = useState('user-profile-loading', () => false)
-const profileError = useState<string | null>('user-profile-error', () => null)
-
 export const useUserProfile = () => {
+  // 在函数内部定义状态
+  const userProfileState = useState<any>('user-profile', () => null)
+  const isLoadingProfile = useState('user-profile-loading', () => false)
+  const profileError = useState<string | null>('user-profile-error', () => null)
+  
   const client = useSupabaseClient()
   const user = useSupabaseUser()
 
@@ -100,7 +100,7 @@ export const useUserProfile = () => {
   const profile = computed(() => userProfileState.value)
   
   const userName = computed(() => 
-    userProfileState.value?.name || user.value?.email?.split('@')[0] || '用户'
+    userProfileState.value?.name || '用户'
   )
 
   const userAvatar = computed(() => userProfileState.value?.avatar_url)
