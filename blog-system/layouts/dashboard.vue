@@ -79,9 +79,16 @@ watch(() => route.path, () => {
             </div>
             <div class="flex flex-col">
               <div class="text-sm font-black font-display text-gray-900 dark:text-white">{{ userName + '的家庭' }}</div>
-              <div :class="['text-xs font-bold uppercase tracking-wider', isSuperAdmin ? 'text-[#FF4D94]' : 'text-gray-500 dark:text-gray-400']">
-                {{ userRole }}
-              </div>
+              <ClientOnly>
+                <div :class="['text-xs font-bold uppercase tracking-wider', isSuperAdmin ? 'text-[#FF4D94]' : 'text-gray-500 dark:text-gray-400']">
+                  {{ userRole }}
+                </div>
+                <template #fallback>
+                  <div class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    加载中...
+                  </div>
+                </template>
+              </ClientOnly>
             </div>
           </div>
           <button
@@ -116,29 +123,31 @@ watch(() => route.path, () => {
 
         <!-- Navigation -->
         <div class="flex-1 overflow-y-auto p-5">
-          <nav class="space-y-1.5">
-            <NuxtLink
-              v-for="item in navItems"
-              :key="item.href"
-              :to="item.href"
-              :class="[
-                'group flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-all duration-300 text-sm font-bold font-display relative overflow-hidden border',
-                isActive(item.href)
-                  ? 'bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white border-transparent shadow-[0_8px_16px_-4px_rgba(255,77,148,0.3)]'
-                  : 'text-gray-700 dark:text-gray-300 border-transparent hover:bg-white/60 dark:hover:bg-white/5 hover:text-[#FF4D94] hover:border-[#FF4D94]/10 hover:translate-x-1'
-              ]"
-            >
-              <component
-                :is="item.icon"
+          <ClientOnly>
+            <nav class="space-y-1.5">
+              <NuxtLink
+                v-for="item in navItems"
+                :key="item.href"
+                :to="item.href"
                 :class="[
-                  'w-5 h-5 relative z-10 transition-colors',
-                  isActive(item.href) ? 'text-white' : 'text-gray-400 dark:text-gray-500 group-hover:text-[#FF4D94]'
+                  'group flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-all duration-300 text-sm font-bold font-display relative overflow-hidden border',
+                  isActive(item.href)
+                    ? 'bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white border-transparent shadow-[0_8px_16px_-4px_rgba(255,77,148,0.3)]'
+                    : 'text-gray-700 dark:text-gray-300 border-transparent hover:bg-white/60 dark:hover:bg-white/5 hover:text-[#FF4D94] hover:border-[#FF4D94]/10 hover:translate-x-1'
                 ]"
-              />
-              <span class="relative z-10 tracking-wide">{{ item.label }}</span>
-              <div v-if="isActive(item.href)" class="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-sm animate-pulse"></div>
-            </NuxtLink>
-          </nav>
+              >
+                <component
+                  :is="item.icon"
+                  :class="[
+                    'w-5 h-5 relative z-10 transition-colors',
+                    isActive(item.href) ? 'text-white' : 'text-gray-400 dark:text-gray-500 group-hover:text-[#FF4D94]'
+                  ]"
+                />
+                <span class="relative z-10 tracking-wide">{{ item.label }}</span>
+                <div v-if="isActive(item.href)" class="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-sm animate-pulse"></div>
+              </NuxtLink>
+            </nav>
+          </ClientOnly>
         </div>
 
         <!-- Bottom Actions -->
@@ -184,22 +193,24 @@ watch(() => route.path, () => {
 
         <!-- Mobile Menu -->
         <div v-if="mobileMenuOpen" class="border-t border-gray-100 dark:border-white/5 bg-white dark:bg-[#0F172A]">
-          <nav class="p-4 space-y-1.5">
-            <NuxtLink
-              v-for="item in navItems"
-              :key="item.href"
-              :to="item.href"
-              :class="[
-                'flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 text-sm font-bold',
-                isActive(item.href)
-                  ? 'bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white shadow-lg'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-[#FF4D94]/5 hover:to-[#7C4DFF]/5 hover:text-[#FF4D94]'
-              ]"
-            >
-              <component :is="item.icon" class="w-5 h-5" />
-              <span>{{ item.label }}</span>
-            </NuxtLink>
-          </nav>
+          <ClientOnly>
+            <nav class="p-4 space-y-1.5">
+              <NuxtLink
+                v-for="item in navItems"
+                :key="item.href"
+                :to="item.href"
+                :class="[
+                  'flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 text-sm font-bold',
+                  isActive(item.href)
+                    ? 'bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-[#FF4D94]/5 hover:to-[#7C4DFF]/5 hover:text-[#FF4D94]'
+                ]"
+              >
+                <component :is="item.icon" class="w-5 h-5" />
+                <span>{{ item.label }}</span>
+              </NuxtLink>
+            </nav>
+          </ClientOnly>
           <div class="p-4 border-t border-gray-100 dark:border-white/5">
             <button
               @click="handleLogout"
@@ -222,20 +233,22 @@ watch(() => route.path, () => {
       <!-- Mobile Bottom Navigation (< lg) -->
       <nav class="lg:hidden mobile-bottom-nav">
         <div class="container mx-auto px-2">
-          <div class="grid grid-cols-5 gap-1">
-            <NuxtLink
-              v-for="item in navItems.slice(0, 5)"
-              :key="item.href"
-              :to="item.href"
-              :class="[
-                'mobile-bottom-nav-item',
-                isActive(item.href) ? 'active' : ''
-              ]"
-            >
-              <component :is="item.icon" class="w-5 h-5" />
-              <span class="text-[10px] leading-none">{{ item.label }}</span>
-            </NuxtLink>
-          </div>
+          <ClientOnly>
+            <div class="grid grid-cols-5 gap-1">
+              <NuxtLink
+                v-for="item in navItems.slice(0, 5)"
+                :key="item.href"
+                :to="item.href"
+                :class="[
+                  'mobile-bottom-nav-item',
+                  isActive(item.href) ? 'active' : ''
+                ]"
+              >
+                <component :is="item.icon" class="w-5 h-5" />
+                <span class="text-[10px] leading-none">{{ item.label }}</span>
+              </NuxtLink>
+            </div>
+          </ClientOnly>
         </div>
       </nav>
     </div>

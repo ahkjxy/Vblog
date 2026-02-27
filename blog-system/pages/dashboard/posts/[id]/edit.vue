@@ -12,9 +12,10 @@ const postId = route.params.id as string
 
 const error = ref<string | null>(null)
 const saving = ref(false)
+const showShareModal = ref(false)
 
 // 获取文章数据
-const { data: editData } = await useAsyncData(`edit-post-${postId}`, async () => {
+const { data: editData, error: loadError } = await useAsyncData(`edit-post-${postId}`, async () => {
   if (!user.value) throw createError({ statusCode: 401, statusMessage: '未登录' })
 
   // 1. 获取文章
@@ -40,11 +41,10 @@ const { data: editData } = await useAsyncData(`edit-post-${postId}`, async () =>
     throw createError({ statusCode: 403, statusMessage: '您没有权限编辑此文章' })
   }
 
-  // 3. 获取分类和标签（使用公共数据 Composable）
-  const commonData = useCommonData()
-  const [categories, tags] = await Promise.all([
-    commonData.fetchCategories(),
-    commonData.fetchTags()
+  // 3. 获取分类和标签
+  const [categoriesRes, tagsRes] = await Promise.all([
+    client.from('categories').select('id, name, slug').order('name'),
+    client.from('tags').select('id, name, slug').order('name')
   ])
 
   // 4. 获取文章的分类和标签
@@ -55,13 +55,18 @@ const { data: editData } = await useAsyncData(`edit-post-${postId}`, async () =>
 
   return {
     post,
-    categories,
-    tags,
+    categories: categoriesRes.data || [],
+    tags: tagsRes.data || [],
     selectedCategories: postCatsRes.data?.map((c: any) => c.category_id) || [],
     selectedTags: postTagsRes.data?.map((t: any) => t.tag_id) || [],
     isSuperAdmin
   }
 })
+
+// 如果加载失败，显示错误
+if (loadError.value) {
+  console.error('Load error:', loadError.value)
+}
 
 const form = ref({
   title: editData.value?.post.title || '',
@@ -184,7 +189,24 @@ useSeoMeta({
 </script>
 
 <template>
-  <div v-if="editData" class="max-w-5xl mx-auto px-3 sm:px-4 lg:px-0">
+  <div v-if="loadError" class="max-w-5xl mx-auto px-3 sm:px-4 lg:px-0">
+    <div class="bg-red-50 border border-red-200 text-red-600 p-6 rounded-xl">
+      <h2 class="text-xl font-bold mb-2">加载失败</h2>
+      <p>{{ loadError.message || '无法加载文章数据' }}</p>
+      <button
+        @click="router.back()"
+        class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+      >
+        返回
+      </button>
+    </div>
+  </div>
+  <div v-else-if="!editData" class="max-w-5xl mx-auto px-3 sm:px-4 lg:px-0">
+    <div class="text-center py-12">
+      <p class="text-gray-600">加载中...</p>
+    </div>
+  </div>
+  <div v-else class="max-w-5xl mx-auto px-3 sm:px-4 lg:px-0">
     <!-- Header -->
     <div class="mb-6 sm:mb-8">
       <h1 class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] bg-clip-text text-transparent mb-2">
@@ -387,6 +409,14 @@ useSeoMeta({
           取消
         </button>
         <button
+          v-if="form.status === 'published'"
+          type="button"
+          @click="showShareModal = true"
+          class="px-6 py-2 bg-gradient-to-r from-[#FF4D94] to-[#7C4DFF] text-white rounded-lg hover:shadow-lg transition-all font-bold"
+        >
+          📤 一键分发
+        </button>
+        <button
           type="button"
           @click="handleDelete"
           class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors ml-auto"
@@ -395,5 +425,17 @@ useSeoMeta({
         </button>
       </div>
     </form>
+
+    <!-- Social Share Modal -->
+    <DashboardSocialShareModal
+      v-if="showShareModal && editData"
+      :post="{
+        title: form.title,
+        content: form.content,
+        excerpt: form.excerpt,
+        slug: form.slug
+      }"
+      @close="showShareModal = false"
+    />
   </div>
 </template>

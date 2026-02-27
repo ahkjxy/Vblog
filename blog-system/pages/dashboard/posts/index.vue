@@ -34,6 +34,7 @@ const reviewFilter = ref('all')
 const currentPage = ref(1)
 const deletePostId = ref<string | null>(null)
 const postsPerPage = 10
+const sharePost = ref<Post | null>(null)
 
 // 获取数据
 const { data: postsData, refresh } = await useAsyncData('dashboard-posts', async () => {
@@ -300,6 +301,16 @@ const formatDate = (dateString: string) => {
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-end gap-2">
+                    <button
+                      v-if="post.status === 'published'"
+                      @click="sharePost = post"
+                      class="p-2 text-[#FF4D94] hover:bg-[#FF4D94]/10 rounded-xl transition-all"
+                      title="分发到社交平台"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                      </svg>
+                    </button>
                     <NuxtLink
                       :to="`/dashboard/posts/${post.id}/edit`"
                       class="p-2 text-[#7C4DFF] hover:bg-[#7C4DFF]/10 rounded-xl transition-all"
@@ -468,5 +479,17 @@ const formatDate = (dateString: string) => {
         </div>
       </div>
     </div>
+
+    <!-- Social Share Modal -->
+    <DashboardSocialShareModal
+      v-if="sharePost"
+      :post="{
+        title: sharePost.title,
+        content: '', 
+        excerpt: '',
+        slug: sharePost.slug
+      }"
+      @close="sharePost = null"
+    />
   </div>
 </template>

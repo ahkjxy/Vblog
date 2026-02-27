@@ -95,58 +95,60 @@ const handleTipped = async () => {
   }
 }
 
-// SEO 优化
-if (post.value) {
-  const categories = post.value.post_categories?.map((pc: any) => pc.categories.name) || []
-  const tags = post.value.post_tags?.map((pt: any) => pt.tags.name) || []
-  const authorName = formatAuthorName(post.value.profiles)
-  const description = cleanDescription(post.value.seo_description || post.value.excerpt || post.value.content, 160)
-  const keywords = generateKeywords(tags, categories, [post.value.title])
-  
-  const seoConfig = {
-    title: post.value.seo_title || post.value.title,
-    description,
-    keywords,
-    image: post.value.featured_image || undefined,
-    url: `/blog/${post.value.slug}`,
-    type: 'article' as const,
-    author: authorName,
-    publishedTime: post.value.published_at,
-    modifiedTime: post.value.updated_at,
-    section: categories[0] || '家庭教育',
-    tags,
+// SEO 优化 - 使用 watchEffect 确保在客户端也能正确设置
+watchEffect(() => {
+  if (post.value) {
+    const categories = post.value.post_categories?.map((pc: any) => pc.categories.name) || []
+    const tags = post.value.post_tags?.map((pt: any) => pt.tags.name) || []
+    const authorName = formatAuthorName(post.value.profiles)
+    const description = cleanDescription(post.value.seo_description || post.value.excerpt || post.value.content, 160)
+    const keywords = generateKeywords(tags, categories, [post.value.title])
+    
+    const seoConfig = {
+      title: post.value.seo_title || post.value.title,
+      description,
+      keywords,
+      image: post.value.featured_image || undefined,
+      url: `/blog/${post.value.slug}`,
+      type: 'article' as const,
+      author: authorName,
+      publishedTime: post.value.published_at,
+      modifiedTime: post.value.updated_at,
+      section: categories[0] || '家庭教育',
+      tags,
+    }
+    
+    useSeoMeta(generateSeoMeta(seoConfig))
+    
+    // 添加结构化数据
+    useHead({
+      script: [
+        {
+          type: 'application/ld+json',
+          innerHTML: JSON.stringify(generateJsonLd('article', {
+            title: post.value.title,
+            description,
+            image: post.value.featured_image || 'https://blog.familybank.chat/favicon.png',
+            publishedTime: post.value.published_at,
+            modifiedTime: post.value.updated_at,
+            author: authorName,
+            url: `https://blog.familybank.chat/blog/${post.value.slug}`,
+          })),
+        },
+        {
+          type: 'application/ld+json',
+          innerHTML: JSON.stringify(generateJsonLd('breadcrumb', {
+            items: generateBreadcrumbs([
+              { name: '首页', url: '/' },
+              { name: '社区讨论', url: '/blog' },
+              { name: post.value.title, url: `/blog/${post.value.slug}` },
+            ]),
+          })),
+        },
+      ],
+    })
   }
-  
-  useSeoMeta(generateSeoMeta(seoConfig))
-  
-  // 添加结构化数据
-  useHead({
-    script: [
-      {
-        type: 'application/ld+json',
-        innerHTML: JSON.stringify(generateJsonLd('article', {
-          title: post.value.title,
-          description,
-          image: post.value.featured_image || 'https://blog.familybank.chat/favicon.png',
-          publishedTime: post.value.published_at,
-          modifiedTime: post.value.updated_at,
-          author: authorName,
-          url: `https://blog.familybank.chat/blog/${post.value.slug}`,
-        })),
-      },
-      {
-        type: 'application/ld+json',
-        innerHTML: JSON.stringify(generateJsonLd('breadcrumb', {
-          items: generateBreadcrumbs([
-            { name: '首页', url: '/' },
-            { name: '社区讨论', url: '/blog' },
-            { name: post.value.title, url: `/blog/${post.value.slug}` },
-          ]),
-        })),
-      },
-    ],
-  })
-}
+})
 
 // 添加 AdSense 脚本（只在允许的页面）
 const { shouldShowAds, loadAdsenseScript } = useAdsense()
