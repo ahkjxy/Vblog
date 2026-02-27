@@ -9,6 +9,11 @@ export const useUserProfile = () => {
 
   // 加载用户 profile（支持 SSR）
   const loadProfile = async (force = false) => {
+    // 预渲染时跳过
+    if (process.env.prerender) {
+      return null
+    }
+
     // 如果已经加载且不强制刷新，直接返回
     if (userProfileState.value && !force) {
       return userProfileState.value

@@ -1,5 +1,10 @@
 // 在应用启动时初始化用户 profile
-export default defineNuxtPlugin(async () => {
+export default defineNuxtPlugin(async (nuxtApp) => {
+  // 预渲染时跳过
+  if (process.env.prerender) {
+    return
+  }
+
   const user = useSupabaseUser()
   
   // 只在有用户时才加载 profile

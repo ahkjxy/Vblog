@@ -1,4 +1,9 @@
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin((nuxtApp) => {
+  // 预渲染时跳过
+  if (process.env.prerender) {
+    return
+  }
+
   const client = useSupabaseClient()
 
   // 在客户端监听 auth 状态变化
