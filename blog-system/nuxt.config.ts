@@ -41,9 +41,11 @@ export default defineNuxtConfig({
         '/auth-debug'
       ],
     },
+    cookieName: 'sb-mfgfbwhznqpdjumtsrus-auth-token',
     cookieOptions: {
       maxAge: 60 * 60 * 24 * 7, // 7 days
       sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production', // 生产环境使用 secure
     },
     clientOptions: {
       auth: {
@@ -51,6 +53,7 @@ export default defineNuxtConfig({
         detectSessionInUrl: true,
         persistSession: true,
         autoRefreshToken: true,
+        storage: process.client ? window.localStorage : undefined,
       }
     }
   },
@@ -170,7 +173,11 @@ export default defineNuxtConfig({
     // API 路由 - 缓存
     '/api/**': { cors: true, headers: { 'cache-control': 'public, max-age=60' } },
     
-    // Dashboard - 不缓存，但保持 SSR
-    '/dashboard/**': { ssr: true, cache: false }
+    // Dashboard - 完全禁用缓存，强制 SSR
+    '/dashboard': { ssr: true, cache: false },
+    '/dashboard/**': { ssr: true, cache: false },
+    
+    // Auth 页面 - 不缓存
+    '/auth/**': { ssr: true, cache: false }
   }
 })

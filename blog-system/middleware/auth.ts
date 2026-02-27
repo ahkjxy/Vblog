@@ -1,20 +1,36 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   const user = useSupabaseUser()
+  const client = useSupabaseClient()
+  
+  // 在服务端，等待 session 初始化
+  if (process.server) {
+    try {
+      const { data: { session } } = await client.auth.getSession()
+      if (!session) {
+        console.log('[AUTH SSR] No session found')
+        return navigateTo('/auth/unified')
+      }
+    } catch (error) {
+      console.error('[AUTH SSR] Error getting session:', error)
+      return navigateTo('/auth/unified')
+    }
+  }
   
   // 检查用户是否登录
   if (!user.value) {
+    console.log('[AUTH] No user found')
     return navigateTo('/auth/unified')
   }
 
   // 获取用户 profile
-  const client = useSupabaseClient()
-  const { data: profile } = await client
+  const { data: profile, error: profileError } = await client
     .from('profiles')
     .select('role, family_id')
     .eq('id', user.value.id)
     .single()
 
-  if (!profile) {
+  if (profileError || !profile) {
+    console.error('[AUTH] Profile error:', profileError)
     return navigateTo('/auth/unified')
   }
 
@@ -34,6 +50,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const requiresAdmin = adminOnlyPages.some(page => to.path.startsWith(page))
 
   if (requiresAdmin && !isSuperAdmin) {
+    console.log('[AUTH] Access denied: requires admin')
     return navigateTo('/dashboard')
   }
 })
