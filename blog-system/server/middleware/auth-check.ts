@@ -8,8 +8,8 @@ export default defineEventHandler(async (event) => {
     return
   }
 
-  // 跳过 API 路由
-  if (url.startsWith('/api')) {
+  // 跳过 API 路由和静态资源
+  if (url.startsWith('/api') || url.includes('.')) {
     return
   }
 
@@ -17,13 +17,15 @@ export default defineEventHandler(async (event) => {
     const user = await serverSupabaseUser(event)
     
     if (!user) {
-      console.log('[Server Auth] No user found for dashboard route:', url)
-      // 不在这里重定向，让客户端中间件处理
-      return
+      console.log('[Server Middleware] No user found for:', url)
+      // 设置一个标记，让客户端中间件知道 SSR 没有用户
+      event.context.noUser = true
+    } else {
+      console.log('[Server Middleware] User authenticated:', user.id)
+      event.context.userId = user.id
     }
-    
-    console.log('[Server Auth] User authenticated:', user.id)
   } catch (error) {
-    console.error('[Server Auth] Error checking user:', error)
+    console.error('[Server Middleware] Error checking user:', error)
+    event.context.authError = true
   }
 })
