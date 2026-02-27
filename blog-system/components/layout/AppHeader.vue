@@ -18,8 +18,24 @@ const user = useSupabaseUser()
 const client = useSupabaseClient()
 const config = useRuntimeConfig()
 
-// 使用全局 profile 状态（已在 plugin 中初始化）
-const { profile, userName, userAvatar } = useUserProfile()
+// 使用全局 profile 状态（预渲染时跳过）
+const profile = ref(null)
+const userName = ref('用户')
+const userAvatar = ref(null)
+
+if (!process.env.prerender) {
+  const userProfile = useUserProfile()
+  profile.value = userProfile.profile.value
+  userName.value = userProfile.userName.value
+  userAvatar.value = userProfile.userAvatar.value
+  
+  // 监听变化
+  watch([userProfile.profile, userProfile.userName, userProfile.userAvatar], ([p, n, a]) => {
+    profile.value = p
+    userName.value = n
+    userAvatar.value = a
+  })
+}
 
 const isDropdownOpen = ref(false)
 const isMobileMenuOpen = ref(false)
