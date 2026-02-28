@@ -421,7 +421,7 @@ useSeoMeta({
                       <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500">
                         <div class="flex items-center gap-1.5 font-bold">
                           <User class="w-3.5 h-3.5" />
-                          <span>{{ post.profiles?.name || '匿名' }}</span>
+                          <span>{{ post.profiles?.name ? `${post.profiles.name}的家庭` : '匿名家庭' }}</span>
                         </div>
                         
                         <span class="text-gray-300">•</span>
