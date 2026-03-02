@@ -47,16 +47,17 @@ export default defineNuxtConfig({
     },
     workbox: {
       navigateFallback: '/',
-      globPatterns: ['**/*.{js,css,html,png,svg,ico,webp,jpg,jpeg}'],
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,webp,jpg,jpeg,woff,woff2}'],
       runtimeCaching: [
         {
-          urlPattern: /^https:\/\/mfgfbwhznqpdjumtsrus\.supabase\.co\/.*/i,
+          urlPattern: /^https:\/\/mfgfbwhznqpdjumtsrus\.supabase\.co\/rest\/v1\/.*/i,
           handler: 'NetworkFirst',
           options: {
-            cacheName: 'supabase-cache',
+            cacheName: 'supabase-api-cache',
+            networkTimeoutSeconds: 10,
             expiration: {
               maxEntries: 50,
-              maxAgeSeconds: 60 * 60 // 1 hour
+              maxAgeSeconds: 5 * 60 // 5 minutes
             },
             cacheableResponse: {
               statuses: [0, 200]
@@ -79,6 +80,17 @@ export default defineNuxtConfig({
           handler: 'CacheFirst',
           options: {
             cacheName: 'google-fonts-cache',
+            expiration: {
+              maxEntries: 10,
+              maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+            }
+          }
+        },
+        {
+          urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'google-fonts-static-cache',
             expiration: {
               maxEntries: 10,
               maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
